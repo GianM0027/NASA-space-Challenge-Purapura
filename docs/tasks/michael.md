@@ -4,7 +4,8 @@
 # Michael: tasks
 
 ## Status
-EPH-1 and EPH-2 done (`build_ephemeris_provider` exported, IF-5). Next: CAT-1, CAT-2.
+EPH-1, EPH-2, CAT-1, CAT-2 done (`build_ephemeris_provider`, `build_catalog` exported, IF-5).
+Next: Artemis III regions (blocked, see Blockers), AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -30,10 +31,20 @@ EPH-1 and EPH-2 done (`build_ephemeris_provider` exported, IF-5). Next: CAT-1, C
 - EPH-1: `HorizonsEphemerisProvider`, any window length (split at 80,000 rows), 1-sample windows work.
   Tolerance vs Horizons: exact to the printed 1e-6 deg (values passed through; live check in the slow test).
 - EPH-2: disk cache `data/cache/ephemeris/`, also serves sub-windows and coarser steps on the same grid.
+- CAT-1: `data/catalog/sites.json`, 27 landed sites (Apollo 6, Luna 7, Surveyor 5, Chang'e 4,
+  Chandrayaan-3, SLIM, CLPS 3), coordinates from LROC/NSSDCA/NASA/JAXA, cited per site; heights left
+  null (taken from the DEM). Landing times only where a source gives UT (Luna, Surveyor, Chang'e 5, Chandrayaan-3).
+- CAT-2: `JsonSiteCatalog`, user sites in `data/user/sites.json`; tests for list, get, add, duplicates, round trip.
 
 ## Blockers
+- Artemis III candidate regions: NASA publishes names and maps (https://svs.gsfc.nasa.gov/5013) but no
+  center coordinates; not added rather than guessed. Options: digitize centers from the NASA map, or
+  use IAU feature coordinates labelled as approximate. Michael to decide.
 
 ## Requests
+- To Gian, tests (D23 impact): with the real `build_catalog` present, `test_add_user_site` writes the
+  real `data/user/sites.json`, so it fails with 409 on every second run. Suggested fix: the API test
+  client should use a fake catalog or a `JsonSiteCatalog(user_path=tmp_path / ...)`.
 - To Gian (spec owner), EPH-1: replace "spans up to about 60 days" with "any window (landing date plus
   mission duration); the provider splits long windows into several Horizons requests (90,000-row cap)".
   60 days at 10 min stays only as the acceptance test case. Reason: the window comes from the user, it
