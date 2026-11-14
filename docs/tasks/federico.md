@@ -4,13 +4,13 @@
 # Federico: tasks
 
 ## Status
-Terrain and evaluation live in the app (factories exported). Next: TER-5 (mask cache), EVA-3, TER-4.
+Terrain and evaluation live; TER-5 cache and EVA-3 measurement done. Next: TER-4, D27 field once in the contract.
 
 ## Next (in priority order)
-1. TER-5 (horizon mask cache), EVA-3 (speed target: measure with the real ephemeris), TER-4 (finer polar DEMs,
+1. TER-4 (finer polar DEMs,
    multi-resolution rays: fine near the site, coarse far away).
-2. Contract fields proposed to Gian (horizon under Sun/Earth per sample, Sun+Earth fraction, truncated runs):
-   implement in EVA once accepted.
+2. `VisibilityMetrics.sun_and_earth_visible_fraction` (D27): compute in EVA once Gian adds it to the contract;
+   other proposed fields (horizon under Sun/Earth per sample, truncated runs) if accepted.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -31,6 +31,10 @@ for tests write small fakes of both that return the example payloads.
 - EVA-1 + EVA-2: `LunarEvaluator` (visibility strictly above the mask interpolated periodically at the body
   azimuth, runs n x step, first-sample events) and terrain over landing precision + operating range;
   `build_evaluator` exported. 10 known-answer tests; 30 days at 1 h on the polar DEM: ~0.17 s via the API.
+- TER-5: horizon mask cache, in-memory LRU plus JSON files in `data/cache/terrain/` (key: DEM, position,
+  observer height, ray length, algorithm version). 36 catalog sites: 2.8 s computed, 2 ms again, 0.6 s from disk.
+- EVA-3: with a warm ephemeris cache one 30-day 1 h evaluation takes ~16 ms (equator) and ~160 ms (pole, all
+  of it the horizon mask; ~1 ms once cached). Target < 2 s met; cold Horizons calls dominate otherwise.
 
 ## Blockers
 
