@@ -45,3 +45,11 @@ def test_rendered_types_cover_the_main_models() -> None:
 def test_committed_frontend_types_are_current() -> None:
     committed = GENERATED.read_text(encoding="utf-8").replace("\r\n", "\n")
     assert committed == render_typescript(), "run: uv run python scripts/api_export_types.py"
+
+
+def test_defaults_are_required_in_responses_but_optional_in_requests() -> None:
+    text = render_typescript()
+    window = text[text.index("export type TimeWindow = ") :]
+    assert "  step_minutes: number" in window.split("}")[0]
+    request = text[text.index("export type EvaluateRequest = ") :]
+    assert "  area?: OperationsArea" in request.split("}")[0]

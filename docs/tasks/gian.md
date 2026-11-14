@@ -12,13 +12,13 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
 ## Next (in priority order)
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
    checked through the DOM and network only, not by eye.
-2. UI-2 (site panel): Sun and Earth elevation timeline against the horizon.
 3. UI-4 (AI box) on example data, then C3 (LLM JSON check) and AI-1 (request to requirements), AI-2 (deterministic ranking).
 4. UI-3 (side-by-side comparison).
 5. MA-1 (date-slip sweep), MA-2 (dispersion), MA-3 (summary), UI-5 (mission analysis view), AI-6 (AI presents it).
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- UI-2 (site panel): Sun and Earth elevation timeline against the per-sample horizon, joint visibility, truncated periods; checked on Apollo 11 and Malapert Massif with real catalog, ephemeris and terrain.
 - UI-1 (3D globe, decision D22) with `GET /api/sky`; automatic module wiring (IF-5, decision D21); TypeScript types generated from the contracts with a staleness test.
 - API skeleton (IF-4, REST API) on example services, 11 smoke tests; frontend scaffold with `/api` proxy, verified end to end in the browser.
 - Node.js LTS installed on this PC.
@@ -33,6 +33,23 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
 - Michael, new fields (`Site.region_radius_m`, `Site.feature`, `VisibilityMetrics.sun_and_earth_visible_fraction`):
   pending the team's review of the parameters to show; not added yet.
 
+- Federico, wiring test: already fixed on `main` (wiring tests start from "no factories"); merge `main`.
+- Federico, README (npm on Windows, DEM download step) and spec section 7 (LOLA products): done.
+- Federico, slope baseline in the panel: done ("regional slopes, N m baseline").
+- Federico and Michael, new contract fields (per-sample horizon elevation at the body azimuth,
+  `sun_and_earth_visible_fraction`, `earth_elevation_mean_visible_deg`, truncated-run flags):
+  waiting for Gian's go-ahead.
+
 ## Blockers
 
 ## Requests
+- Federico (decision D29, new contract fields; blocks the tests on `main`): `LunarEvaluator` must fill the
+  fields now required by the contract, otherwise `Evaluation`/`VisibilityMetrics` fail validation (8 tests in
+  `tests/evaluation/` red after merging `main`, and `/api/evaluate` answers 502 in the app):
+  - `Evaluation.sun_horizon_elevation_deg`, `Evaluation.earth_horizon_elevation_deg`: the `horizon_at(...)`
+    arrays already computed for `is_visible` (same values, so the UI timeline matches the engine);
+  - `VisibilityMetrics.sun_and_earth_visible_fraction`, `earth_elevation_mean_visible_deg`,
+    `longest_light_truncated`, `longest_dark_truncated`, `longest_earth_visible_truncated`,
+    `longest_earth_hidden_truncated`.
+  Definitions: spec section 3 (Truncated run, Joint visibility, Horizon per sample); reference implementation
+  and known-answer tests: `src/lunarnav/api/placeholder_metrics.py`, `tests/api/test_placeholder_metrics.py`.

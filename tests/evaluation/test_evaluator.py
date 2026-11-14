@@ -17,7 +17,7 @@ from lunarnav.contracts import (
     TimeWindow,
 )
 from lunarnav.evaluation import LunarEvaluator, build_evaluator
-from lunarnav.evaluation.visibility import horizon_at, longest_run_h
+from lunarnav.evaluation.visibility import horizon_at, longest_run
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "data" / "examples"
 T0 = datetime(2027, 1, 1, tzinfo=UTC)
@@ -92,9 +92,16 @@ def test_horizon_interpolation_is_linear_and_wraps_at_north() -> None:
 
 def test_longest_run() -> None:
     flags = np.array([True, True, False, True, True, True, False])
-    assert longest_run_h(flags, True, 0.5) == 1.5
-    assert longest_run_h(flags, False, 0.5) == 0.5
-    assert longest_run_h(np.array([True, True]), False, 1.0) == 0.0
+    assert longest_run(flags, True, 0.5) == (1.5, False)  # the 3-sample run is inside
+    assert longest_run(flags, False, 0.5) == (0.5, True)  # one of the 1-sample runs ends the window
+    assert longest_run(np.array([True, True]), False, 1.0) == (0.0, False)
+
+
+def test_truncation_follows_the_longest_runs_only() -> None:
+    edge_short = np.array([True, False, True, True, False])  # edge run shorter than inner run
+    assert longest_run(edge_short, True, 1.0) == (2.0, False)
+    tie = np.array([True, True, False, True, True, False])  # one of the tied runs is at the edge
+    assert longest_run(tie, True, 1.0) == (2.0, True)
 
 
 # --- Metrics on a flat horizon -----------------------------------------------------------------
@@ -185,3 +192,56 @@ def test_example_payloads_evaluate_to_a_valid_evaluation() -> None:
     )
     Evaluation.model_validate(ev.model_dump())
     assert len(ev.sun_visible) == len(series.times_utc)
+
+
+# --- Decision D29 fields ------------------------------------------------------------------------
+
+
+def test_horizon_per_sample_is_the_threshold_used() -> None:
+    mask_az = [0.0, 90.0, 180.0, 270.0]
+    mask_el = [0.0, 10.0, 0.0, 20.0]
+    eph = FakeEphemeris(
+        [4.0, 12.0], sun_az=[45.0, 315.0], earth_el=[1.0, 1.0], earth_az=[90.0, 0.0]
+    )
+    ev = evaluate(eph, FakeTerrain(mask_az, mask_el), n=2)
+    assert ev.sun_horizon_elevation_deg == pytest.approx([5.0, 10.0])  # 45 -> 5, 315 -> 10
+    assert ev.sun_visible == [False, True]
+    assert ev.earth_horizon_elevation_deg == pytest.approx([10.0, 0.0])
+    assert ev.earth_visible == [False, True]
+
+
+def test_joint_fraction_earth_mean_and_truncation() -> None:
+    # Sun visible  T T T F F T ; Earth visible T T F F T T  (flat horizon)
+    sun = [5.0, 6.0, 7.0, -1.0, -2.0, 4.0]
+    earth = [3.0, 1.0, -1.0, -2.0, 2.0, 4.0]
+    m = evaluate(FakeEphemeris(sun, earth_el=earth)).metrics
+    assert m.sun_and_earth_visible_fraction == pytest.approx(3 / 6)
+    assert m.earth_elevation_mean_visible_deg == pytest.approx((3 + 1 + 2 + 4) / 4)
+    assert (m.longest_light_h, m.longest_light_truncated) == (3.0, True)
+    assert (m.longest_dark_h, m.longest_dark_truncated) == (2.0, False)
+    assert (m.longest_earth_visible_h, m.longest_earth_visible_truncated) == (2.0, True)
+    assert (m.longest_earth_hidden_h, m.longest_earth_hidden_truncated) == (2.0, False)
+
+
+def test_metrics_agree_with_the_reference_definitions_on_random_series() -> None:
+    # Gian's reference implementation pins the spec section 3 definitions (decision D29).
+    reference = pytest.importorskip("lunarnav.api.placeholder_metrics")
+    from lunarnav.evaluation.evaluator import compute_metrics
+
+    rng = np.random.default_rng(42)
+    for _ in range(200):
+        n = int(rng.integers(1, 40))
+        sun_el = rng.uniform(-5.0, 5.0, n)
+        earth_el = rng.uniform(-5.0, 5.0, n)
+        sun_vis, earth_vis = sun_el > 0.0, earth_el > 0.0
+        times = [T0 + timedelta(hours=i) for i in range(n)]
+        ours = compute_metrics(times, sun_el, sun_vis, earth_el, earth_vis, window(max(n, 2)))
+        ref = reference.compute_metrics(
+            times, sun_el.tolist(), sun_vis.tolist(), earth_el.tolist(), earth_vis.tolist(), 1.0
+        )
+        for name, value in ref.model_dump().items():
+            mine = getattr(ours, name)
+            if isinstance(value, float) and not isinstance(value, bool):
+                assert mine == pytest.approx(value), (name, n)
+            else:
+                assert mine == value, (name, n)

@@ -15,6 +15,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, TypeAdapter
 
+from lunarnav.api.placeholder_metrics import compute_metrics
 from lunarnav.contracts import (
     AiAnswer,
     DateShiftResult,
@@ -32,53 +33,11 @@ from lunarnav.contracts import (
     SiteScore,
     TerrainStats,
     TimeWindow,
-    VisibilityMetrics,
 )
 
 OUT = Path(__file__).resolve().parents[1] / "data" / "examples"
 LABEL = "SYNTHETIC EXAMPLE, not real data"
 STEP_MIN = 240
-
-
-def _runs_h(flags: list[bool], state: bool, step_h: float) -> float:
-    """Return the longest run of ``state`` in ``flags``, in hours (n samples last n * step)."""
-    best = cur = 0
-    for flag in flags:
-        cur = cur + 1 if flag is state else 0
-        best = max(best, cur)
-    return best * step_h
-
-
-def _event(times: list[datetime], flags: list[bool], new_state: bool) -> datetime | None:
-    """Return the time of the first sample entering ``new_state`` after the start, or None."""
-    for i in range(1, len(flags)):
-        if flags[i] is new_state and flags[i - 1] is not new_state:
-            return times[i]
-    return None
-
-
-def _metrics(
-    times: list[datetime], sun_el: list[float], sun_vis: list[bool], earth_vis: list[bool]
-) -> VisibilityMetrics:
-    """Compute VisibilityMetrics from synthetic series, following the contract definitions."""
-    step_h = STEP_MIN / 60.0
-    visible_el = [e for e, v in zip(sun_el, sun_vis, strict=True) if v]
-    return VisibilityMetrics(
-        illumination_fraction=sum(sun_vis) / len(sun_vis),
-        sun_elevation_max_deg=max(sun_el),
-        sun_elevation_mean_visible_deg=sum(visible_el) / len(visible_el) if visible_el else None,
-        longest_light_h=_runs_h(sun_vis, True, step_h),
-        longest_dark_h=_runs_h(sun_vis, False, step_h),
-        earth_visibility_fraction=sum(earth_vis) / len(earth_vis),
-        longest_earth_visible_h=_runs_h(earth_vis, True, step_h),
-        longest_earth_hidden_h=_runs_h(earth_vis, False, step_h),
-        sun_visible_at_start=sun_vis[0],
-        earth_visible_at_start=earth_vis[0],
-        next_sunset_utc=_event(times, sun_vis, False),
-        next_sunrise_utc=_event(times, sun_vis, True),
-        next_earthset_utc=_event(times, earth_vis, False),
-        next_earthrise_utc=_event(times, earth_vis, True),
-    )
 
 
 def _dump(name: str, payload: BaseModel | list[Site]) -> None:
@@ -113,7 +72,7 @@ def main() -> None:
     )
     sun_vis = [e > 0.0 for e in sun_el]
     earth_vis = [e > 0.0 for e in earth_el]
-    metrics = _metrics(times, sun_el, sun_vis, earth_vis)
+    metrics = compute_metrics(times, sun_el, sun_vis, earth_el, earth_vis, STEP_MIN / 60.0)
     terrain = TerrainStats(
         location=point,
         radius_m=600.0,
@@ -200,9 +159,11 @@ def main() -> None:
             times_utc=times,
             sun_azimuth_deg=sun_az,
             sun_elevation_deg=sun_el,
+            sun_horizon_elevation_deg=[0.0] * 13,
             sun_visible=sun_vis,
             earth_azimuth_deg=earth_az,
             earth_elevation_deg=earth_el,
+            earth_horizon_elevation_deg=[0.0] * 13,
             earth_visible=earth_vis,
             horizon=horizon,
             terrain=terrain,

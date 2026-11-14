@@ -1,5 +1,5 @@
 # ABOUTME: Tests of the horizon mask cache (TER-5): reuse in memory and on disk, keys, bad entries
-# ABOUTME: Counts real ray-casting calls by wrapping horizon_profile in the provider module
+# ABOUTME: Counts real ray-casting calls by wrapping segmented_horizon_profile in the provider
 
 from pathlib import Path
 
@@ -20,13 +20,13 @@ SITE = GeoPoint(lat_deg=10.0, lon_deg=20.0)
 def calls(monkeypatch: pytest.MonkeyPatch) -> list[int]:
     """Count how many masks are really ray-cast."""
     counter: list[int] = []
-    real = provider_module.horizon_profile
+    real = provider_module.segmented_horizon_profile
 
     def counting(*args, **kwargs):
         counter.append(1)
         return real(*args, **kwargs)
 
-    monkeypatch.setattr(provider_module, "horizon_profile", counting)
+    monkeypatch.setattr(provider_module, "segmented_horizon_profile", counting)
     return counter
 
 

@@ -122,7 +122,7 @@ def test_real_dems_agree_at_the_south_pole() -> None:
     site = GeoPoint(lat_deg=-89.5, lon_deg=0.0)
     polar = provider.horizon_mask(site)
     global_mask = LolaTerrainProvider(provider.global_dem).horizon_mask(site)
-    assert polar.dem_resolution_m == 80.0
+    assert polar.dem_resolution_m in (20.0, 80.0)  # 20 m near field when ldem_85s_20m is present
     p, g = np.array(polar.horizon_elevation_deg), np.array(global_mask.horizon_elevation_deg)
     assert abs(p.max() - g.max()) < 0.3
     assert abs(int(p.argmax()) - int(g.argmax())) <= 3  # degrees of azimuth

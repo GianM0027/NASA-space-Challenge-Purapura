@@ -20,7 +20,7 @@ from lunarnav.evaluation.visibility import (
     first_transition,
     horizon_at,
     is_visible,
-    longest_run_h,
+    longest_run,
 )
 
 
@@ -70,13 +70,13 @@ class LunarEvaluator:
         mask_el = np.asarray(horizon.horizon_elevation_deg)
         sun_el = np.asarray(series.sun_elevation_deg)
         earth_el = np.asarray(series.earth_elevation_deg)
-        sun_vis = is_visible(
-            sun_el, horizon_at(mask_az, mask_el, np.asarray(series.sun_azimuth_deg))
-        )
-        earth_vis = is_visible(
-            earth_el, horizon_at(mask_az, mask_el, np.asarray(series.earth_azimuth_deg))
-        )
-        metrics = compute_metrics(series.times_utc, sun_el, sun_vis, earth_vis, window)
+        # The interpolated horizon is both the visibility threshold and an output (decision D29),
+        # so the UI timeline draws exactly the line the engine compared against.
+        sun_horizon = horizon_at(mask_az, mask_el, np.asarray(series.sun_azimuth_deg))
+        earth_horizon = horizon_at(mask_az, mask_el, np.asarray(series.earth_azimuth_deg))
+        sun_vis = is_visible(sun_el, sun_horizon)
+        earth_vis = is_visible(earth_el, earth_horizon)
+        metrics = compute_metrics(series.times_utc, sun_el, sun_vis, earth_el, earth_vis, window)
 
         return Evaluation(
             site_id=site_id,
@@ -86,9 +86,11 @@ class LunarEvaluator:
             times_utc=series.times_utc,
             sun_azimuth_deg=series.sun_azimuth_deg,
             sun_elevation_deg=series.sun_elevation_deg,
+            sun_horizon_elevation_deg=sun_horizon.tolist(),
             sun_visible=sun_vis.tolist(),
             earth_azimuth_deg=series.earth_azimuth_deg,
             earth_elevation_deg=series.earth_elevation_deg,
+            earth_horizon_elevation_deg=earth_horizon.tolist(),
             earth_visible=earth_vis.tolist(),
             horizon=horizon,
             terrain=terrain,
@@ -97,14 +99,20 @@ class LunarEvaluator:
 
 
 def compute_metrics(
-    times, sun_el: np.ndarray, sun_vis: np.ndarray, earth_vis: np.ndarray, window: TimeWindow
+    times,
+    sun_el: np.ndarray,
+    sun_vis: np.ndarray,
+    earth_el: np.ndarray,
+    earth_vis: np.ndarray,
+    window: TimeWindow,
 ) -> VisibilityMetrics:
-    """Power and communication metrics from per-sample visibility (definitions of decision D20).
+    """Power and communication metrics from per-sample visibility (decisions D20 and D29).
 
     Args:
         times: Sample times (list of aware datetimes).
         sun_el: Geometric Sun elevation per sample, degrees.
         sun_vis: Sun visible per sample.
+        earth_el: Geometric Earth elevation per sample, degrees.
         earth_vis: Earth visible per sample.
         window: The window; ``step_minutes`` is the duration of one sample.
 
@@ -113,15 +121,26 @@ def compute_metrics(
     """
     step_h = window.step_minutes / 60.0
     lit = sun_el[sun_vis]
+    in_view = earth_el[earth_vis]
+    light_h, light_cut = longest_run(sun_vis, True, step_h)
+    dark_h, dark_cut = longest_run(sun_vis, False, step_h)
+    contact_h, contact_cut = longest_run(earth_vis, True, step_h)
+    outage_h, outage_cut = longest_run(earth_vis, False, step_h)
     return VisibilityMetrics(
         illumination_fraction=float(sun_vis.mean()),
         sun_elevation_max_deg=float(sun_el.max()),
         sun_elevation_mean_visible_deg=float(lit.mean()) if lit.size else None,
-        longest_light_h=longest_run_h(sun_vis, True, step_h),
-        longest_dark_h=longest_run_h(sun_vis, False, step_h),
+        longest_light_h=light_h,
+        longest_light_truncated=light_cut,
+        longest_dark_h=dark_h,
+        longest_dark_truncated=dark_cut,
         earth_visibility_fraction=float(earth_vis.mean()),
-        longest_earth_visible_h=longest_run_h(earth_vis, True, step_h),
-        longest_earth_hidden_h=longest_run_h(earth_vis, False, step_h),
+        earth_elevation_mean_visible_deg=float(in_view.mean()) if in_view.size else None,
+        longest_earth_visible_h=contact_h,
+        longest_earth_visible_truncated=contact_cut,
+        longest_earth_hidden_h=outage_h,
+        longest_earth_hidden_truncated=outage_cut,
+        sun_and_earth_visible_fraction=float((sun_vis & earth_vis).mean()),
         sun_visible_at_start=bool(sun_vis[0]),
         earth_visible_at_start=bool(earth_vis[0]),
         next_sunset_utc=first_transition(times, sun_vis, False),
