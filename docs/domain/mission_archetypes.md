@@ -22,8 +22,12 @@ Rules (Michael's decisions, 2026-11-14):
 - The operations area is **not** filtered by its maximum slope: a site next to a steep crater wall
   is fine if crews or rovers can avoid the wall. NASA likewise shows slopes > 20 deg as areas
   excluded from EVAs (HLS Overview 2025, p. 24). Instead, `traverse_slope_limit_deg` (proposed
-  field) is the vehicle limit used to report the share of the operations area that is traversable,
-  shown to the user as information. No minimum share is set: no source gives one.
+  field) is the vehicle limit used to report the **reachable share** of the operations area, shown
+  to the user as information. No minimum share is set: no source gives one.
+- Reachable, not just traversable: a cell counts only if a path from the landing point reaches it
+  through cells below `traverse_slope_limit_deg` with a path length within `operating_range_m`.
+  A steep wall across the disk therefore cuts off the far side, and a detour longer than the range
+  makes an area unreachable even if it is connected.
 
 ### Darkness vs light (why both kinds of constraint exist)
 

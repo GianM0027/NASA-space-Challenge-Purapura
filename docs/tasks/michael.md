@@ -79,11 +79,17 @@ recent missions, Haworth/de Gerlache points on the rim.
   - Slopes (Michael's decision): `max_slope_deg` should apply to the **landing-precision disk**
     only (Artemis: < 10 deg over 100 m), not to the whole operations area: a site next to a steep
     wall the crew never crosses must not be rejected. For the operations area, add an informational
-    "traversable share": fraction of the area with slope below `traverse_slope_limit_deg`
-    (EVA 20 deg, VIPER 15 deg), shown to the user, no minimum (no source gives one). Contract
-    wording is yours.
-- To Federico (D23 impact), once Gian updates the contract: max slope over the landing-precision
-  disk, and the share of the operations area below a given slope limit.
+    "reachable share": fraction of the operations disk reachable from the landing point through
+    cells below `traverse_slope_limit_deg` (EVA 20 deg, VIPER 15 deg) with a path length within
+    `operating_range_m`; shown to the user, no minimum (no source gives one). Contract wording is
+    yours.
+- To Federico (D23 impact), once Gian updates the contract: (1) max slope over the
+  landing-precision disk; (2) reachable share: cells with slope below the limit are traversable;
+  minimum path distance from the landing point through traversable cells (Dijkstra, e.g.
+  `skimage.graph.MCP_Geometric`); count cells within `operating_range_m`. A wall splitting the disk
+  cuts off the far side; a detour longer than the range also excludes it. Landing dispersion is
+  covered by Gian's mission analysis (MA-2), so start from the nominal point. At 20 m pixels the
+  rover case (20 km) is about 2000 x 2000 cells: worth timing.
 - To Gian (D23 impact): (a) whether observer height becomes a request field is your call (D30
   gives the default and per-archetype values). (b) Ephemeris stays on per-site Horizons queries
   (Michael's choice: fewer own formulas). A new date costs about 2-4 s per site; the warm-up makes
