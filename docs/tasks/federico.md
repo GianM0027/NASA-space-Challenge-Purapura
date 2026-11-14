@@ -4,7 +4,7 @@
 # Federico: tasks
 
 ## Status
-Setup, C1, TER-3 and TER-1 done; next EVA-1 (visibility and metrics).
+Setup, C1, TER-3, TER-1, TER-2 done; terrain is live in the app (`build_terrain_provider`). Next EVA-1.
 
 ## Next (in priority order)
 1. EVA-1 (visibility and metrics from series plus mask) against `data/examples/ephemeris_series.json` and
@@ -25,10 +25,18 @@ for tests write small fakes of both that return the example payloads.
 - TER-1: `LolaTerrainProvider.horizon_mask` (360 azimuths, rays to 150 km, curvature included); picks the
   south polar DEM when the whole ray disk fits, else LDEM_64; ~15 ms equator, ~160 ms pole. Known-answer
   tests (bare sphere, geometric dip, 3 km ridge) plus slow real-DEM checks; both catch injected bugs.
+- TER-2: `terrain_stats` (center elevation, mean/max slope over a disk at the DEM pixel baseline);
+  known-answer tests on inclined planes (global and polar grids, exact pole); real: mare ~1 deg mean,
+  Shackleton walls up to ~37 deg. Factory `build_terrain_provider()` exported (IF-5): API shows terrain `real`.
 
 ## Blockers
 
 ## Requests
+- Gian (tests/api/test_wiring.py): `test_real_evaluator_receives_ephemeris_and_terrain` assumes terrain has no
+  factory and now fails (status `real`, or `error` without DEMs). Suggest faking the upstream packages in the
+  test: `_fake_module(monkeypatch, "lunarnav.terrain")` and `_fake_module(monkeypatch, "lunarnav.ephemeris")`.
+- Gian (README): `npm --prefix frontend install` fails on Windows with npm 10.9.2 (ENOENT package.json);
+  `cd frontend && npm install` works.
 - Gian (README): add the setup step `uv run python scripts/terrain_download_dem.py` (~650 MB, once per machine).
 - Gian (spec section 7): LOLA DEM row can name the products of D24: LDEM_64 and LDEM_80S_80M,
   LRO-L-LOLA-4-GDR-V1.0, https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/
