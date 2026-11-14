@@ -247,8 +247,10 @@ class VisibilityMetrics(_Contract):
 
     "Visible" means the body's center is above the terrain horizon mask. Durations are measured on
     the sampled series: a run of n consecutive samples in the same state lasts n * step, so the
-    resolution is the window step. An event time (sunset, sunrise, Earthset, Earthrise) is the
-    time of the first sample in the new state after ``TimeWindow.start_utc``, or None when the
+    resolution is the window step. A longest run is *truncated* when at least one run of that
+    length starts at the first sample or ends at the last one: the true duration may be longer.
+    An event time (sunset, sunrise, Earthset, Earthrise) is the time of the first sample in the
+    new state after ``TimeWindow.start_utc``, or None when the
     transition does not happen inside the window.
 
     Attributes:
@@ -256,10 +258,17 @@ class VisibilityMetrics(_Contract):
         sun_elevation_max_deg: Maximum geometric Sun elevation in the window, degrees.
         sun_elevation_mean_visible_deg: Mean Sun elevation over visible samples; None if none.
         longest_light_h: Longest continuous Sun-visible period, hours.
+        longest_light_truncated: The longest light period touches the window edge (lower bound).
         longest_dark_h: Longest continuous Sun-hidden period, hours.
+        longest_dark_truncated: The longest dark period touches the window edge (lower bound).
         earth_visibility_fraction: Fraction of samples with the Earth visible, [0, 1].
+        earth_elevation_mean_visible_deg: Mean Earth elevation over visible samples; None if none.
         longest_earth_visible_h: Longest continuous Earth-visible period, hours.
+        longest_earth_visible_truncated: The longest contact touches the window edge.
         longest_earth_hidden_h: Longest continuous Earth-hidden period, hours.
+        longest_earth_hidden_truncated: The longest outage touches the window edge.
+        sun_and_earth_visible_fraction: Fraction of samples with Sun and Earth both visible
+            (power and direct-to-Earth link at the same time), [0, 1].
         sun_visible_at_start: Sun visible at the window start.
         earth_visible_at_start: Earth visible at the window start.
         next_sunset_utc: First Sun visible-to-hidden transition.
@@ -272,10 +281,16 @@ class VisibilityMetrics(_Contract):
     sun_elevation_max_deg: float
     sun_elevation_mean_visible_deg: float | None
     longest_light_h: float = Field(ge=0.0)
+    longest_light_truncated: bool
     longest_dark_h: float = Field(ge=0.0)
+    longest_dark_truncated: bool
     earth_visibility_fraction: float = Field(ge=0.0, le=1.0)
+    earth_elevation_mean_visible_deg: float | None
     longest_earth_visible_h: float = Field(ge=0.0)
+    longest_earth_visible_truncated: bool
     longest_earth_hidden_h: float = Field(ge=0.0)
+    longest_earth_hidden_truncated: bool
+    sun_and_earth_visible_fraction: float = Field(ge=0.0, le=1.0)
     sun_visible_at_start: bool
     earth_visible_at_start: bool
     next_sunset_utc: AwareDatetime | None
@@ -298,9 +313,13 @@ class Evaluation(_Contract):
         times_utc: Sample times.
         sun_azimuth_deg: Sun azimuth per sample, degrees.
         sun_elevation_deg: Geometric Sun elevation per sample, degrees.
+        sun_horizon_elevation_deg: Terrain horizon elevation at the Sun's azimuth per sample,
+            degrees: the exact threshold the engine compared ``sun_elevation_deg`` with.
         sun_visible: Sun center above the terrain horizon per sample.
         earth_azimuth_deg: Earth azimuth per sample, degrees.
         earth_elevation_deg: Geometric Earth elevation per sample, degrees.
+        earth_horizon_elevation_deg: Terrain horizon elevation at the Earth's azimuth per
+            sample, degrees.
         earth_visible: Earth center above the terrain horizon per sample.
         horizon: Horizon mask used.
         terrain: Terrain statistics over the operations area.
@@ -314,9 +333,11 @@ class Evaluation(_Contract):
     times_utc: list[AwareDatetime]
     sun_azimuth_deg: list[float]
     sun_elevation_deg: list[float]
+    sun_horizon_elevation_deg: list[float]
     sun_visible: list[bool]
     earth_azimuth_deg: list[float]
     earth_elevation_deg: list[float]
+    earth_horizon_elevation_deg: list[float]
     earth_visible: list[bool]
     horizon: HorizonMask
     terrain: TerrainStats
@@ -330,9 +351,11 @@ class Evaluation(_Contract):
             "times_utc",
             "sun_azimuth_deg",
             "sun_elevation_deg",
+            "sun_horizon_elevation_deg",
             "sun_visible",
             "earth_azimuth_deg",
             "earth_elevation_deg",
+            "earth_horizon_elevation_deg",
             "earth_visible",
         )
         return self
@@ -354,6 +377,8 @@ class MissionRequirements(_Contract):
         min_sun_elevation_deg: Minimum mean Sun elevation while visible, degrees.
         min_earth_visibility_fraction: Minimum fraction of time with Earth visible, [0, 1].
         min_continuous_earth_visibility_h: Minimum longest continuous Earth-visible period, hours.
+        min_sun_and_earth_visible_fraction: Minimum fraction of time with Sun and Earth both
+            visible, [0, 1].
         max_slope_deg: Maximum slope allowed over the operations area, degrees.
         latitude_min_deg: Southern latitude bound, degrees.
         latitude_max_deg: Northern latitude bound, degrees.
@@ -369,6 +394,7 @@ class MissionRequirements(_Contract):
     min_sun_elevation_deg: float | None = None
     min_earth_visibility_fraction: float | None = Field(default=None, ge=0.0, le=1.0)
     min_continuous_earth_visibility_h: float | None = Field(default=None, ge=0.0)
+    min_sun_and_earth_visible_fraction: float | None = Field(default=None, ge=0.0, le=1.0)
     max_slope_deg: float | None = Field(default=None, ge=0.0, le=90.0)
     latitude_min_deg: float | None = Field(default=None, ge=-90.0, le=90.0)
     latitude_max_deg: float | None = Field(default=None, ge=-90.0, le=90.0)

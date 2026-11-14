@@ -23,6 +23,7 @@ from typing import Protocol
 
 from pydantic import TypeAdapter
 
+from lunarnav.api.placeholder_metrics import compute_metrics, horizon_at
 from lunarnav.contracts import (
     AiAnswer,
     EphemerisProvider,
@@ -41,7 +42,6 @@ from lunarnav.contracts import (
     TerrainProvider,
     TerrainStats,
     TimeWindow,
-    VisibilityMetrics,
 )
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[3] / "data" / "examples"
@@ -178,28 +178,12 @@ class ExampleTerrainProvider:
         )
 
 
-def _longest_run_h(flags: list[bool], state: bool, step_h: float) -> float:
-    """Return the longest run of ``state`` in ``flags``, hours (n samples last n * step)."""
-    best = current = 0
-    for flag in flags:
-        current = current + 1 if flag is state else 0
-        best = max(best, current)
-    return best * step_h
-
-
-def _first_transition(times: list[datetime], flags: list[bool], to: bool) -> datetime | None:
-    """Return the time of the first sample entering state ``to`` after the start, or None."""
-    for i in range(1, len(flags)):
-        if flags[i] is to and flags[i - 1] is not to:
-            return times[i]
-    return None
-
-
 class ExampleEvaluator:
-    """Placeholder evaluator: body visible when its elevation exceeds the horizon at azimuth 0.
+    """Placeholder evaluator: the spec section 3 definitions applied in plain Python.
 
-    It ignores the azimuth dependence of the mask (it is only ever paired with flat placeholder
-    terrain or used to draw curves); the real evaluator is Federico's (spec EVA-1).
+    It interpolates the horizon mask at each body's azimuth, so paired with the real ephemeris
+    and terrain modules it already gives meaningful numbers; the real, faster evaluator is
+    Federico's (spec EVA-1).
     """
 
     def __init__(self, ephemeris: EphemerisProvider, terrain: TerrainProvider) -> None:
@@ -219,30 +203,29 @@ class ExampleEvaluator:
         area: OperationsArea,
         site_id: str | None = None,
     ) -> Evaluation:
-        """Evaluate ``location`` over ``window`` with the placeholder visibility rule."""
+        """Evaluate ``location`` over ``window``."""
         series = self._ephemeris.sun_earth(location, window)
         horizon = self._terrain.horizon_mask(location)
-        level = horizon.horizon_elevation_deg[0]
-        times = series.times_utc
-        sun_visible = [el > level for el in series.sun_elevation_deg]
-        earth_visible = [el > level for el in series.earth_elevation_deg]
-        step_h = window.step_minutes / 60.0
-        lit = [el for el, vis in zip(series.sun_elevation_deg, sun_visible, strict=True) if vis]
-        metrics = VisibilityMetrics(
-            illumination_fraction=sum(sun_visible) / len(times),
-            sun_elevation_max_deg=max(series.sun_elevation_deg),
-            sun_elevation_mean_visible_deg=sum(lit) / len(lit) if lit else None,
-            longest_light_h=_longest_run_h(sun_visible, True, step_h),
-            longest_dark_h=_longest_run_h(sun_visible, False, step_h),
-            earth_visibility_fraction=sum(earth_visible) / len(times),
-            longest_earth_visible_h=_longest_run_h(earth_visible, True, step_h),
-            longest_earth_hidden_h=_longest_run_h(earth_visible, False, step_h),
-            sun_visible_at_start=sun_visible[0],
-            earth_visible_at_start=earth_visible[0],
-            next_sunset_utc=_first_transition(times, sun_visible, False),
-            next_sunrise_utc=_first_transition(times, sun_visible, True),
-            next_earthset_utc=_first_transition(times, earth_visible, False),
-            next_earthrise_utc=_first_transition(times, earth_visible, True),
+
+        def mask(azimuths: list[float]) -> list[float]:
+            """Horizon elevation at each azimuth."""
+            return [
+                horizon_at(horizon.azimuth_deg, horizon.horizon_elevation_deg, a) for a in azimuths
+            ]
+
+        sun_horizon = mask(series.sun_azimuth_deg)
+        earth_horizon = mask(series.earth_azimuth_deg)
+        sun_visible = [el > h for el, h in zip(series.sun_elevation_deg, sun_horizon, strict=True)]
+        earth_visible = [
+            el > h for el, h in zip(series.earth_elevation_deg, earth_horizon, strict=True)
+        ]
+        metrics = compute_metrics(
+            series.times_utc,
+            series.sun_elevation_deg,
+            sun_visible,
+            series.earth_elevation_deg,
+            earth_visible,
+            window.step_minutes / 60.0,
         )
         radius = area.landing_precision_m + area.operating_range_m
         return Evaluation(
@@ -250,12 +233,14 @@ class ExampleEvaluator:
             location=location,
             window=window,
             area=area,
-            times_utc=times,
+            times_utc=series.times_utc,
             sun_azimuth_deg=series.sun_azimuth_deg,
             sun_elevation_deg=series.sun_elevation_deg,
+            sun_horizon_elevation_deg=sun_horizon,
             sun_visible=sun_visible,
             earth_azimuth_deg=series.earth_azimuth_deg,
             earth_elevation_deg=series.earth_elevation_deg,
+            earth_horizon_elevation_deg=earth_horizon,
             earth_visible=earth_visible,
             horizon=horizon,
             terrain=self._terrain.terrain_stats(location, radius),

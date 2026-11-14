@@ -52,9 +52,11 @@ export type Evaluation = {
   times_utc: string[]
   sun_azimuth_deg: number[]
   sun_elevation_deg: number[]
+  sun_horizon_elevation_deg: number[]
   sun_visible: boolean[]
   earth_azimuth_deg: number[]
   earth_elevation_deg: number[]
+  earth_horizon_elevation_deg: number[]
   earth_visible: boolean[]
   horizon: HorizonMask
   terrain: TerrainStats
@@ -92,6 +94,7 @@ export type MissionRequirements = {
   min_sun_elevation_deg?: number | null
   min_earth_visibility_fraction?: number | null
   min_continuous_earth_visibility_h?: number | null
+  min_sun_and_earth_visible_fraction?: number | null
   max_slope_deg?: number | null
   latitude_min_deg?: number | null
   latitude_max_deg?: number | null
@@ -173,10 +176,16 @@ export type VisibilityMetrics = {
   sun_elevation_max_deg: number
   sun_elevation_mean_visible_deg: number | null
   longest_light_h: number
+  longest_light_truncated: boolean
   longest_dark_h: number
+  longest_dark_truncated: boolean
   earth_visibility_fraction: number
+  earth_elevation_mean_visible_deg: number | null
   longest_earth_visible_h: number
+  longest_earth_visible_truncated: boolean
   longest_earth_hidden_h: number
+  longest_earth_hidden_truncated: boolean
+  sun_and_earth_visible_fraction: number
   sun_visible_at_start: boolean
   earth_visible_at_start: boolean
   next_sunset_utc: string | null
