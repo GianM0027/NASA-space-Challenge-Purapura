@@ -1,111 +1,301 @@
+/* ABOUTME: Styles of the LunarNav frontend: dark layout with the globe stage and a side column */
+/* ABOUTME: Owner: Gian. Structural styling only; visual polish waits for real engine data */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
+  --bg: #0b0e14;
+  --surface: #141925;
+  --border: #252c3b;
+  --text: #e6e9ef;
+  --muted: #8b93a7;
+  --accent: #4cc9f0;
+  --warn: #ffb454;
+  --bad: #ff6b6b;
+  --good: #5fd38d;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
   color: var(--text);
   background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
 
-body {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
   margin: 0;
+  font-size: 18px;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
+h2 {
+  margin: 0 0 4px;
   font-size: 15px;
-  line-height: 135%;
+}
+
+h3 {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+}
+
+.badge.real {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.badge.example {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.badge.failed {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.banner {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--warn);
+  background: #2a2212;
+}
+
+.error {
+  color: var(--bad);
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+
+.stage {
+  position: relative;
+  min-height: 0;
+}
+
+.globe {
+  position: absolute;
+  inset: 0;
+}
+
+.globe canvas {
+  display: block;
+}
+
+.globe-tooltip {
+  position: absolute;
+  pointer-events: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #000c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toolbar,
+.legend {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar {
+  top: 12px;
+}
+
+.legend {
+  bottom: 12px;
+  right: 12px;
+  gap: 12px;
+  font-size: 12px;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+button,
+select,
+input[type='datetime-local'] {
   padding: 4px 8px;
-  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  color-scheme: dark;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+aside {
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sites {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.sites button {
+  width: 100%;
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+}
+
+.sites button.active {
+  border-color: var(--accent);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.dot.earth {
+  background: #4f8fff;
+}
+
+.dot.landed {
+  background: #ffd166;
+}
+
+.dot.planned {
+  background: #4cc9f0;
+}
+
+.dot.candidate {
+  background: #b388ff;
+}
+
+.dot.custom {
+  background: #ff7ab6;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 11px;
+}
+
+p {
+  margin: 4px 0;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.event {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.event strong {
+  font-size: 18px;
+}
+
+.event-label {
+  min-width: 64px;
+  color: var(--muted);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stale {
+  opacity: 0.5;
 }

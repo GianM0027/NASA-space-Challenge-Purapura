@@ -3,8 +3,18 @@
 
 """Ports between LunarNav modules.
 
-Each module provides one class implementing its Protocol. ``lunarnav.api`` builds the concrete
-objects and injects them (e.g. the evaluator receives an ephemeris provider and a terrain provider).
+Each module provides one class implementing its Protocol, and exposes a factory function from
+its package ``__init__`` so that ``lunarnav.api`` can find and wire it without being edited
+(spec IF-5, names listed in ``lunarnav.api.wiring``):
+
+* ``lunarnav.catalog.build_catalog() -> SiteCatalog``
+* ``lunarnav.ephemeris.build_ephemeris_provider() -> EphemerisProvider``
+* ``lunarnav.terrain.build_terrain_provider() -> TerrainProvider``
+* ``lunarnav.evaluation.build_evaluator(ephemeris, terrain) -> Evaluator``
+* ``lunarnav.mission_analysis.build_mission_analyzer(evaluator) -> MissionAnalyzer``
+
+A factory takes its upstream dependencies as arguments (it never builds another module's
+classes itself) and reads its own configuration (data paths, cache folders) on its own.
 """
 
 from __future__ import annotations

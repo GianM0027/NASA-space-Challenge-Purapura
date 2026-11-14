@@ -116,3 +116,32 @@ def test_mission_analysis(client: TestClient) -> None:
     response = client.post("/api/mission-analysis", json=body)
     assert response.status_code == 200
     RobustnessReport.model_validate(response.json())
+
+
+def test_modules_endpoint_reports_every_service(client: TestClient) -> None:
+    response = client.get("/api/modules")
+    assert response.status_code == 200
+    assert {"catalog", "ephemeris", "terrain", "evaluation"} <= set(response.json())
+
+
+def test_evaluation_series_follow_the_requested_window(client: TestClient) -> None:
+    body = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    evaluation = Evaluation.model_validate(client.post("/api/evaluate", json=body).json())
+    # 2 days at a 4 hour step, both ends included: 13 samples.
+    assert len(evaluation.times_utc) == 13
+    assert evaluation.times_utc[0] == START
+    assert evaluation.times_utc[-1] == START + timedelta(days=2)
+
+
+def test_placeholder_earth_is_at_zenith_at_the_sub_earth_point(client: TestClient) -> None:
+    body = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    evaluation = Evaluation.model_validate(client.post("/api/evaluate", json=body).json())
+    assert evaluation.earth_elevation_deg[0] == pytest.approx(90.0)
+    assert evaluation.metrics.earth_visibility_fraction == 1.0
+
+
+def test_placeholder_earth_is_hidden_on_the_far_side(client: TestClient) -> None:
+    body = {"location": {"lat_deg": 0, "lon_deg": -179}, "window": WINDOW}
+    evaluation = Evaluation.model_validate(client.post("/api/evaluate", json=body).json())
+    assert evaluation.earth_elevation_deg[0] == pytest.approx(-89.0)
+    assert evaluation.metrics.earth_visibility_fraction == 0.0
