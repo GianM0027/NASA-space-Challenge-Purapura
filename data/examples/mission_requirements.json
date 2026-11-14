@@ -6,7 +6,9 @@
   },
   "area": {
     "landing_precision_m": 100.0,
-    "operating_range_m": 500.0
+    "operating_range_m": 500.0,
+    "traverse_slope_limit_deg": 20.0,
+    "observer_height_above_ground_m": 2.0
   },
   "min_illumination_fraction": 0.6,
   "min_continuous_light_h": null,
