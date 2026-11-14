@@ -160,8 +160,8 @@ class ExampleTerrainProvider:
         """Load the example terrain statistics."""
         self._stats = TerrainStats.model_validate_json(_read("terrain_stats.json"))
 
-    def horizon_mask(self, location: GeoPoint) -> HorizonMask:
-        """Return a flat (0 degree) horizon at 1 degree azimuth steps."""
+    def horizon_mask(self, location: GeoPoint, area: OperationsArea) -> HorizonMask:
+        """Return a flat (0 degree) horizon at 1 degree azimuth steps, whatever the height."""
         return HorizonMask(
             location=location,
             azimuth_deg=[float(a) for a in range(360)],
@@ -171,10 +171,18 @@ class ExampleTerrainProvider:
             max_distance_m=1.0,
         )
 
-    def terrain_stats(self, location: GeoPoint, radius_m: float) -> TerrainStats:
-        """Return the example statistics relabelled with ``location`` and ``radius_m``."""
+    def terrain_stats(self, location: GeoPoint, area: OperationsArea) -> TerrainStats:
+        """Return the example slopes relabelled with ``location`` and the radii of ``area``."""
+        reachable = self._stats.reachable_fraction if area.operating_range_m > 0.0 else None
         return self._stats.model_copy(
-            update={"location": location, "radius_m": radius_m, "dem_source": SYNTHETIC}
+            update={
+                "location": location,
+                "radius_m": area.landing_precision_m + area.operating_range_m,
+                "landing_radius_m": area.landing_precision_m,
+                "traverse_slope_limit_deg": area.traverse_slope_limit_deg,
+                "reachable_fraction": reachable,
+                "dem_source": SYNTHETIC,
+            }
         )
 
 
@@ -205,7 +213,7 @@ class ExampleEvaluator:
     ) -> Evaluation:
         """Evaluate ``location`` over ``window``."""
         series = self._ephemeris.sun_earth(location, window)
-        horizon = self._terrain.horizon_mask(location)
+        horizon = self._terrain.horizon_mask(location, area)
 
         def mask(azimuths: list[float]) -> list[float]:
             """Horizon elevation at each azimuth."""
@@ -227,7 +235,6 @@ class ExampleEvaluator:
             earth_visible,
             window.step_minutes / 60.0,
         )
-        radius = area.landing_precision_m + area.operating_range_m
         return Evaluation(
             site_id=site_id,
             location=location,
@@ -243,7 +250,7 @@ class ExampleEvaluator:
             earth_horizon_elevation_deg=earth_horizon,
             earth_visible=earth_visible,
             horizon=horizon,
-            terrain=self._terrain.terrain_stats(location, radius),
+            terrain=self._terrain.terrain_stats(location, area),
             metrics=metrics,
         )
 

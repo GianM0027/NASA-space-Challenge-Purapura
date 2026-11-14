@@ -40,10 +40,24 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
   `sun_and_earth_visible_fraction`, `earth_elevation_mean_visible_deg`, truncated-run flags):
   waiting for Gian's go-ahead.
 
+- Federico, slope contract request (landing slope, traverse limit, reachable share, observer
+  height): done on `gian` as decision D32; the breaking port change waits for Federico (Requests).
+
 ## Blockers
 
 ## Requests
-- Federico (decision D29, new contract fields; blocks the tests on `main`): `LunarEvaluator` must fill the
+- Federico (decision D32, slope contract; breaking port change, lands atomically): merge `origin/gian`
+  into `federico`, then in the same PR:
+  - `LolaTerrainProvider.horizon_mask(location, area)`: observer height from
+    `area.observer_height_above_ground_m` (default 2 m, D30) instead of the constructor; the horizon
+    cache key must include the height;
+  - `LolaTerrainProvider.terrain_stats(location, area)`: fill `landing_radius_m`,
+    `landing_slope_mean_deg`, `landing_slope_max_deg`, `traverse_slope_limit_deg`, `reachable_fraction`
+    (None when `operating_range_m` is 0); `slope_max_deg` stays the true maximum over the full disk;
+  - `LunarEvaluator`: pass `area` to both calls; update the fakes in `tests/evaluation/` and
+    `tests/terrain/` (13 tests red on `gian` until then).
+  The placeholder `ExampleTerrainProvider` and `ExampleEvaluator` already use the new signatures.
+- Done in PR #8: Federico (decision D29, new contract fields; blocks the tests on `main`): `LunarEvaluator` must fill the
   fields now required by the contract, otherwise `Evaluation`/`VisibilityMetrics` fail validation (8 tests in
   `tests/evaluation/` red after merging `main`, and `/api/evaluate` answers 502 in the app):
   - `Evaluation.sun_horizon_elevation_deg`, `Evaluation.earth_horizon_elevation_deg`: the `horizon_at(...)`

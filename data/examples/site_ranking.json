@@ -7,7 +7,9 @@
     },
     "area": {
       "landing_precision_m": 100.0,
-      "operating_range_m": 500.0
+      "operating_range_m": 500.0,
+      "traverse_slope_limit_deg": 20.0,
+      "observer_height_above_ground_m": 2.0
     },
     "min_illumination_fraction": 0.6,
     "min_continuous_light_h": null,
@@ -59,7 +61,7 @@
         "next_earthset_utc": null,
         "next_earthrise_utc": null
       },
-      "slope_max_deg": 11.0,
+      "landing_slope_max_deg": 5.0,
       "rationale": "Synthetic example rationale."
     }
   ]
