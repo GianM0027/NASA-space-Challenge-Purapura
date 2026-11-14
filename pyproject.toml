@@ -17,7 +17,10 @@ dev = ["pytest>=8", "ruff>=0.8"]
 contracts = []
 catalog = []
 ephemeris = ["httpx>=0.27"]
-terrain = ["numpy>=2.0"]
+terrain = [
+    "numpy>=2.0",
+    "scikit-image>=0.26.0",
+]
 evaluation = ["numpy>=2.0"]
 mission_analysis = ["numpy>=2.0"]
 ai = []

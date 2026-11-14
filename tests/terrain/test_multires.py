@@ -4,7 +4,7 @@
 import numpy as np
 import pytest
 
-from lunarnav.contracts import GeoPoint
+from lunarnav.contracts import GeoPoint, OperationsArea
 from lunarnav.terrain.dem import (
     CylindricalDem,
     SouthPolarStereographicDem,
@@ -14,6 +14,7 @@ from lunarnav.terrain.horizon import elevation_angle_deg
 from lunarnav.terrain.provider import DEFAULT_RAW_DIR, LolaTerrainProvider
 
 SITE = GeoPoint(lat_deg=-89.99, lon_deg=0.0)  # ~1.1 km from the pole
+AREA0 = OperationsArea(observer_height_above_ground_m=0.0)  # observer on the surface
 
 
 def flat_global() -> CylindricalDem:
@@ -49,7 +50,7 @@ def flat(r):
 def test_near_relief_known_only_to_the_fine_dem_is_seen() -> None:
     # A 100 m wall, 200 m thick, 2 km away in every direction: the coarse DEM never sees it.
     wall = fine_dem(lambda r: np.where((r >= 2000.0) & (r <= 2200.0), 100.0, 0.0))
-    mask = provider(wall, coarse_dem(flat)).horizon_mask(SITE)
+    mask = provider(wall, coarse_dem(flat)).horizon_mask(SITE, AREA0)
     # The rasterized wall edge is blurred by up to two 20 m pixels: seen between 2000 and 2040 m
     # (2.83 to 2.77 deg). Read on the coarse DEM alone the horizon would be ~0 deg.
     upper = elevation_angle_deg(2000.0, 100.0, 0.0)
@@ -63,7 +64,7 @@ def test_near_relief_known_only_to_the_fine_dem_is_seen() -> None:
 def test_far_relief_beyond_the_fine_dem_is_seen() -> None:
     # A 2 km plateau from 30 km outward exists only in the coarse DEM (the fine one ends at 12 km).
     plateau = coarse_dem(lambda r: np.where(r >= 30_000.0, 2000.0, 0.0))
-    mask = provider(fine_dem(flat), plateau).horizon_mask(SITE)
+    mask = provider(fine_dem(flat), plateau).horizon_mask(SITE, AREA0)
     expected = elevation_angle_deg(30_000.0, 2000.0, 0.0)  # ~3.67 deg
     assert np.allclose(mask.horizon_elevation_deg, expected, atol=0.05)
 
@@ -71,19 +72,19 @@ def test_far_relief_beyond_the_fine_dem_is_seen() -> None:
 def test_observer_stands_on_the_fine_dem() -> None:
     fine = fine_dem(lambda r: np.full_like(r, 12.0))
     coarse = coarse_dem(lambda r: np.full_like(r, 30.0))
-    mask = provider(fine, coarse).horizon_mask(SITE)
+    mask = provider(fine, coarse).horizon_mask(SITE, AREA0)
     assert mask.location.height_m == pytest.approx(12.0)
 
 
 def test_without_a_finer_dem_a_single_resolution_is_used() -> None:
     p = LolaTerrainProvider(flat_global(), [coarse_dem(flat)], max_distance_m=40_000.0)
-    mask = p.horizon_mask(SITE)
+    mask = p.horizon_mask(SITE, AREA0)
     assert mask.dem_resolution_m == 100.0 and " beyond" not in mask.dem_source
 
 
 def test_slopes_use_the_finest_dem() -> None:
     fine, coarse = fine_dem(flat), coarse_dem(flat)
-    stats = provider(fine, coarse).terrain_stats(SITE, 500.0)
+    stats = provider(fine, coarse).terrain_stats(SITE, OperationsArea(landing_precision_m=500.0))
     assert stats.dem_resolution_m == 20.0
 
 
@@ -114,6 +115,8 @@ def test_real_20m_and_80m_polar_dems_agree_and_share_orientation() -> None:
 @needs_fine_dem
 def test_real_provider_uses_the_20m_dem_near_polar_sites() -> None:
     provider = LolaTerrainProvider.from_raw_dir(cache_dir=None)
-    mask = provider.horizon_mask(GeoPoint(lat_deg=-85.98, lon_deg=-1.67))  # Malapert area
+    mask = provider.horizon_mask(
+        GeoPoint(lat_deg=-85.98, lon_deg=-1.67), OperationsArea()
+    )  # Malapert area
     assert mask.dem_resolution_m == 20.0
     assert "LDEM_85S_20M" in mask.dem_source and "LDEM_80S_80M" in mask.dem_source

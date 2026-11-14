@@ -4,10 +4,10 @@
 # Federico: tasks
 
 ## Status
-Terrain (with 20 m near-site detail, TER-4) and evaluation live. Remaining: north polar DEM if a catalog site needs it.
+D32 done: ports take the area, landing-disk slopes and reachable share live. Next: waiting on slope-baseline decision.
 
 ## Next (in priority order)
-1. Waiting on Michael (observer height default, two catalog points) and Gian (slope max definition, see Requests).
+1. Landing-slope baseline (see Requests) once Michael and Gian decide; then any UI support Gian needs.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -35,27 +35,42 @@ for tests write small fakes of both that return the example payloads.
 - D29 fields in the evaluator: horizon at the Sun/Earth azimuth per sample (the exact visibility threshold),
   joint Sun+Earth fraction, Earth mean visible elevation, truncation flags of the four longest runs.
   Agreement test against `lunarnav.api.placeholder_metrics` on 200 random series; `/api/evaluate` back to 200.
-- TER-4 (decision D30): LDEM_85S_20M added; rays read 20 m within 10 km and 80 m to 150 km; slopes on the
+- TER-4 (decision D31): LDEM_85S_20M added; rays read 20 m within 10 km and 80 m to 150 km; slopes on the
   finest DEM. 20 m vs 80 m: median 0.7 m, same orientation (slow test). Malapert 47.4% -> 35.5% light, other
   polar sites within 1 point. Known-answer tests: relief known only to the fine or only to the coarse DEM.
 - 5 m DEM analysis (not adopted): LDEM_875S_5M (1.84 GB, to 87.5 S) would cover only de Gerlache rim 2 and
   Slater plain, already converged (horizon change 40 -> 20 m: 0.13 and 0.04 deg). Malapert, the only site still
   changing with resolution (light 47.4/39.9/35.5% at 80/40/20 m), lies outside it. Observer height and site
   coordinates matter more there.
+- Observer height (D30, Michael): the app provider (`from_raw_dir`, used by the factory) places the observer
+  2 m above the DEM surface (Glaser et al. 2014); the constructor keeps 0 m as the geometric reference for
+  the known-answer tests. Malapert 35.5% -> 37.2% light, IM-2 50.3% -> 51.9%. Duplicate D30 resolved by D31.
+- D32 (contract by Gian, Michael's slope decisions): `horizon_mask(location, area)` takes the observer height
+  from the area (default 2 m); `terrain_stats(location, area)` fills landing-disk slopes (finest DEM, pixel
+  baseline), full-disk slopes and `reachable_fraction` (Dijkstra on slope cells with `skimage.graph`, detour
+  corrected for 8-direction grid bias, corner squeezes closed; grid capped at 400 cells of radius). Crew area
+  (100 m / 2 km / 20 deg) ~20 ms; rover (20 km / 15 deg) <= 0.5 s, was 4-9 s uncapped. Examples, rover reach:
+  Apollo 11 100%, Apollo 15 58% (Hadley), Malapert 7%, Nobile rim 1 76%. scikit-image added to the terrain group.
 
 ## Blockers
 
 ## Requests
+- Gian (D32 follow-up, D23 impact): (1) merging this PR restores `main` (13 tests red and terrain out of
+  contract since PR #12); (2) the site panel can show `terrain.landing_slope_max_deg` (vs
+  `max_slope_deg`) and `terrain.reachable_fraction` as soon as the UI sends an `OperationsArea` with
+  `operating_range_m` > 0 (today the default area has 0, so the share is None); e.g. archetype presets
+  crew 100 m / 2 km / 20 deg, rover 100 m / 20 km / 15 deg; (3) `terrain.dem_source` now says when the full
+  disk was sampled on wider cells (large ranges, `MAX_GRID_RADIUS_CELLS` = 400); (4) landing-slope baseline:
+  please decide with Michael (item below).
+- Michael + Gian (landing-slope baseline): NASA's landing criterion is < 10 deg **over 100 m**; we measure over
+  one DEM pixel (20 m near the pole), which is stricter. Mons Mouton plateau, 100 m disk: max 31 deg and mean
+  11.7 deg at 20 m, max 10.2 deg at 80 m; Malapert 13.4 vs 8.9 deg. Proposal: compute `landing_slope_*` over a
+  100 m baseline (fit a plane to the heights within 50 m of each cell) to match the requirement.
 - Gian + Michael (slope max, contract meaning): on the 20 m DEM `slope_max_deg` catches isolated spikes
   (Shackleton: max 64 deg on 0.02% of pixels, 99th percentile 39 deg, mean 26 deg on both DEMs). A ranking
   filter on max slope could reject a site for one bad pixel. Proposal: define the reported maximum as the
   99th percentile over the disk (robust maximum), or keep the true max and filter on the mean.
-- Gian (spec section 7): add LDEM_85S_20M (20 m, south pole to 85 S) to the LOLA data source row (D30).
-- Michael + Gian (observer height above ground, domain + contract): `LolaTerrainProvider` now takes
-  `observer_height_above_ground_m` (default 0 m = on the surface) and rejects absolute heights below the DEM.
-  Sensitivity, 30 d from 2026-11-14, light % at 0/1/2/5/10 m: Malapert 47/50/53/60/69, IM-2 51/52/52/53/53,
-  Mons Mouton plateau 40/40/41/41/42, Nobile rim 1 unchanged. Michael: pick a sourced default (solar panel
-  height); Gian: decide whether it becomes a per-request field (e.g. in `OperationsArea`).
+- Gian (spec section 7): add LDEM_85S_20M (20 m, south pole to 85 S) to the LOLA data source row (D31).
 - Michael (catalog coordinates): `artemis-haworth` (-87.45, -5.17) and `artemis-de-gerlache-rim-2`
   (-88.48, -88.34) fall in low ground (-3313 m and -1223 m, terrain horizon >= 3.6 deg in every direction):
   0% light and 0% Earth over 30 days. The description says rim; the approximate point is not on it.
