@@ -46,8 +46,15 @@ def _models() -> list[tuple[type[BaseModel], JsonSchemaMode]]:
 
 
 def _name(ref: str) -> str:
-    """Return the TypeScript name of a ``#/$defs/...`` reference ("A-Input" becomes "AInput")."""
-    return ref.rsplit("/", 1)[-1].replace("-", "")
+    """Return the TypeScript name of a ``#/$defs/...`` reference.
+
+    A model whose request and response schemas differ appears twice: "A-Output" (what the
+    backend sends, the one the frontend mostly reads) becomes "A", "A-Input" becomes "AInput".
+    """
+    key = ref.rsplit("/", 1)[-1]
+    if key.endswith("-Output"):
+        return key.removesuffix("-Output")
+    return key.replace("-", "")
 
 
 def _type(node: dict[str, Any]) -> str:

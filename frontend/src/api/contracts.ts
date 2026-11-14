@@ -39,9 +39,9 @@ export type EphemerisSeries = {
 
 export type EvaluateRequest = {
   site_id?: string | null
-  location?: GeoPoint | null
-  window: TimeWindow
-  area?: OperationsArea
+  location?: GeoPointInput | null
+  window: TimeWindowInput
+  area?: OperationsAreaInput
 }
 
 export type Evaluation = {
@@ -63,10 +63,16 @@ export type Evaluation = {
   metrics: VisibilityMetrics
 }
 
-export type GeoPoint = {
+export type GeoPointInput = {
   lat_deg: number
   lon_deg: number
   height_m?: number | null
+}
+
+export type GeoPoint = {
+  lat_deg: number
+  lon_deg: number
+  height_m: number | null
 }
 
 export type HorizonMask = {
@@ -80,32 +86,37 @@ export type HorizonMask = {
 
 export type MissionAnalysisRequest = {
   site_id?: string | null
-  location?: GeoPoint | null
-  window: TimeWindow
-  area?: OperationsArea
+  location?: GeoPointInput | null
+  window: TimeWindowInput
+  area?: OperationsAreaInput
   shifts_days?: number[]
 }
 
 export type MissionRequirements = {
-  window?: TimeWindow | null
-  area?: OperationsArea | null
-  min_illumination_fraction?: number | null
-  min_continuous_light_h?: number | null
-  min_sun_elevation_deg?: number | null
-  min_earth_visibility_fraction?: number | null
-  min_continuous_earth_visibility_h?: number | null
-  min_sun_and_earth_visible_fraction?: number | null
-  max_slope_deg?: number | null
-  latitude_min_deg?: number | null
-  latitude_max_deg?: number | null
-  origins?: Origin[] | null
-  rationale?: Record<string, string>
-  source_request?: string | null
+  window: TimeWindow | null
+  area: OperationsArea | null
+  min_illumination_fraction: number | null
+  min_continuous_light_h: number | null
+  min_sun_elevation_deg: number | null
+  min_earth_visibility_fraction: number | null
+  min_continuous_earth_visibility_h: number | null
+  min_sun_and_earth_visible_fraction: number | null
+  max_slope_deg: number | null
+  latitude_min_deg: number | null
+  latitude_max_deg: number | null
+  origins: Origin[] | null
+  rationale: Record<string, string>
+  source_request: string | null
+}
+
+export type OperationsAreaInput = {
+  landing_precision_m?: number
+  operating_range_m?: number
 }
 
 export type OperationsArea = {
-  landing_precision_m?: number
-  operating_range_m?: number
+  landing_precision_m: number
+  operating_range_m: number
 }
 
 export type Origin = "apollo" | "luna" | "surveyor" | "change" | "chandrayaan" | "slim" | "clps" | "artemis" | "other" | "user"
@@ -115,7 +126,7 @@ export type RobustnessReport = {
   nominal: VisibilityMetrics
   date_shifts: DateShiftResult[]
   dispersion: DispersionSample[]
-  summary?: string | null
+  summary: string | null
 }
 
 export type Site = {
@@ -124,12 +135,12 @@ export type Site = {
   location: GeoPoint
   origin: Origin
   status: "landed" | "planned" | "candidate" | "custom"
-  mission?: string | null
-  agency?: string | null
-  landing_date_utc?: string | null
-  landing_ellipse_m?: number | null
-  description?: string
-  sources?: string[]
+  mission: string | null
+  agency: string | null
+  landing_date_utc: string | null
+  landing_ellipse_m: number | null
+  description: string
+  sources: string[]
 }
 
 export type SiteRanking = {
@@ -145,7 +156,7 @@ export type SiteScore = {
   all_constraints_met: boolean
   metrics: VisibilityMetrics
   slope_max_deg: number
-  rationale?: string | null
+  rationale: string | null
 }
 
 export type SkyState = {
@@ -165,10 +176,16 @@ export type TerrainStats = {
   dem_resolution_m: number
 }
 
-export type TimeWindow = {
+export type TimeWindowInput = {
   start_utc: string
   end_utc: string
   step_minutes?: number
+}
+
+export type TimeWindow = {
+  start_utc: string
+  end_utc: string
+  step_minutes: number
 }
 
 export type VisibilityMetrics = {

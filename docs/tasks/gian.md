@@ -12,13 +12,13 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
 ## Next (in priority order)
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
    checked through the DOM and network only, not by eye.
-2. UI-2 (site panel): Sun and Earth elevation timeline against the horizon.
 3. UI-4 (AI box) on example data, then C3 (LLM JSON check) and AI-1 (request to requirements), AI-2 (deterministic ranking).
 4. UI-3 (side-by-side comparison).
 5. MA-1 (date-slip sweep), MA-2 (dispersion), MA-3 (summary), UI-5 (mission analysis view), AI-6 (AI presents it).
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- UI-2 (site panel): Sun and Earth elevation timeline against the per-sample horizon, joint visibility, truncated periods; checked on Apollo 11 and Malapert Massif with real catalog, ephemeris and terrain.
 - UI-1 (3D globe, decision D22) with `GET /api/sky`; automatic module wiring (IF-5, decision D21); TypeScript types generated from the contracts with a staleness test.
 - API skeleton (IF-4, REST API) on example services, 11 smoke tests; frontend scaffold with `/api` proxy, verified end to end in the browser.
 - Node.js LTS installed on this PC.

@@ -2,6 +2,7 @@
 // ABOUTME: Owner: Gian. Shows numbers from Evaluation only; the elevation timeline is a separate component
 
 import type { Evaluation, GeoPoint } from '../api/contracts'
+import { ElevationTimeline } from '../timeline/ElevationTimeline'
 import {
   formatAtLeast,
   formatCoordinates,
@@ -109,6 +110,8 @@ export function SitePanel(props: Props) {
 
       {evaluation && metrics && start && (
         <div className={loading ? 'stale' : undefined}>
+          <ElevationTimeline evaluation={evaluation} />
+
           <h3>Power (Sun)</h3>
           <NextEvent
             label={metrics.sun_visible_at_start ? 'Sunset' : 'Sunrise'}

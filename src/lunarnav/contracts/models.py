@@ -22,9 +22,15 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 
 
 class _Contract(BaseModel):
-    """Base class of every contract model: unknown fields are rejected, instances are immutable."""
+    """Base class of every contract model: unknown fields are rejected, instances are immutable.
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    In the serialization JSON schema (used to generate the frontend types) fields with a default
+    are required, because the backend always writes them.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid", frozen=True, json_schema_serialization_defaults_required=True
+    )
 
 
 def _check_same_length(model: BaseModel, *names: str) -> None:

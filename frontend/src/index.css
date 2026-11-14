@@ -299,3 +299,43 @@ p {
 .stale {
   opacity: 0.5;
 }
+
+.timeline {
+  margin: 10px 0 4px;
+}
+
+.timeline svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.timeline-title {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.timeline-axis {
+  font-size: 8px;
+  fill: var(--muted);
+}
+
+.timeline-frame {
+  fill: none;
+  stroke: var(--border);
+}
+
+.timeline-zero {
+  stroke: var(--muted);
+  stroke-dasharray: 2 3;
+  stroke-width: 0.6;
+}
+
+.timeline-cursor {
+  stroke: var(--text);
+  stroke-width: 0.6;
+}
+
+.timeline-readout {
+  min-height: 2.6em;
+}
