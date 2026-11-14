@@ -43,3 +43,13 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
 ## Blockers
 
 ## Requests
+- Federico (decision D29, new contract fields; blocks the tests on `main`): `LunarEvaluator` must fill the
+  fields now required by the contract, otherwise `Evaluation`/`VisibilityMetrics` fail validation (8 tests in
+  `tests/evaluation/` red after merging `main`, and `/api/evaluate` answers 502 in the app):
+  - `Evaluation.sun_horizon_elevation_deg`, `Evaluation.earth_horizon_elevation_deg`: the `horizon_at(...)`
+    arrays already computed for `is_visible` (same values, so the UI timeline matches the engine);
+  - `VisibilityMetrics.sun_and_earth_visible_fraction`, `earth_elevation_mean_visible_deg`,
+    `longest_light_truncated`, `longest_dark_truncated`, `longest_earth_visible_truncated`,
+    `longest_earth_hidden_truncated`.
+  Definitions: spec section 3 (Truncated run, Joint visibility, Horizon per sample); reference implementation
+  and known-answer tests: `src/lunarnav/api/placeholder_metrics.py`, `tests/api/test_placeholder_metrics.py`.
