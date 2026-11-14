@@ -1,0 +1,301 @@
+/* ABOUTME: Styles of the LunarNav frontend: dark layout with the globe stage and a side column */
+/* ABOUTME: Owner: Gian. Structural styling only; visual polish waits for real engine data */
+
+:root {
+  --bg: #0b0e14;
+  --surface: #141925;
+  --border: #252c3b;
+  --text: #e6e9ef;
+  --muted: #8b93a7;
+  --accent: #4cc9f0;
+  --warn: #ffb454;
+  --bad: #ff6b6b;
+  --good: #5fd38d;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+}
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+h3 {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+}
+
+.badge.real {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.badge.example {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.badge.failed {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.banner {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--warn);
+  background: #2a2212;
+}
+
+.error {
+  color: var(--bad);
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+
+.stage {
+  position: relative;
+  min-height: 0;
+}
+
+.globe {
+  position: absolute;
+  inset: 0;
+}
+
+.globe canvas {
+  display: block;
+}
+
+.globe-tooltip {
+  position: absolute;
+  pointer-events: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #000c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toolbar,
+.legend {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar {
+  top: 12px;
+}
+
+.legend {
+  bottom: 12px;
+  right: 12px;
+  gap: 12px;
+  font-size: 12px;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+button,
+select,
+input[type='datetime-local'] {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  color-scheme: dark;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+aside {
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sites {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.sites button {
+  width: 100%;
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+}
+
+.sites button.active {
+  border-color: var(--accent);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.dot.earth {
+  background: #4f8fff;
+}
+
+.dot.landed {
+  background: #ffd166;
+}
+
+.dot.planned {
+  background: #4cc9f0;
+}
+
+.dot.candidate {
+  background: #b388ff;
+}
+
+.dot.custom {
+  background: #ff7ab6;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 11px;
+}
+
+p {
+  margin: 4px 0;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.event {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.event strong {
+  font-size: 18px;
+}
+
+.event-label {
+  min-width: 64px;
+  color: var(--muted);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stale {
+  opacity: 0.5;
+}

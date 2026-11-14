@@ -474,3 +474,22 @@ class RobustnessReport(_Contract):
     date_shifts: list[DateShiftResult]
     dispersion: list[DispersionSample]
     summary: str | None = None
+
+
+# --- Globe view -------------------------------------------------------------------------------
+
+
+class SkyState(_Contract):
+    """Where the Sun and the Earth are overhead on the Moon at one instant (lights the 3D globe).
+
+    Attributes:
+        time_utc: The instant.
+        subsolar: Point where the Sun is at the zenith (``height_m`` unset).
+        sub_earth: Point where the Earth is at the zenith (``height_m`` unset).
+        source: Provenance of the underlying ephemeris.
+    """
+
+    time_utc: AwareDatetime
+    subsolar: GeoPoint
+    sub_earth: GeoPoint
+    source: str
