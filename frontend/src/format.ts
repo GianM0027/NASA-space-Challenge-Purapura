@@ -42,3 +42,9 @@ export function hoursBetween(fromIso: string, toIso: string): number {
 export function formatPercent(fraction: number): string {
   return `${(fraction * 100).toFixed(1)} %`
 }
+
+/** A duration that may be a lower bound: "≥ 3 d 4 h" when the run touches the window edge. */
+export function formatAtLeast(hours: number, truncated: boolean): string {
+  const text = formatDuration(hours)
+  return truncated && hours > 0 ? `≥ ${text}` : text
+}
