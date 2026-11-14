@@ -7,6 +7,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from pydantic import ValidationError
 
 from lunarnav.contracts import EphemerisProvider, GeoPoint, TimeWindow
 from lunarnav.ephemeris import (
@@ -104,9 +105,10 @@ def test_sample_times_inclusive_end_and_utc_conversion() -> None:
     assert sample_times(w) == [T0, T0 + timedelta(minutes=10), T0 + timedelta(minutes=20)]
 
 
-def test_sample_times_rejects_fractional_step() -> None:
-    with pytest.raises(ValueError, match="whole number of minutes"):
-        sample_times(_window(step=2.5))
+def test_fractional_step_rejected_by_contract() -> None:
+    # D25: TimeWindow.step_minutes is an integer >= 1, so a fraction never reaches Horizons.
+    with pytest.raises(ValidationError):
+        _window(step=2.5)
 
 
 def test_split_chunks_balanced_and_complete() -> None:

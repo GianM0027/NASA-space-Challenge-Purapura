@@ -44,24 +44,9 @@ Next: AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
 ## Blockers
 
 ## Requests
-- To Gian, tests (D23 impact): with the real `build_catalog` present, `test_add_user_site` writes the
-  real `data/user/sites.json`, so it fails with 409 on every second run. Suggested fix: the API test
-  client should use a fake catalog or a `JsonSiteCatalog(user_path=tmp_path / ...)`.
-- To Gian (spec owner), EPH-1: replace "spans up to about 60 days" with "any window (landing date plus
-  mission duration); the provider splits long windows into several Horizons requests (90,000-row cap)".
-  60 days at 10 min stays only as the acceptance test case. Reason: the window comes from the user, it
-  should not be capped by the spec; 1 year at 10 min is about 52,600 rows per body, still cheap.
-- To Gian, tests (D23 impact): with the real `build_ephemeris_provider` present, 3 API tests fail
-  (`test_placeholder_earth_is_at_zenith_at_the_sub_earth_point`, `test_placeholder_earth_is_hidden_on_the_far_side`,
-  `test_real_evaluator_receives_ephemeris_and_terrain`): they assume the placeholder ephemeris, and the
-  test client now calls live Horizons and writes `data/cache/`. Suggested fix: in those tests force the
-  example provider (e.g. `_fake_module(monkeypatch, "lunarnav.ephemeris")` or patch `find_factory`).
-- To Gian, globe (D23 impact): a new date costs 2 Horizons requests (about 2-4 s) the first time; the
-  cache hits only the same instant on the same grid. If `sky_state` rounds `time_utc` to the whole
-  minute, an EPH-3 warm-up at lat 0, lon 0 with a 1-minute step makes every date change instant.
-- To Gian and Federico (D23 impact): `step_minutes` must be a whole number of minutes (Horizons
-  limit); a fractional step raises `ValueError`.
-- To Gian, contracts review (optional fields, catalog side):
+- Resolved by Gian (merged 496a26b): EPH-1 wording, API tests off real modules, whole-minute step in
+  the contract (D25), `sky_state` truncates to the whole minute.
+- To Gian, contracts review (pending the team's review) (optional fields, catalog side):
   - `Site.region_radius_m: float | None`: Artemis III candidates are regions (about 15 km), not points.
   - `Site.feature: str | None`: named feature (e.g. "Mare Tranquillitatis", "Shackleton rim") for UI and AI retrieval.
   - `VisibilityMetrics.sun_and_earth_visible_fraction`: time with power and direct-to-Earth link

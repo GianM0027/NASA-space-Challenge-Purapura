@@ -20,6 +20,17 @@ def _fake_module(monkeypatch: pytest.MonkeyPatch, name: str, **attrs: object) ->
     monkeypatch.setitem(sys.modules, name, module)
 
 
+PACKAGES = ("catalog", "ephemeris", "terrain", "evaluation", "mission_analysis", "ai")
+
+
+@pytest.fixture(autouse=True)
+def _no_real_modules(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Start every test from "no module has a factory", whatever is merged in the repo; each test
+    # then adds the fake module it is about.
+    for package in PACKAGES:
+        _fake_module(monkeypatch, f"lunarnav.{package}")
+
+
 class _RealCatalog(ExampleCatalog):
     """Stands in for Michael's catalog: same behaviour, different class."""
 
@@ -94,3 +105,10 @@ def test_a_failing_factory_falls_back_and_is_reported(monkeypatch: pytest.Monkey
     assert isinstance(services.catalog, ExampleCatalog)
     assert status["catalog"].startswith("error")
     assert "sites.json is broken" in status["catalog"]
+
+
+def test_use_real_false_ignores_existing_factories(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_module(monkeypatch, "lunarnav.catalog", build_catalog=_RealCatalog)
+    services, status = wiring.build_services(use_real=False)
+    assert type(services.catalog) is ExampleCatalog
+    assert status["catalog"] == "example"

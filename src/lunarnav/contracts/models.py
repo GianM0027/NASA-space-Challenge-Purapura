@@ -66,12 +66,12 @@ class TimeWindow(_Contract):
     Attributes:
         start_utc: First sample, timezone-aware. Also the reference time for "time to next sunset".
         end_utc: Last sample (inclusive when it falls on the step grid); after ``start_utc``.
-        step_minutes: Sampling step, minutes, > 0.
+        step_minutes: Sampling step, whole minutes, >= 1 (JPL Horizons takes no fractions).
     """
 
     start_utc: AwareDatetime
     end_utc: AwareDatetime
-    step_minutes: float = Field(default=60.0, gt=0.0)
+    step_minutes: int = Field(default=60, ge=1)
 
     @model_validator(mode="after")
     def _end_after_start(self) -> Self:
