@@ -8,6 +8,11 @@
   "elevation_m": 1500.0,
   "slope_mean_deg": 4.0,
   "slope_max_deg": 11.0,
+  "landing_radius_m": 100.0,
+  "landing_slope_mean_deg": 2.0,
+  "landing_slope_max_deg": 5.0,
+  "traverse_slope_limit_deg": 20.0,
+  "reachable_fraction": 0.9,
   "dem_source": "SYNTHETIC EXAMPLE, not real data",
   "dem_resolution_m": 60.0
 }

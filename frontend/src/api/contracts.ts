@@ -112,11 +112,15 @@ export type MissionRequirements = {
 export type OperationsAreaInput = {
   landing_precision_m?: number
   operating_range_m?: number
+  traverse_slope_limit_deg?: number
+  observer_height_above_ground_m?: number
 }
 
 export type OperationsArea = {
   landing_precision_m: number
   operating_range_m: number
+  traverse_slope_limit_deg: number
+  observer_height_above_ground_m: number
 }
 
 export type Origin = "apollo" | "luna" | "surveyor" | "change" | "chandrayaan" | "slim" | "clps" | "artemis" | "other" | "user"
@@ -155,7 +159,7 @@ export type SiteScore = {
   constraints_met: Record<string, boolean>
   all_constraints_met: boolean
   metrics: VisibilityMetrics
-  slope_max_deg: number
+  landing_slope_max_deg: number
   rationale: string | null
 }
 
@@ -172,6 +176,11 @@ export type TerrainStats = {
   elevation_m: number
   slope_mean_deg: number
   slope_max_deg: number
+  landing_radius_m: number
+  landing_slope_mean_deg: number
+  landing_slope_max_deg: number
+  traverse_slope_limit_deg: number
+  reachable_fraction: number | null
   dem_source: string
   dem_resolution_m: number
 }

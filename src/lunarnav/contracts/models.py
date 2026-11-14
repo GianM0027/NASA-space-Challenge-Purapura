@@ -95,10 +95,19 @@ class OperationsArea(_Contract):
     Attributes:
         landing_precision_m: Radius of the landing dispersion (e.g. 3-sigma), meters, >= 0.
         operating_range_m: Radius the rover/crew operates in after landing, meters, >= 0.
+        traverse_slope_limit_deg: Steepest slope crews or rovers may cross, degrees, [0, 90].
+        observer_height_above_ground_m: Height of the observer (solar panel, antenna) above the
+            terrain, meters, >= 0; used for the horizon when the location has no ``height_m``.
     """
 
     landing_precision_m: float = Field(default=0.0, ge=0.0)
     operating_range_m: float = Field(default=0.0, ge=0.0)
+    # NASA HLS Overview for Space Apps 2025, p. 21 and p. 24: surface slope limit for EVA < 20 deg
+    # (docs/domain/mission_archetypes.md); a VIPER-class rover uses 15 deg.
+    traverse_slope_limit_deg: float = Field(default=20.0, ge=0.0, le=90.0)
+    # Decision D30 (observer height): 2 m after Glaser et al. 2014, Icarus 243, 78; 10 m for
+    # large crewed landers, 0 m only as a reference case.
+    observer_height_above_ground_m: float = Field(default=2.0, ge=0.0)
 
 
 # --- Site catalog ----------------------------------------------------------------------------
@@ -227,14 +236,26 @@ class HorizonMask(_Contract):
 
 
 class TerrainStats(_Contract):
-    """Terrain statistics over a disk around a site.
+    """Terrain statistics over the operations area around a site.
+
+    Two disks share the center: the full disk of radius ``landing_precision_m +
+    operating_range_m`` (informational slopes) and the landing-precision disk (the hard landing
+    slope constraint, compared with ``MissionRequirements.max_slope_deg``).
 
     Attributes:
         location: Disk center.
-        radius_m: Disk radius, meters (0 means the single center pixel).
+        radius_m: Full disk radius, meters (0 means the single center pixel).
         elevation_m: Center height above the 1737.4 km reference sphere, meters.
-        slope_mean_deg: Mean slope over the disk, degrees.
-        slope_max_deg: Maximum slope over the disk, degrees.
+        slope_mean_deg: Mean slope over the full disk, degrees.
+        slope_max_deg: Maximum slope over the full disk, degrees (informational).
+        landing_radius_m: Landing-precision disk radius, meters (= landing_precision_m).
+        landing_slope_mean_deg: Mean slope over the landing-precision disk, degrees.
+        landing_slope_max_deg: Maximum slope over the landing-precision disk, degrees.
+        traverse_slope_limit_deg: The traverse slope limit used, degrees (echoed from the area).
+        reachable_fraction: Share of the disk of radius ``operating_range_m`` reachable from the
+            center through cells with slope <= ``traverse_slope_limit_deg`` by a path no longer
+            than ``operating_range_m``, [0, 1]; None when ``operating_range_m`` is 0. Landing
+            dispersion is not included. Informational, no minimum.
         dem_source: DEM product used.
         dem_resolution_m: DEM pixel size, meters.
     """
@@ -244,6 +265,11 @@ class TerrainStats(_Contract):
     elevation_m: float
     slope_mean_deg: float = Field(ge=0.0, le=90.0)
     slope_max_deg: float = Field(ge=0.0, le=90.0)
+    landing_radius_m: float = Field(ge=0.0)
+    landing_slope_mean_deg: float = Field(ge=0.0, le=90.0)
+    landing_slope_max_deg: float = Field(ge=0.0, le=90.0)
+    traverse_slope_limit_deg: float = Field(ge=0.0, le=90.0)
+    reachable_fraction: float | None = Field(ge=0.0, le=1.0)
     dem_source: str
     dem_resolution_m: float = Field(gt=0.0)
 
@@ -385,7 +411,8 @@ class MissionRequirements(_Contract):
         min_continuous_earth_visibility_h: Minimum longest continuous Earth-visible period, hours.
         min_sun_and_earth_visible_fraction: Minimum fraction of time with Sun and Earth both
             visible, [0, 1].
-        max_slope_deg: Maximum slope allowed over the operations area, degrees.
+        max_slope_deg: Maximum slope allowed over the landing-precision disk, degrees; compared
+            with ``TerrainStats.landing_slope_max_deg``.
         latitude_min_deg: Southern latitude bound, degrees.
         latitude_max_deg: Northern latitude bound, degrees.
         origins: Restrict the search to these catalog programs.
@@ -419,7 +446,8 @@ class SiteScore(_Contract):
         constraints_met: Requirement field name -> whether this site satisfies it.
         all_constraints_met: True when every set constraint is satisfied.
         metrics: The computed metrics the score is based on.
-        slope_max_deg: Maximum slope over the operations area, degrees.
+        landing_slope_max_deg: Maximum slope over the landing-precision disk, degrees: the value
+            compared with ``MissionRequirements.max_slope_deg``.
         rationale: Short explanation for the user, citing the computed numbers only.
     """
 
@@ -429,7 +457,7 @@ class SiteScore(_Contract):
     constraints_met: dict[str, bool]
     all_constraints_met: bool
     metrics: VisibilityMetrics
-    slope_max_deg: float = Field(ge=0.0, le=90.0)
+    landing_slope_max_deg: float = Field(ge=0.0, le=90.0)
     rationale: str | None = None
 
 
