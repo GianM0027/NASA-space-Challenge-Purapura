@@ -51,6 +51,9 @@ def test_artemis_regions_are_flagged_approximate(catalog: JsonSiteCatalog) -> No
         assert s.status == "candidate"
         assert "APPROXIMATE" in s.description
         assert s.location.lat_deg < -80  # all near the south pole
+    # Crater-floor points found by Federico's terrain check are flagged for the AI and the UI
+    for site_id in ("artemis-haworth", "artemis-de-gerlache-rim-2"):
+        assert "NOT REPRESENTATIVE" in catalog.get_site(site_id).description
     # Known answer: IAU gazetteer center of Mons Malapert (feature 16338)
     malapert = catalog.get_site("artemis-malapert-massif")
     assert (malapert.location.lat_deg, malapert.location.lon_deg) == (-85.98, -1.67)

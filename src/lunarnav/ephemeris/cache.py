@@ -33,6 +33,9 @@ class EphemerisCache:
     def __init__(self, root: Path = DEFAULT_CACHE_DIR) -> None:
         """Create a cache rooted at ``root``."""
         self.root = Path(root)
+        # Parsed files kept in memory (path -> (mtime, series)): a warmed 60-day, 1-minute file
+        # is several MB and is hit on every globe date change.
+        self._loaded: dict[Path, tuple[float, EphemerisSeries]] = {}
 
     def get(self, location: GeoPoint, window: TimeWindow) -> EphemerisSeries | None:
         """Return the cached series for ``window`` at ``location``, or None on a miss.
@@ -61,7 +64,7 @@ class EphemerisCache:
             if rem:
                 continue  # different grid phase
             stride = step // stored_step
-            series = EphemerisSeries.model_validate_json(path.read_text(encoding="utf-8"))
+            series = self._load(path)
             sl = slice(int(offset), int(offset) + (len(times) - 1) * stride + 1, stride)
             if series.times_utc[sl] != times:
                 continue
@@ -76,6 +79,16 @@ class EphemerisCache:
                 source=series.source,
             )
         return None
+
+    def _load(self, path: Path) -> EphemerisSeries:
+        """Return the series stored in ``path``, parsing it only when the file changed."""
+        mtime = path.stat().st_mtime
+        cached = self._loaded.get(path)
+        if cached is None or cached[0] != mtime:
+            series = EphemerisSeries.model_validate_json(path.read_text(encoding="utf-8"))
+            self._loaded[path] = (mtime, series)
+            return series
+        return cached[1]
 
     def put(self, series: EphemerisSeries, window: TimeWindow) -> Path:
         """Store a series fetched for ``window`` and return the file path.
