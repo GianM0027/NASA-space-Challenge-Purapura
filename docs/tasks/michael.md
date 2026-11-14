@@ -59,6 +59,16 @@ recent missions, Haworth/de Gerlache points on the rim.
 ## Blockers
 
 ## Requests
+- To Gian, AI-5 priority (D23 impact): no archetype has a `priority` list (Michael's decision): for
+  the crewed stay NASA lists light, Earth >= 25 % and landing slope all as mandatory without ranking
+  them; the other archetypes set one weighted criterion or none. Equal weights, explained in
+  `mission_archetypes.md`; the tests you asked for are in place and will check any future list.
+- To Gian, D32 follow-up: `traverse_slope_limit_deg` and the observer height are now in
+  `requirements.area` (`traverse_slope_limit_deg`, `observer_height_above_ground_m`) since D32 put
+  them in `OperationsArea`; the top-level `observer_height_m` key is gone. `max_continuous_dark_h`
+  stays in `proposed_fields` until your contract PR lands; then I move it to `requirements`.
+- To Gian, AI-1: `docs/domain/example_requests.md` has 8 scripted requests with expected
+  requirements (fields + values, no invented constraints) for your AI tests.
 - To Gian: your Next item 1 (look at the globe by eye) is done, see Done above.
 - To Federico: `docs/decisions.md` has two D30 rows (mine: observer height; yours: near-site DEM,
   which your task file calls D31). Please add a row renaming yours, since existing rows are not edited.

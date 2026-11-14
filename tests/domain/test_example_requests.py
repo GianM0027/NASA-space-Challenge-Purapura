@@ -65,5 +65,5 @@ def test_hard_cases_follow_the_documented_rules() -> None:
     assert r8["expect"]["mission_duration_h"] == 168
     assert r8["expect"]["requirements"]["min_continuous_light_h"] == 168
     assert set(r8["message_must_mention"]) == {"temperature", "titanium"}
-    # R7: vague request maps to the outpost with no extra numbers
-    assert by_id["R7"]["expect"]["requirements"] == {}
+    # R7: vague request maps to the outpost with nothing beyond the archetype
+    assert by_id["R7"]["expect"]["requirements"] == ARCH["long-duration-outpost"]["requirements"]

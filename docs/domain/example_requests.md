@@ -50,7 +50,8 @@ Notes on the hard cases:
 
 - **R6**: the user's numbers win over the archetype (illumination 80 %, slope 5 deg); what the user
   did not say comes from the archetype (one lunar day, lit throughout).
-- **R7**: the AI picks the long-duration outpost and must say so in `rationale`; no other numbers.
+- **R7**: the AI picks the long-duration outpost and must say so in `rationale`; no numbers beyond
+  the archetype's.
 - **R8**: "one week" is the user's duration (168 h), so continuous light covers 168 h; crewed
   landing values come from the archetype. Temperature and soil composition cannot be evaluated by
   the engine: no field, and the message must say so instead of inventing anything.
@@ -68,13 +69,18 @@ Notes on the hard cases:
       "expect": {
         "mission_duration_h": 156,
         "requirements": {
-          "area": {"landing_precision_m": 100, "operating_range_m": 2000},
+          "area": {
+            "landing_precision_m": 100,
+            "operating_range_m": 2000,
+            "traverse_slope_limit_deg": 20,
+            "observer_height_above_ground_m": 10
+          },
           "min_continuous_light_h": 156,
           "min_earth_visibility_fraction": 0.25,
           "max_slope_deg": 10,
           "latitude_max_deg": -84
         },
-        "proposed_fields": {"traverse_slope_limit_deg": 20}
+        "proposed_fields": {}
       },
       "message_must_mention": [],
       "rationale_required": true
@@ -86,8 +92,14 @@ Notes on the hard cases:
       "expected_archetype": "long-duration-outpost",
       "expect": {
         "mission_duration_h": 720,
-        "requirements": {},
-        "proposed_fields": {"max_continuous_dark_h": 192}
+        "requirements": {
+          "area": {
+            "observer_height_above_ground_m": 10
+          }
+        },
+        "proposed_fields": {
+          "max_continuous_dark_h": 192
+        }
       },
       "message_must_mention": [],
       "rationale_required": true
@@ -99,8 +111,16 @@ Notes on the hard cases:
       "expected_archetype": "polar-rover",
       "expect": {
         "mission_duration_h": 2400,
-        "requirements": {"area": {"operating_range_m": 20000}},
-        "proposed_fields": {"max_continuous_dark_h": 50, "traverse_slope_limit_deg": 15}
+        "requirements": {
+          "area": {
+            "operating_range_m": 20000,
+            "traverse_slope_limit_deg": 15,
+            "observer_height_above_ground_m": 2
+          }
+        },
+        "proposed_fields": {
+          "max_continuous_dark_h": 50
+        }
       },
       "message_must_mention": [],
       "rationale_required": true
@@ -112,7 +132,12 @@ Notes on the hard cases:
       "expected_archetype": "small-robotic-lander",
       "expect": {
         "mission_duration_h": 336,
-        "requirements": {"min_continuous_light_h": 336},
+        "requirements": {
+          "min_continuous_light_h": 336,
+          "area": {
+            "observer_height_above_ground_m": 2
+          }
+        },
         "proposed_fields": {}
       },
       "message_must_mention": [],
@@ -140,7 +165,10 @@ Notes on the hard cases:
         "requirements": {
           "min_continuous_light_h": 336,
           "min_illumination_fraction": 0.8,
-          "max_slope_deg": 5
+          "max_slope_deg": 5,
+          "area": {
+            "observer_height_above_ground_m": 2
+          }
         },
         "proposed_fields": {}
       },
@@ -154,8 +182,14 @@ Notes on the hard cases:
       "expected_archetype": "long-duration-outpost",
       "expect": {
         "mission_duration_h": 720,
-        "requirements": {},
-        "proposed_fields": {"max_continuous_dark_h": 192}
+        "requirements": {
+          "area": {
+            "observer_height_above_ground_m": 10
+          }
+        },
+        "proposed_fields": {
+          "max_continuous_dark_h": 192
+        }
       },
       "message_must_mention": [],
       "rationale_required": true
@@ -168,15 +202,23 @@ Notes on the hard cases:
       "expect": {
         "mission_duration_h": 168,
         "requirements": {
-          "area": {"landing_precision_m": 100, "operating_range_m": 2000},
+          "area": {
+            "landing_precision_m": 100,
+            "operating_range_m": 2000,
+            "traverse_slope_limit_deg": 20,
+            "observer_height_above_ground_m": 10
+          },
           "min_continuous_light_h": 168,
           "min_earth_visibility_fraction": 0.25,
           "max_slope_deg": 10,
           "latitude_max_deg": -84
         },
-        "proposed_fields": {"traverse_slope_limit_deg": 20}
+        "proposed_fields": {}
       },
-      "message_must_mention": ["temperature", "titanium"],
+      "message_must_mention": [
+        "temperature",
+        "titanium"
+      ],
       "rationale_required": true
     }
   ]
