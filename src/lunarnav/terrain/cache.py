@@ -25,7 +25,7 @@ from lunarnav.contracts import HorizonMask
 LOGGER = logging.getLogger(__name__)
 
 # Part of every key: increase it whenever the ray casting or the DEM handling changes results.
-CACHE_VERSION = 1
+CACHE_VERSION = 2  # 2: multi-resolution rays (TER-4)
 
 
 def cache_key(

@@ -3,7 +3,7 @@
 
 """Download the LOLA digital elevation models used by the terrain module (requirement TER-3).
 
-Run once on every machine (about 650 MB in total)::
+Run once on every machine (about 1.1 GB in total)::
 
     uv run python scripts/terrain_download_dem.py            # all products
     uv run python scripts/terrain_download_dem.py ldem_64    # one product
@@ -13,6 +13,7 @@ data set LRO-L-LOLA-4-GDR-V1.0):
 
 - ``ldem_64``: global, simple cylindrical, 64 px/deg (~474 m/px at the equator), 531 MB.
 - ``ldem_80s_80m``: south pole to 80 deg S, polar stereographic, 80 m/px, 116 MB.
+- ``ldem_85s_20m``: south pole to 85 deg S, polar stereographic, 20 m/px, 460 MB (TER-4).
 
 Each product is an ``.img`` grid of little-endian int16 heights (0.5 m per unit above the
 1737.4 km sphere) plus its ``.lbl`` PDS label, which documents size, scaling and projection.
@@ -72,6 +73,12 @@ PRODUCTS = {
             "polar/img",
             115_520_000,  # 7600 x 7600 int16 samples
             "south pole to 80 S, polar stereographic, 80 m/px",
+        ),
+        DemProduct(
+            "ldem_85s_20m",
+            "polar/img",
+            460_136_448,  # 15168 x 15168 int16 samples
+            "south pole to 85 S, polar stereographic, 20 m/px (near-site detail, TER-4)",
         ),
     )
 }

@@ -1,5 +1,5 @@
 # ABOUTME: LolaTerrainProvider: the TerrainProvider port backed by LOLA DEMs (decision D28)
-# ABOUTME: Picks the finest DEM covering the whole ray disk; converts results to contract models
+# ABOUTME: Fine DEM near the site, coarser DEM to 150 km (TER-4); results as contract models
 
 """TerrainProvider implementation over LOLA digital elevation models."""
 
@@ -13,13 +13,17 @@ import numpy as np
 from lunarnav.contracts import GeoPoint, HorizonMask, TerrainStats
 from lunarnav.terrain.cache import HorizonCache, cache_key
 from lunarnav.terrain.dem import Dem, load_lola_cylindrical, load_lola_south_polar
-from lunarnav.terrain.horizon import horizon_profile
+from lunarnav.terrain.horizon import RaySegment, segmented_horizon_profile
 from lunarnav.terrain.slope import slope_stats
 
 DEFAULT_RAW_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "lola"
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "cache" / "terrain"
 # Decision D28 (check C1): 150 km covers peaks of ~8 km seen over the lunar curvature.
 DEFAULT_MAX_DISTANCE_M = 150_000.0
+# TER-4: rays read the finest DEM up to this distance and the DEM covering the full ray beyond.
+# Raising the eye by dh changes the angle to terrain at distance d by about dh/d, so sub-pixel
+# relief of a few meters matters within a few km and is negligible (~0.02 deg) past 10 km.
+DEFAULT_NEAR_FIELD_M = 10_000.0
 PDS_DATA_SET = "LRO-L-LOLA-4-GDR-V1.0"
 # At exactly +-90 deg azimuths are undefined (every direction is north or south); computations
 # start from this latitude instead, about 3 m from the pole, well below one DEM pixel.
@@ -46,6 +50,7 @@ class LolaTerrainProvider:
             DEM surface when a location has no ``height_m``, meters, >= 0. The horizon is very
             sensitive to it near the ground; 0 means the observer lies on the surface.
         cache: Horizon mask cache (TER-5); default an in-memory cache only.
+        near_field_m: Ray stretch read on the finest available DEM, meters (TER-4).
     """
 
     def __init__(
@@ -55,6 +60,7 @@ class LolaTerrainProvider:
         max_distance_m: float = DEFAULT_MAX_DISTANCE_M,
         observer_height_above_ground_m: float = 0.0,
         cache: HorizonCache | None = None,
+        near_field_m: float = DEFAULT_NEAR_FIELD_M,
     ):
         """See the class docstring."""
         if observer_height_above_ground_m < 0.0:
@@ -66,6 +72,7 @@ class LolaTerrainProvider:
         self.max_distance_m = max_distance_m
         self.observer_height_above_ground_m = observer_height_above_ground_m
         self.cache = cache if cache is not None else HorizonCache()
+        self.near_field_m = min(near_field_m, max_distance_m)
 
     @classmethod
     def from_raw_dir(
@@ -74,7 +81,8 @@ class LolaTerrainProvider:
         """Load the D28 products downloaded by ``scripts/terrain_download_dem.py``.
 
         Args:
-            raw_dir: Folder with ``ldem_64.img`` and optionally ``ldem_80s_80m.img``.
+            raw_dir: Folder with ``ldem_64.img`` and optionally the south polar tiles
+                ``ldem_80s_80m.img`` and ``ldem_85s_20m.img``.
             cache_dir: Folder for cached horizon masks (git-ignored); None keeps them in memory.
 
         Returns:
@@ -93,6 +101,10 @@ class LolaTerrainProvider:
         if polar_path.exists():
             # Size and scale from the ldem_80s_80m.lbl label: 7600 x 7600 samples, 80 m/pixel.
             regional.append(load_lola_south_polar(polar_path, 7600, 80.0))
+        fine_path = raw_dir / "ldem_85s_20m.img"
+        if fine_path.exists():
+            # Size and scale from the ldem_85s_20m.lbl label: 15168 x 15168 samples, 20 m/pixel.
+            regional.append(load_lola_south_polar(fine_path, 15168, 20.0))
         global_dem = load_lola_cylindrical(global_path, 64)
         return cls(global_dem, regional, cache=HorizonCache(cache_dir))
 
@@ -117,22 +129,37 @@ class LolaTerrainProvider:
         Raises:
             ValueError: If an absolute ``height_m`` lies below the terrain surface.
         """
-        dem = self.dem_for(location, self.max_distance_m)
+        far = self.dem_for(location, self.max_distance_m)
+        near = self.dem_for(location, self.near_field_m)
+        if near.resolution_m >= far.resolution_m:
+            near = far
         lat, lon = np.array([_off_pole(location.lat_deg)]), np.array([location.lon_deg])
-        ground_h = float(dem.height_m(lat, lon)[0])
+        ground_h = float(near.height_m(lat, lon)[0])
         observer_h = location.height_m
         if observer_h is None:
             observer_h = ground_h + self.observer_height_above_ground_m
         elif observer_h < ground_h - BELOW_GROUND_TOLERANCE_M:
             raise ValueError(
                 f"observer height {observer_h:.1f} m is below the terrain ({ground_h:.1f} m above "
-                f"the 1737.4 km sphere in {dem.name}) at {location.lat_deg}, {location.lon_deg}; "
+                f"the 1737.4 km sphere in {near.name}) at {location.lat_deg}, {location.lon_deg}; "
                 "leave height_m empty to stand on the surface"
             )
         observer = location.model_copy(update={"height_m": observer_h})
+        if near is far:
+            segments = [RaySegment(far, 0.0, self.max_distance_m, far.resolution_m)]
+            source = self._source(far)
+        else:
+            segments = [
+                RaySegment(near, 0.0, self.near_field_m, near.resolution_m),
+                RaySegment(far, self.near_field_m, self.max_distance_m, far.resolution_m),
+            ]
+            source = (
+                f"{self._source(near)} within {self.near_field_m / 1000:.0f} km, "
+                f"{self._source(far)} beyond"
+            )
         key = cache_key(
-            dem.name,
-            dem.resolution_m,
+            source,
+            near.resolution_m,
             location.lat_deg,
             location.lon_deg,
             observer_h,
@@ -141,15 +168,15 @@ class LolaTerrainProvider:
         cached = self.cache.get(key)
         if cached is not None:
             return cached.model_copy(update={"location": observer})
-        azimuth, elevation = horizon_profile(
-            dem, _off_pole(location.lat_deg), location.lon_deg, observer_h, self.max_distance_m
+        azimuth, elevation = segmented_horizon_profile(
+            segments, _off_pole(location.lat_deg), location.lon_deg, observer_h
         )
         mask = HorizonMask(
             location=observer,
             azimuth_deg=azimuth.tolist(),
             horizon_elevation_deg=elevation.tolist(),
-            dem_source=self._source(dem),
-            dem_resolution_m=dem.resolution_m,
+            dem_source=source,
+            dem_resolution_m=near.resolution_m,
             max_distance_m=self.max_distance_m,
         )
         self.cache.put(key, mask)

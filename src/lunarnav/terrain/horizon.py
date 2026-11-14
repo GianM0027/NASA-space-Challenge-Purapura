@@ -20,6 +20,8 @@ gives a slightly negative horizon.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 
 from lunarnav.terrain.dem import MOON_RADIUS_M, Dem
@@ -99,8 +101,69 @@ def horizon_profile(
     step = dem.resolution_m if step_m is None else step_m
     if max_distance_m < step:
         raise ValueError(f"max_distance_m {max_distance_m} is below the ray step {step}")
+    return segmented_horizon_profile(
+        [RaySegment(dem, 0.0, max_distance_m, step)],
+        lat_deg,
+        lon_deg,
+        observer_height_m,
+        n_azimuth,
+    )
+
+
+@dataclass(frozen=True)
+class RaySegment:
+    """One stretch of every ray, sampled on one DEM.
+
+    Attributes:
+        dem: Height model covering the stretch all around the observer.
+        start_m: Distance where the stretch begins (exclusive), meters.
+        end_m: Distance where the stretch ends (inclusive), meters.
+        step_m: Sample spacing, meters; samples sit at whole multiples of it.
+    """
+
+    dem: Dem
+    start_m: float
+    end_m: float
+    step_m: float
+
+
+def segmented_horizon_profile(
+    segments: list[RaySegment],
+    lat_deg: float,
+    lon_deg: float,
+    observer_height_m: float,
+    n_azimuth: int = 360,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Terrain horizon where each stretch of the rays reads its own DEM (multi-resolution rays).
+
+    Typical use: a fine DEM near the site, where nearby terrain and small relief matter most,
+    and a coarser DEM far away, where the same detail changes the angle very little.
+
+    Args:
+        segments: Consecutive stretches, nearest first; together they cover the ray length.
+        lat_deg: Observer latitude, degrees.
+        lon_deg: Observer east longitude, degrees.
+        observer_height_m: Observer height above the reference sphere, meters.
+        n_azimuth: Number of azimuths, evenly spaced from 0 (north) clockwise.
+
+    Returns:
+        (azimuths in degrees, horizon elevations in degrees), both shape (n_azimuth,).
+
+    Raises:
+        ValueError: If a segment holds no sample.
+    """
     azimuth = np.arange(n_azimuth) * (360.0 / n_azimuth)
-    distance = np.arange(1, int(max_distance_m // step) + 1) * step
-    lat, lon = destination(lat_deg, lon_deg, azimuth, distance)
-    angle = elevation_angle_deg(distance[None, :], dem.height_m(lat, lon), observer_height_m)
-    return azimuth, angle.max(axis=1)
+    horizon = np.full(n_azimuth, -np.inf)
+    for seg in segments:
+        first = int(np.floor(seg.start_m / seg.step_m)) + 1
+        last = int(np.floor(seg.end_m / seg.step_m + 1e-9))
+        if last < first:
+            raise ValueError(
+                f"ray segment {seg.start_m}-{seg.end_m} m holds no {seg.step_m} m step"
+            )
+        distance = np.arange(first, last + 1) * seg.step_m
+        lat, lon = destination(lat_deg, lon_deg, azimuth, distance)
+        heights = seg.dem.height_m(lat, lon)
+        angle = elevation_angle_deg(distance[None, :], heights, observer_height_m)
+        horizon = np.maximum(horizon, angle.max(axis=1))
+    return azimuth, horizon
