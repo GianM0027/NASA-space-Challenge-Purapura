@@ -30,7 +30,7 @@ class HorizonsEphemerisProvider:
 
     Values are Horizons' airless apparent directions (light-time and aberration corrected). The
     contract asks for geometric directions; the difference is far below one arcminute, negligible
-    next to the 0.53 deg solar disk (decision D21). Any window length is supported: windows longer
+    next to the 0.53 deg solar disk (decision D24). Any window length is supported: windows longer
     than ``max_rows`` samples are fetched in several requests, one at a time.
 
     Args:

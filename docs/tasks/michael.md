@@ -4,7 +4,7 @@
 # Michael: tasks
 
 ## Status
-Setup done (branch `michael`, tests green). C2 done: Horizons chosen (D21). Next: EPH-1.
+Setup done (branch `michael`, tests green). C2 done: Horizons chosen (D24). Next: EPH-1.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -25,7 +25,7 @@ Setup done (branch `michael`, tests green). C2 done: Horizons chosen (D21). Next
 ## Done
 - Setup: branch `michael`, `uv sync`, 15 tests green.
 - Submission rules: team already aware (skipped).
-- C2 (Horizons query check): works for topocentric lunar sites; limits and decision in D21.
+- C2 (Horizons query check): works for topocentric lunar sites; limits and decision in D24.
   Recorded responses for the EPH-1 test in `tests/ephemeris/fixtures/` (Apollo 11, Sun and Earth, 2026-12-01 00:00-01:00 UTC, 10 min).
 
 ## Blockers

@@ -6,7 +6,7 @@
 Horizons is queried in OBSERVER mode with the observer at a geodetic site on the Moon
 (``CENTER='coord@301'``) and quantity 4 (airless apparent azimuth and elevation, degrees, azimuth
 from north clockwise). Times are UTC. See https://ssd-api.jpl.nasa.gov/doc/horizons.html and
-decision D21 in docs/decisions.md.
+decision D24 in docs/decisions.md.
 """
 
 from __future__ import annotations
