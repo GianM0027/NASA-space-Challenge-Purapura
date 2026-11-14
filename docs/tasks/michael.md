@@ -5,7 +5,7 @@
 
 ## Status
 EPH-1, EPH-2, CAT-1, CAT-2 done (`build_ephemeris_provider`, `build_catalog` exported, IF-5).
-CAT-3 done (descriptions for all sites). Next: AI-5, EPH-3. Optional: landing times of recent missions.
+CAT-3 and EPH-3 done. Next: AI-5. Optional: landing times of recent missions.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -45,6 +45,10 @@ CAT-3 done (descriptions for all sites). Next: AI-5, EPH-3. Optional: landing ti
   `tests/ephemeris/test_apollo_verification.py` compares Sun and Earth alt/az at the 6 Apollo landings
   with the ALSJ table: Sun within 0.02 deg; Earth elevation 0.05-0.22 deg lower, explained by
   topocentric parallax (the table uses the Moon-center direction). Good demo material.
+- EPH-3: `scripts/ephemeris_warm_cache.py` (all sites at 10 min, globe origin at 1 min, default
+  60 days from today; `--start`, `--days`, `--step`, `--sites`). The cache keeps parsed files in
+  memory so repeated globe lookups do not re-read the large 1-minute file.
+  Before the demo: `uv run python scripts/ephemeris_warm_cache.py --start <demo date> --days 60`.
 
 ## Blockers
 
