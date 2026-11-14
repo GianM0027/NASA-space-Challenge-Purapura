@@ -24,6 +24,10 @@ DEFAULT_MAX_DISTANCE_M = 150_000.0
 # Raising the eye by dh changes the angle to terrain at distance d by about dh/d, so sub-pixel
 # relief of a few meters matters within a few km and is negligible (~0.02 deg) past 10 km.
 DEFAULT_NEAR_FIELD_M = 10_000.0
+# Observer (solar panel) height above the ground used by the app, decision D30 (Michael): Glaser et
+# al. 2014, Icarus 243, 78, model south-pole illumination at 2 m and 10 m above ground as rover and
+# lander solar panel heights; 2 m is the team default, 0 m only a reference case.
+DEFAULT_OBSERVER_HEIGHT_ABOVE_GROUND_M = 2.0
 PDS_DATA_SET = "LRO-L-LOLA-4-GDR-V1.0"
 # At exactly +-90 deg azimuths are undefined (every direction is north or south); computations
 # start from this latitude instead, about 3 m from the pole, well below one DEM pixel.
@@ -48,7 +52,9 @@ class LolaTerrainProvider:
         max_distance_m: Ray length for horizon masks, meters.
         observer_height_above_ground_m: Height of the observer (solar panel, antenna) above the
             DEM surface when a location has no ``height_m``, meters, >= 0. The horizon is very
-            sensitive to it near the ground; 0 means the observer lies on the surface.
+            sensitive to it near the ground; 0 (the geometric reference used by the known-answer
+            tests) means the observer lies on the surface. The app uses ``from_raw_dir``, whose
+            default is 2 m (decision D30, observer height).
         cache: Horizon mask cache (TER-5); default an in-memory cache only.
         near_field_m: Ray stretch read on the finest available DEM, meters (TER-4).
     """
@@ -76,7 +82,10 @@ class LolaTerrainProvider:
 
     @classmethod
     def from_raw_dir(
-        cls, raw_dir: Path = DEFAULT_RAW_DIR, cache_dir: Path | None = DEFAULT_CACHE_DIR
+        cls,
+        raw_dir: Path = DEFAULT_RAW_DIR,
+        cache_dir: Path | None = DEFAULT_CACHE_DIR,
+        observer_height_above_ground_m: float = DEFAULT_OBSERVER_HEIGHT_ABOVE_GROUND_M,
     ) -> LolaTerrainProvider:
         """Load the D28 products downloaded by ``scripts/terrain_download_dem.py``.
 
@@ -84,6 +93,8 @@ class LolaTerrainProvider:
             raw_dir: Folder with ``ldem_64.img`` and optionally the south polar tiles
                 ``ldem_80s_80m.img`` and ``ldem_85s_20m.img``.
             cache_dir: Folder for cached horizon masks (git-ignored); None keeps them in memory.
+            observer_height_above_ground_m: Observer height above the DEM surface, meters;
+                default 2 m (decision D30, observer height).
 
         Returns:
             The provider.
@@ -106,7 +117,12 @@ class LolaTerrainProvider:
             # Size and scale from the ldem_85s_20m.lbl label: 15168 x 15168 samples, 20 m/pixel.
             regional.append(load_lola_south_polar(fine_path, 15168, 20.0))
         global_dem = load_lola_cylindrical(global_path, 64)
-        return cls(global_dem, regional, cache=HorizonCache(cache_dir))
+        return cls(
+            global_dem,
+            regional,
+            observer_height_above_ground_m=observer_height_above_ground_m,
+            cache=HorizonCache(cache_dir),
+        )
 
     def dem_for(self, location: GeoPoint, radius_m: float) -> Dem:
         """Return the finest DEM containing the disk of ``radius_m`` around ``location``."""

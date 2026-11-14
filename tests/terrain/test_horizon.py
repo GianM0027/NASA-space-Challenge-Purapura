@@ -174,3 +174,15 @@ def test_observer_below_the_terrain_is_rejected() -> None:
 def test_negative_height_above_ground_is_rejected() -> None:
     with pytest.raises(ValueError, match="must be >= 0"):
         LolaTerrainProvider(flat_global(), observer_height_above_ground_m=-2.0)
+
+
+@pytest.mark.slow
+@needs_dems
+def test_app_provider_places_the_observer_2_m_above_the_ground() -> None:
+    # Decision D30: the app default is 2 m above the DEM surface (Glaser et al. 2014).
+    app = LolaTerrainProvider.from_raw_dir(cache_dir=None)
+    surface = LolaTerrainProvider.from_raw_dir(cache_dir=None, observer_height_above_ground_m=0.0)
+    site = GeoPoint(lat_deg=0.674, lon_deg=23.473)
+    lifted = app.horizon_mask(site).location.height_m
+    ground = surface.horizon_mask(site).location.height_m
+    assert lifted - ground == pytest.approx(2.0)
