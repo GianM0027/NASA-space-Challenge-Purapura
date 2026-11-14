@@ -53,26 +53,29 @@ class EphemerisProvider(Protocol):
 class TerrainProvider(Protocol):
     """Terrain horizon and slopes from LOLA topography (owner: Federico)."""
 
-    def horizon_mask(self, location: GeoPoint) -> HorizonMask:
+    def horizon_mask(self, location: GeoPoint, area: OperationsArea) -> HorizonMask:
         """Return the terrain horizon elevation around ``location`` as a function of azimuth.
 
         Args:
-            location: Observer on the Moon.
+            location: Observer on the Moon. An absolute ``height_m`` is the observer height;
+                without it the observer stands ``area.observer_height_above_ground_m`` above
+                the terrain.
+            area: Operations area; only its observer height is used.
 
         Returns:
             The horizon mask.
         """
         ...
 
-    def terrain_stats(self, location: GeoPoint, radius_m: float) -> TerrainStats:
-        """Return elevation and slope statistics over a disk.
+    def terrain_stats(self, location: GeoPoint, area: OperationsArea) -> TerrainStats:
+        """Return elevation, slope and reachability statistics over the operations area.
 
         Args:
-            location: Disk center.
-            radius_m: Disk radius, meters, >= 0.
+            location: Center of the operations area.
+            area: Landing precision, operating range and traverse slope limit.
 
         Returns:
-            The terrain statistics.
+            The terrain statistics (see ``TerrainStats`` for the two disks).
         """
         ...
 

@@ -79,6 +79,11 @@ def main() -> None:
         elevation_m=1500.0,
         slope_mean_deg=4.0,
         slope_max_deg=11.0,
+        landing_radius_m=area.landing_precision_m,
+        landing_slope_mean_deg=2.0,
+        landing_slope_max_deg=5.0,
+        traverse_slope_limit_deg=area.traverse_slope_limit_deg,
+        reachable_fraction=0.9,
         dem_source=LABEL,
         dem_resolution_m=60.0,
     )
@@ -129,7 +134,7 @@ def main() -> None:
                 },
                 all_constraints_met=True,
                 metrics=metrics,
-                slope_max_deg=terrain.slope_max_deg,
+                landing_slope_max_deg=terrain.landing_slope_max_deg,
                 rationale="Synthetic example rationale.",
             )
         ],
