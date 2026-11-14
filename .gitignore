@@ -1,0 +1,32 @@
+# ABOUTME: Files never committed: environments, caches, heavy data, secrets, build outputs
+# ABOUTME: Heavy data is fetched by scripts/<module>_*.py into data/raw/ (MISSION.md section 8)
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Data
+data/raw/
+data/cache/
+data/user/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

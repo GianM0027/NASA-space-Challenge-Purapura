@@ -1,0 +1,46 @@
+# ABOUTME: Python project definition for LunarNav: one dependency group per module, shared tool settings
+# ABOUTME: Each owner edits only their own group (MISSION.md section 4); [project] and tools are Gian's
+
+[project]
+name = "lunarnav"
+version = "0.1.0"
+description = "Lunar landing site navigator: Sun and Earth visibility, power and comms windows, AI-assisted site search"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.9",
+]
+
+[dependency-groups]
+# Install only what you need: `uv sync --group <module> --group dev`; integration: `uv sync --all-groups`
+dev = ["pytest>=8", "ruff>=0.8"]
+contracts = []
+catalog = []
+ephemeris = ["httpx>=0.27"]
+terrain = ["numpy>=2.0"]
+evaluation = ["numpy>=2.0"]
+mission_analysis = ["numpy>=2.0"]
+ai = []
+api = ["fastapi>=0.115", "uvicorn>=0.32"]
+tradeoff = ["numpy>=2.0"]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "N", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config", "--import-mode=importlib", "-m", "not slow"]
+markers = ["slow: real data, network or > 5 s; run with -m slow"]

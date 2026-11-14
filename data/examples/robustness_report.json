@@ -1,0 +1,87 @@
+{
+  "site_id": "example-polar",
+  "nominal": {
+    "illumination_fraction": 0.6923076923076923,
+    "sun_elevation_max_deg": 3.2,
+    "sun_elevation_mean_visible_deg": 2.022222222222222,
+    "longest_light_h": 36.0,
+    "longest_dark_h": 8.0,
+    "earth_visibility_fraction": 1.0,
+    "longest_earth_visible_h": 52.0,
+    "longest_earth_hidden_h": 0.0,
+    "sun_visible_at_start": false,
+    "earth_visible_at_start": true,
+    "next_sunset_utc": "2027-01-02T20:00:00Z",
+    "next_sunrise_utc": "2027-01-01T08:00:00Z",
+    "next_earthset_utc": null,
+    "next_earthrise_utc": null
+  },
+  "date_shifts": [
+    {
+      "shift_days": 1.0,
+      "metrics": {
+        "illumination_fraction": 0.6923076923076923,
+        "sun_elevation_max_deg": 3.2,
+        "sun_elevation_mean_visible_deg": 2.022222222222222,
+        "longest_light_h": 36.0,
+        "longest_dark_h": 8.0,
+        "earth_visibility_fraction": 1.0,
+        "longest_earth_visible_h": 52.0,
+        "longest_earth_hidden_h": 0.0,
+        "sun_visible_at_start": false,
+        "earth_visible_at_start": true,
+        "next_sunset_utc": "2027-01-02T20:00:00Z",
+        "next_sunrise_utc": "2027-01-01T08:00:00Z",
+        "next_earthset_utc": null,
+        "next_earthrise_utc": null
+      }
+    },
+    {
+      "shift_days": 7.0,
+      "metrics": {
+        "illumination_fraction": 0.6923076923076923,
+        "sun_elevation_max_deg": 3.2,
+        "sun_elevation_mean_visible_deg": 2.022222222222222,
+        "longest_light_h": 36.0,
+        "longest_dark_h": 8.0,
+        "earth_visibility_fraction": 1.0,
+        "longest_earth_visible_h": 52.0,
+        "longest_earth_hidden_h": 0.0,
+        "sun_visible_at_start": false,
+        "earth_visible_at_start": true,
+        "next_sunset_utc": "2027-01-02T20:00:00Z",
+        "next_sunrise_utc": "2027-01-01T08:00:00Z",
+        "next_earthset_utc": null,
+        "next_earthrise_utc": null
+      }
+    }
+  ],
+  "dispersion": [
+    {
+      "location": {
+        "lat_deg": -89.5,
+        "lon_deg": 0.0,
+        "height_m": 1500.0
+      },
+      "offset_m": 0.0,
+      "metrics": {
+        "illumination_fraction": 0.6923076923076923,
+        "sun_elevation_max_deg": 3.2,
+        "sun_elevation_mean_visible_deg": 2.022222222222222,
+        "longest_light_h": 36.0,
+        "longest_dark_h": 8.0,
+        "earth_visibility_fraction": 1.0,
+        "longest_earth_visible_h": 52.0,
+        "longest_earth_hidden_h": 0.0,
+        "sun_visible_at_start": false,
+        "earth_visible_at_start": true,
+        "next_sunset_utc": "2027-01-02T20:00:00Z",
+        "next_sunrise_utc": "2027-01-01T08:00:00Z",
+        "next_earthset_utc": null,
+        "next_earthrise_utc": null
+      },
+      "slope_max_deg": 11.0
+    }
+  ],
+  "summary": "SYNTHETIC EXAMPLE, not real data"
+}

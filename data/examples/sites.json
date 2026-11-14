@@ -1,0 +1,38 @@
+[
+  {
+    "id": "example-polar",
+    "name": "Synthetic polar site",
+    "location": {
+      "lat_deg": -89.5,
+      "lon_deg": 0.0,
+      "height_m": 1500.0
+    },
+    "origin": "other",
+    "status": "candidate",
+    "mission": null,
+    "agency": null,
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Synthetic example of a high-latitude candidate site.",
+    "sources": [
+      "SYNTHETIC EXAMPLE, not real data"
+    ]
+  },
+  {
+    "id": "example-user",
+    "name": "Synthetic user site",
+    "location": {
+      "lat_deg": 10.0,
+      "lon_deg": -20.0,
+      "height_m": null
+    },
+    "origin": "user",
+    "status": "custom",
+    "mission": null,
+    "agency": null,
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Synthetic example of a user-added site.",
+    "sources": []
+  }
+]
