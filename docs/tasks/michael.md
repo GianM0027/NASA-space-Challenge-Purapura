@@ -51,9 +51,17 @@ recent missions, Haworth/de Gerlache points on the rim.
   memory so repeated globe lookups do not re-read the large 1-minute file.
   Before the demo: `uv run python scripts/ephemeris_warm_cache.py --start <demo date> --days 60`.
 
+- Globe checked by eye (Gian's Next item 1), all OK: Apollo 11 at 1969-07-20 20:17 UTC just inside
+  the lit side near the terminator; today's phase matches; Earth direction at the near-side center;
+  south pole lit at grazing angle, lit side rotating with the date; Chang'e 4/6 with no Earth;
+  markers in place; click picking gives sensible coordinates.
+
 ## Blockers
 
 ## Requests
+- To Gian: your Next item 1 (look at the globe by eye) is done, see Done above.
+- To Federico: `docs/decisions.md` has two D30 rows (mine: observer height; yours: near-site DEM,
+  which your task file calls D31). Please add a row renaming yours, since existing rows are not edited.
 - Resolved by Gian (merged 496a26b): EPH-1 wording, API tests off real modules, whole-minute step in
   the contract (D25), `sky_state` truncates to the whole minute.
 - Contracts review decided by Michael (D27): `Site.region_radius_m` and `Site.feature` dropped.
