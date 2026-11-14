@@ -1,6 +1,7 @@
 # ABOUTME: Smoke tests of the REST API (spec IF-4): endpoints answer with contract-valid payloads
 # ABOUTME: Owner: Gian; skipped automatically when the api dependency group is not installed
 
+import dataclasses
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -11,6 +12,7 @@ pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
 
 from lunarnav.api.main import build_app
+from lunarnav.api.wiring import build_services
 from lunarnav.contracts import (
     AiAnswer,
     Evaluation,
@@ -29,7 +31,9 @@ WINDOW = {
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(build_app())
+    # Placeholders only: these tests are about the API and must not reach Horizons or
+    # the disk cache.
+    return TestClient(build_app(*build_services(use_real=False)))
 
 
 def test_health(client: TestClient) -> None:
@@ -145,3 +149,39 @@ def test_placeholder_earth_is_hidden_on_the_far_side(client: TestClient) -> None
     evaluation = Evaluation.model_validate(client.post("/api/evaluate", json=body).json())
     assert evaluation.earth_elevation_deg[0] == pytest.approx(-89.0)
     assert evaluation.metrics.earth_visibility_fraction == 0.0
+
+
+class _FailingEvaluator:
+    def __init__(self, error: Exception) -> None:
+        self._error = error
+
+    def evaluate(self, *args: object, **kwargs: object) -> Evaluation:
+        raise self._error
+
+
+def _client_with_failing_evaluator(error: Exception) -> TestClient:
+    services, status = build_services(use_real=False)
+    broken = dataclasses.replace(services, evaluator=_FailingEvaluator(error))
+    return TestClient(build_app(broken, status), raise_server_exceptions=False)
+
+
+def test_module_failure_is_502_with_a_readable_message() -> None:
+    client = _client_with_failing_evaluator(RuntimeError("Horizons unreachable"))
+    body = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    response = client.post("/api/evaluate", json=body)
+    assert response.status_code == 502
+    assert "Horizons unreachable" in response.json()["detail"]
+
+
+def test_module_rejecting_its_input_is_422() -> None:
+    client = _client_with_failing_evaluator(ValueError("window too long"))
+    body = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    response = client.post("/api/evaluate", json=body)
+    assert response.status_code == 422
+    assert response.json()["detail"] == "window too long"
+
+
+def test_fractional_step_is_rejected(client: TestClient) -> None:
+    window = {**WINDOW, "step_minutes": 0.5}
+    body = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": window}
+    assert client.post("/api/evaluate", json=body).status_code == 422

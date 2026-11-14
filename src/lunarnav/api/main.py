@@ -9,7 +9,10 @@ exists, placeholder otherwise); ``GET /api/modules`` reports which is which.
 
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+import logging
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
 from lunarnav.api.requests import (
@@ -32,6 +35,8 @@ from lunarnav.contracts import (
     SkyState,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def build_app(services: Services | None = None, status: ModuleStatus | None = None) -> FastAPI:
     """Create the FastAPI app.
@@ -49,6 +54,18 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
     else:
         svc, modules = services, status or {}
     app = FastAPI(title="LunarNav API", version="0.1.0")
+
+    @app.exception_handler(ValueError)
+    def invalid_input(_: Request, error: ValueError) -> JSONResponse:
+        """Map a module's rejection of its input to HTTP 422."""
+        return JSONResponse(status_code=422, content={"detail": str(error)})
+
+    @app.exception_handler(Exception)
+    def module_failure(_: Request, error: Exception) -> JSONResponse:
+        """Map any other module failure (Horizons, LLM, data files) to HTTP 502 for the UI."""
+        logger.exception("module failure")
+        detail = f"{type(error).__name__}: {error}"
+        return JSONResponse(status_code=502, content={"detail": detail})
 
     def resolve(request: EvaluateRequest) -> tuple[GeoPoint, str | None]:
         """Return the point to evaluate and its site id; 404 for an unknown site."""
