@@ -50,6 +50,7 @@ module's classes by itself.
 | Distances, heights | meters; heights above the 1737.4 km reference sphere |
 | Durations | hours |
 | Times | timezone-aware UTC, ISO 8601 in JSON |
+| Sampling step | whole minutes, >= 1 (`TimeWindow.step_minutes` is an integer; JPL Horizons takes no fractions) |
 | Coordinates | planetocentric latitude [-90, 90]; east-positive longitude [-180, 180); Moon Mean Earth / polar axis frame |
 | Azimuth | from local north, clockwise, [0, 360) |
 | Elevation | above the local horizontal plane; ephemeris values are geometric (no terrain) |
@@ -76,8 +77,9 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 ### 4.2 Ephemerides (EPH)
 
 - **EPH-1** (P0, Michael): an `EphemerisProvider` returning topocentric Sun and Earth azimuth and
-  geometric elevation for any lunar point and any `TimeWindow` (step down to 10 minutes, spans up to
-  about 60 days).
+  geometric elevation for any lunar point and any `TimeWindow`: any length (landing date plus
+  mission duration; long windows are split into several requests), step in whole minutes.
+  Acceptance case for speed: 60 days at a 10 minute step.
   *Acceptance*: for one site and time, values agree with JPL Horizons within a tolerance Michael
   states and justifies; a test with a recorded Horizons response.
 - **EPH-2** (P0, Michael): results are cached on disk (`data/cache/ephemeris/`) so the demo works
@@ -196,8 +198,9 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 | `POST /api/ai/ask` | `{"text": str}` | `AiAnswer` |
 | `POST /api/mission-analysis` | evaluate request plus `"shifts_days": list[float]` | `RobustnessReport` |
 
-  Errors: HTTP 422 for invalid input (Pydantic detail), 404 for unknown site id, 502 when an upstream
-  service (Horizons, LLM) fails, with a message the UI can show.
+  Errors: HTTP 422 for invalid input (Pydantic detail, or a `ValueError` raised by a module),
+  404 for unknown site id, 502 when a module fails for any other reason (Horizons, LLM, data
+  files), with `detail` the UI can show. `GET /api/sky` truncates the instant to the whole minute.
 
 ## 6. Non-functional requirements
 

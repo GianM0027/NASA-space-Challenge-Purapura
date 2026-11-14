@@ -68,6 +68,7 @@ def _build[T](
     name: str,
     placeholder: Callable[[], T],
     *args: object,
+    use_real: bool = True,
 ) -> T:
     """Build one service with its real factory, or the placeholder, recording which in ``status``.
 
@@ -78,11 +79,12 @@ def _build[T](
         name: Factory function name.
         placeholder: Zero-argument callable building the fallback.
         *args: Arguments passed to the real factory.
+        use_real: When False the factory is not looked up; the placeholder is always used.
 
     Returns:
         The real service when its factory exists and succeeds, the placeholder otherwise.
     """
-    factory = find_factory(package, name)
+    factory = find_factory(package, name) if use_real else None
     if factory is None:
         status[key] = "example"
         return placeholder()
@@ -96,20 +98,30 @@ def _build[T](
     return service
 
 
-def build_services() -> tuple[Services, ModuleStatus]:
+def build_services(use_real: bool = True) -> tuple[Services, ModuleStatus]:
     """Build every service, preferring real modules over placeholders.
+
+    Args:
+        use_real: When False only placeholders are built: no real module is imported, so nothing
+            touches the network or the disk cache. Tests of the API itself use this.
 
     Returns:
         The services, and for each of them whether it is "real", "example" or "error: ...".
     """
     status: ModuleStatus = {}
-    catalog = _build(status, "catalog", "catalog", "build_catalog", ExampleCatalog)
-    ephemeris = _build(
-        status, "ephemeris", "ephemeris", "build_ephemeris_provider", ExampleEphemerisProvider
+
+    def build[T](
+        key: str, package: str, name: str, placeholder: Callable[[], T], *args: object
+    ) -> T:
+        """Build one service with this call's ``status`` and ``use_real``."""
+        return _build(status, key, package, name, placeholder, *args, use_real=use_real)
+
+    catalog = build("catalog", "catalog", "build_catalog", ExampleCatalog)
+    ephemeris = build(
+        "ephemeris", "ephemeris", "build_ephemeris_provider", ExampleEphemerisProvider
     )
-    terrain = _build(status, "terrain", "terrain", "build_terrain_provider", ExampleTerrainProvider)
-    evaluator = _build(
-        status,
+    terrain = build("terrain", "terrain", "build_terrain_provider", ExampleTerrainProvider)
+    evaluator = build(
         "evaluation",
         "evaluation",
         "build_evaluator",
@@ -117,14 +129,13 @@ def build_services() -> tuple[Services, ModuleStatus]:
         ephemeris,
         terrain,
     )
-    analyzer = _build(
-        status,
+    analyzer = build(
         "mission_analysis",
         "mission_analysis",
         "build_mission_analyzer",
         ExampleAnalyzer,
         evaluator,
     )
-    ranker = _build(status, "ranking", "ai", "build_ranker", ExampleRanker, catalog, evaluator)
-    assistant = _build(status, "assistant", "ai", "build_assistant", ExampleAssistant, ranker)
+    ranker = build("ranking", "ai", "build_ranker", ExampleRanker, catalog, evaluator)
+    assistant = build("assistant", "ai", "build_assistant", ExampleAssistant, ranker)
     return Services(catalog, ephemeris, evaluator, analyzer, ranker, assistant), status

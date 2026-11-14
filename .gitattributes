@@ -1,0 +1,5 @@
+# ABOUTME: Git attributes: how specific files are merged
+# ABOUTME: Owner: Gian (decision D26, union merge of the decisions log)
+
+# Append-only log edited by everyone: on merge keep the rows of both sides instead of conflicting.
+docs/decisions.md merge=union

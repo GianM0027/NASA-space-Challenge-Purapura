@@ -24,6 +24,15 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
 - Node.js LTS installed on this PC.
 - Minor: Starlette warns that `httpx` with its TestClient is deprecated in favour of `httpx2`; switch after verifying the `httpx2` package.
 
+## Answers to requests from others
+- Michael, EPH-1 wording: done in the spec (any window length, 60 days at 10 min only as the speed case).
+- Michael, API tests against the real provider: done; API tests build placeholder-only services
+  (`build_services(use_real=False)`), wiring tests start from "no factories".
+- Michael, globe: `sky_state` truncates to the whole minute, so a 1 minute warm-up at lat 0, lon 0 (EPH-3) hits.
+- Michael, whole-minute step: now in the contract (decision D25, sampling step).
+- Michael, new fields (`Site.region_radius_m`, `Site.feature`, `VisibilityMetrics.sun_and_earth_visible_fraction`):
+  pending the team's review of the parameters to show; not added yet.
+
 ## Blockers
 
 ## Requests

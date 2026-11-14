@@ -50,11 +50,14 @@ def sky_state(ephemeris: EphemerisProvider, time_utc: datetime) -> SkyState:
 
     Args:
         ephemeris: Source of topocentric Sun and Earth directions.
-        time_utc: Timezone-aware instant.
+        time_utc: Timezone-aware instant; truncated to the whole minute.
 
     Returns:
         The sky state; ``source`` echoes the ephemeris provenance.
     """
+    # Whole minutes only: the ephemeris cache is keyed on the sampling grid, so a warm-up
+    # at a 1 minute step then serves any requested instant.
+    time_utc = time_utc.replace(second=0, microsecond=0)
     # TimeWindow needs end > start; only the first sample is used.
     window = TimeWindow(start_utc=time_utc, end_utc=time_utc + timedelta(minutes=1))
     series = ephemeris.sun_earth(_ORIGIN, window)
