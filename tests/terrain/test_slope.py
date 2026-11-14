@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from lunarnav.contracts import GeoPoint, TerrainStats
+from lunarnav.contracts import GeoPoint, OperationsArea, TerrainStats
 from lunarnav.terrain.dem import MOON_RADIUS_M, CylindricalDem, SouthPolarStereographicDem
 from lunarnav.terrain.provider import DEFAULT_RAW_DIR, LolaTerrainProvider
 from lunarnav.terrain.slope import slope_stats
@@ -82,7 +82,9 @@ def test_provider_handles_a_site_exactly_on_the_pole() -> None:
     provider = LolaTerrainProvider(
         global_grid(lambda lat, lon: np.zeros_like(lat)), [polar_plane(15.0)]
     )
-    stats = provider.terrain_stats(GeoPoint(lat_deg=-90.0, lon_deg=0.0), 2_000.0)
+    stats = provider.terrain_stats(
+        GeoPoint(lat_deg=-90.0, lon_deg=0.0), OperationsArea(landing_precision_m=2_000.0)
+    )
     assert stats.dem_source.startswith("synthetic polar")
     assert stats.slope_mean_deg == pytest.approx(15.0, abs=0.05)
 
@@ -91,7 +93,9 @@ def test_provider_returns_valid_terrain_stats_even_at_the_pole() -> None:
     dem = global_grid(lambda lat, lon: np.full_like(lat, 100.0))
     provider = LolaTerrainProvider(dem)
     for lat in (0.0, -90.0, 90.0):
-        stats = provider.terrain_stats(GeoPoint(lat_deg=lat, lon_deg=0.0), 3_000.0)
+        stats = provider.terrain_stats(
+            GeoPoint(lat_deg=lat, lon_deg=0.0), OperationsArea(landing_precision_m=3_000.0)
+        )
         TerrainStats.model_validate(stats.model_dump())
         assert stats.slope_max_deg == pytest.approx(0.0, abs=1e-6)
         assert stats.elevation_m == pytest.approx(100.0)
@@ -110,9 +114,13 @@ needs_dems = pytest.mark.skipif(
 @needs_dems
 def test_real_slopes_mare_is_gentle_and_shackleton_walls_are_steep() -> None:
     provider = LolaTerrainProvider.from_raw_dir()
-    mare = provider.terrain_stats(GeoPoint(lat_deg=0.674, lon_deg=23.473), 5_000.0)
+    mare = provider.terrain_stats(
+        GeoPoint(lat_deg=0.674, lon_deg=23.473), OperationsArea(landing_precision_m=5_000.0)
+    )
     # Shackleton (approx. 89.67 S, 129.78 E, radius ~10.5 km): inner walls of roughly 30 degrees.
-    crater = provider.terrain_stats(GeoPoint(lat_deg=-89.67, lon_deg=129.78), 10_500.0)
+    crater = provider.terrain_stats(
+        GeoPoint(lat_deg=-89.67, lon_deg=129.78), OperationsArea(landing_precision_m=10_500.0)
+    )
     assert mare.slope_mean_deg < 5.0
     assert crater.dem_resolution_m in (20.0, 80.0)  # finest polar DEM available
     assert crater.slope_max_deg > 25.0

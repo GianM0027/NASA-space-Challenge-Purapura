@@ -10,11 +10,12 @@ from pathlib import Path
 
 import numpy as np
 
-from lunarnav.contracts import GeoPoint, HorizonMask, TerrainStats
+from lunarnav.contracts import GeoPoint, HorizonMask, OperationsArea, TerrainStats
 from lunarnav.terrain.cache import HorizonCache, cache_key
 from lunarnav.terrain.dem import Dem, load_lola_cylindrical, load_lola_south_polar
 from lunarnav.terrain.horizon import RaySegment, segmented_horizon_profile
-from lunarnav.terrain.slope import slope_stats
+from lunarnav.terrain.reachability import reachable_fraction
+from lunarnav.terrain.slope import slope_grid
 
 DEFAULT_RAW_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "lola"
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "cache" / "terrain"
@@ -25,6 +26,10 @@ DEFAULT_MAX_DISTANCE_M = 150_000.0
 # relief of a few meters matters within a few km and is negligible (~0.02 deg) past 10 km.
 DEFAULT_NEAR_FIELD_M = 10_000.0
 PDS_DATA_SET = "LRO-L-LOLA-4-GDR-V1.0"
+# Largest full-disk slope grid, in cells from the center to the edge (grid side 2n + 1). Beyond it
+# the cells widen: a 20 km rover range is sampled every 50 m instead of 20 m. Measured: a 20 km
+# reachable share at 20 m took 4-9 s per site, too slow for interactive use.
+MAX_GRID_RADIUS_CELLS = 400
 # At exactly +-90 deg azimuths are undefined (every direction is north or south); computations
 # start from this latitude instead, about 3 m from the pole, well below one DEM pixel.
 MAX_ABS_LAT_DEG = 90.0 - 1e-4
@@ -46,9 +51,6 @@ class LolaTerrainProvider:
         regional_dems: Finer DEMs (e.g. south polar tiles); the finest one that contains the
             whole disk of rays around a site is used instead of the global one.
         max_distance_m: Ray length for horizon masks, meters.
-        observer_height_above_ground_m: Height of the observer (solar panel, antenna) above the
-            DEM surface when a location has no ``height_m``, meters, >= 0. The horizon is very
-            sensitive to it near the ground; 0 means the observer lies on the surface.
         cache: Horizon mask cache (TER-5); default an in-memory cache only.
         near_field_m: Ray stretch read on the finest available DEM, meters (TER-4).
     """
@@ -58,25 +60,21 @@ class LolaTerrainProvider:
         global_dem: Dem,
         regional_dems: Sequence[Dem] = (),
         max_distance_m: float = DEFAULT_MAX_DISTANCE_M,
-        observer_height_above_ground_m: float = 0.0,
         cache: HorizonCache | None = None,
         near_field_m: float = DEFAULT_NEAR_FIELD_M,
     ):
         """See the class docstring."""
-        if observer_height_above_ground_m < 0.0:
-            raise ValueError(
-                f"observer_height_above_ground_m {observer_height_above_ground_m} must be >= 0"
-            )
         self.global_dem = global_dem
         self.regional_dems = sorted(regional_dems, key=lambda d: d.resolution_m)
         self.max_distance_m = max_distance_m
-        self.observer_height_above_ground_m = observer_height_above_ground_m
         self.cache = cache if cache is not None else HorizonCache()
         self.near_field_m = min(near_field_m, max_distance_m)
 
     @classmethod
     def from_raw_dir(
-        cls, raw_dir: Path = DEFAULT_RAW_DIR, cache_dir: Path | None = DEFAULT_CACHE_DIR
+        cls,
+        raw_dir: Path = DEFAULT_RAW_DIR,
+        cache_dir: Path | None = DEFAULT_CACHE_DIR,
     ) -> LolaTerrainProvider:
         """Load the D28 products downloaded by ``scripts/terrain_download_dem.py``.
 
@@ -106,7 +104,11 @@ class LolaTerrainProvider:
             # Size and scale from the ldem_85s_20m.lbl label: 15168 x 15168 samples, 20 m/pixel.
             regional.append(load_lola_south_polar(fine_path, 15168, 20.0))
         global_dem = load_lola_cylindrical(global_path, 64)
-        return cls(global_dem, regional, cache=HorizonCache(cache_dir))
+        return cls(
+            global_dem,
+            regional,
+            cache=HorizonCache(cache_dir),
+        )
 
     def dem_for(self, location: GeoPoint, radius_m: float) -> Dem:
         """Return the finest DEM containing the disk of ``radius_m`` around ``location``."""
@@ -115,13 +117,14 @@ class LolaTerrainProvider:
                 return dem
         return self.global_dem
 
-    def horizon_mask(self, location: GeoPoint) -> HorizonMask:
+    def horizon_mask(self, location: GeoPoint, area: OperationsArea) -> HorizonMask:
         """Return the terrain horizon elevation around ``location`` at 1 degree azimuth steps.
 
         Args:
             location: Observer on the Moon. ``height_m`` None places the observer
-                ``observer_height_above_ground_m`` above the DEM surface; otherwise it is the
+                ``area.observer_height_above_ground_m`` above the DEM surface; otherwise it is the
                 absolute height above the 1737.4 km sphere, meters.
+            area: Operations area; only its observer height is used (decision D32).
 
         Returns:
             The horizon mask; ``location.height_m`` is filled with the observer height used.
@@ -137,7 +140,7 @@ class LolaTerrainProvider:
         ground_h = float(near.height_m(lat, lon)[0])
         observer_h = location.height_m
         if observer_h is None:
-            observer_h = ground_h + self.observer_height_above_ground_m
+            observer_h = ground_h + area.observer_height_above_ground_m
         elif observer_h < ground_h - BELOW_GROUND_TOLERANCE_M:
             raise ValueError(
                 f"observer height {observer_h:.1f} m is below the terrain ({ground_h:.1f} m above "
@@ -182,29 +185,56 @@ class LolaTerrainProvider:
         self.cache.put(key, mask)
         return mask
 
-    def terrain_stats(self, location: GeoPoint, radius_m: float) -> TerrainStats:
-        """Return elevation and slope statistics over a disk (requirement TER-2).
+    def terrain_stats(self, location: GeoPoint, area: OperationsArea) -> TerrainStats:
+        """Return elevation, slope and reachability statistics over the operations area (D32).
 
-        Slopes are measured over one DEM pixel (see ``lunarnav.terrain.slope``).
+        The landing-precision disk (the hard landing constraint) always uses the finest DEM at
+        its pixel spacing. The full disk (radius ``landing_precision_m + operating_range_m``,
+        informational slopes) and the reachable share of the disk of radius ``operating_range_m``
+        (see ``lunarnav.terrain.reachability``) share one grid, whose cells widen beyond
+        ``MAX_GRID_RADIUS_CELLS``. Slopes are measured over one grid cell.
 
         Args:
-            location: Disk center; its ``height_m`` is ignored (elevation comes from the DEM).
-            radius_m: Disk radius, meters, >= 0 (0 means the center point only).
+            location: Center of the operations area; its ``height_m`` is ignored.
+            area: Landing precision, operating range and traverse slope limit.
 
         Returns:
             The terrain statistics.
         """
-        dem = self.dem_for(location, radius_m + 2 * self.global_dem.resolution_m)
-        stats = slope_stats(dem, _off_pole(location.lat_deg), location.lon_deg, radius_m)
+        lat, lon = _off_pole(location.lat_deg), location.lon_deg
+        landing_dem = self._dem_for_grid(location, area.landing_precision_m)
+        landing_grid = slope_grid(landing_dem, lat, lon, area.landing_precision_m)
+        landing = landing_grid.disk_stats(area.landing_precision_m)
+        full_radius = area.landing_precision_m + area.operating_range_m
+        dem = self._dem_for_grid(location, full_radius)
+        spacing = max(dem.resolution_m, full_radius / MAX_GRID_RADIUS_CELLS)
+        grid = slope_grid(dem, lat, lon, full_radius, spacing)
+        full = grid.disk_stats(full_radius)
+        reachable = reachable_fraction(grid, area.operating_range_m, area.traverse_slope_limit_deg)
+        source = self._source(landing_dem)
+        if dem is not landing_dem or spacing > dem.resolution_m:
+            source += f" (landing disk); full disk {dem.name} sampled every {spacing:.0f} m"
         return TerrainStats(
             location=location,
-            radius_m=radius_m,
-            elevation_m=stats.elevation_m,
-            slope_mean_deg=stats.slope_mean_deg,
-            slope_max_deg=stats.slope_max_deg,
-            dem_source=self._source(dem),
-            dem_resolution_m=dem.resolution_m,
+            radius_m=full_radius,
+            elevation_m=landing.elevation_m,
+            slope_mean_deg=full.slope_mean_deg,
+            slope_max_deg=full.slope_max_deg,
+            landing_radius_m=area.landing_precision_m,
+            landing_slope_mean_deg=landing.slope_mean_deg,
+            landing_slope_max_deg=landing.slope_max_deg,
+            traverse_slope_limit_deg=area.traverse_slope_limit_deg,
+            reachable_fraction=reachable,
+            dem_source=source,
+            dem_resolution_m=landing_dem.resolution_m,
         )
+
+    def _dem_for_grid(self, location: GeoPoint, radius_m: float) -> Dem:
+        """Finest DEM containing a slope grid of ``radius_m`` plus its two-cell border."""
+        for dem in self.regional_dems:
+            if dem.contains(location.lat_deg, location.lon_deg, radius_m + 2 * dem.resolution_m):
+                return dem
+        return self.global_dem
 
     @staticmethod
     def _source(dem: Dem) -> str:

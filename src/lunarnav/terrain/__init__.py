@@ -11,7 +11,8 @@ def build_terrain_provider() -> TerrainProvider:
     """Build the terrain provider the API wires in (spec IF-5, decision D21).
 
     Returns:
-        A LolaTerrainProvider over the DEMs in ``data/raw/lola/``.
+        A LolaTerrainProvider over the DEMs in ``data/raw/lola/``, observer 2 m above the
+        ground (decision D30, observer height).
 
     Raises:
         FileNotFoundError: If the DEMs were not downloaded (the API then shows the placeholder).

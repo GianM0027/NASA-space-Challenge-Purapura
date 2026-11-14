@@ -61,6 +61,71 @@ def offset_points(
     return np.degrees(phi2), (np.degrees(lam2) + 180.0) % 360.0 - 180.0
 
 
+@dataclass(frozen=True)
+class SlopeGrid:
+    """Heights and slopes on a local square grid centered on a site (module-internal).
+
+    Attributes:
+        east_m: East offset of each cell from the center, meters, shape (n, n).
+        north_m: North offset of each cell, meters, same shape (rows go north).
+        heights_m: Terrain height above the reference sphere, meters, same shape.
+        slope_deg: Slope at each cell, degrees, same shape.
+        step_m: Cell size, meters (also the slope baseline).
+        center: Index of the center cell along both axes.
+    """
+
+    east_m: np.ndarray
+    north_m: np.ndarray
+    heights_m: np.ndarray
+    slope_deg: np.ndarray
+    step_m: float
+    center: int
+
+    def inside(self, radius_m: float) -> np.ndarray:
+        """Boolean mask of the cells within ``radius_m`` of the center."""
+        return np.hypot(self.east_m, self.north_m) <= radius_m + 1e-6
+
+    def disk_stats(self, radius_m: float) -> SlopeStats:
+        """Center elevation and slope statistics over the disk of ``radius_m``."""
+        inside = self.inside(radius_m)
+        return SlopeStats(
+            elevation_m=float(self.heights_m[self.center, self.center]),
+            slope_mean_deg=float(self.slope_deg[inside].mean()),
+            slope_max_deg=float(self.slope_deg[inside].max()),
+        )
+
+
+def slope_grid(
+    dem: Dem, lat_deg: float, lon_deg: float, radius_m: float, spacing_m: float | None = None
+) -> SlopeGrid:
+    """Heights and slopes on a local grid covering the disk of ``radius_m`` (plus one ring).
+
+    Args:
+        dem: Height model covering the disk plus one pixel.
+        lat_deg: Center latitude, degrees.
+        lon_deg: Center east longitude, degrees.
+        radius_m: Disk radius, meters, >= 0.
+        spacing_m: Grid spacing and slope baseline, meters; default one DEM pixel.
+
+    Returns:
+        The grid.
+
+    Raises:
+        ValueError: If ``radius_m`` is negative.
+    """
+    if radius_m < 0.0:
+        raise ValueError(f"radius_m {radius_m} must be >= 0")
+    step = dem.resolution_m if spacing_m is None else spacing_m
+    k = int(np.ceil(radius_m / step)) + 1  # one extra ring so central differences reach the edge
+    axis = np.arange(-k, k + 1) * step
+    east, north = np.meshgrid(axis, axis)  # rows: north offsets, columns: east offsets
+    lat, lon = offset_points(lat_deg, lon_deg, east, north)
+    heights = dem.height_m(lat, lon)
+    dh_dnorth, dh_deast = np.gradient(heights, step)
+    slope = np.degrees(np.arctan(np.hypot(dh_deast, dh_dnorth)))
+    return SlopeGrid(east, north, heights, slope, step, k)
+
+
 def slope_stats(
     dem: Dem, lat_deg: float, lon_deg: float, radius_m: float, spacing_m: float | None = None
 ) -> SlopeStats:
@@ -79,19 +144,4 @@ def slope_stats(
     Raises:
         ValueError: If ``radius_m`` is negative.
     """
-    if radius_m < 0.0:
-        raise ValueError(f"radius_m {radius_m} must be >= 0")
-    step = dem.resolution_m if spacing_m is None else spacing_m
-    k = int(np.ceil(radius_m / step)) + 1  # one extra ring so central differences reach the edge
-    axis = np.arange(-k, k + 1) * step
-    east, north = np.meshgrid(axis, axis)  # rows: north offsets, columns: east offsets
-    lat, lon = offset_points(lat_deg, lon_deg, east, north)
-    heights = dem.height_m(lat, lon)
-    dh_dnorth, dh_deast = np.gradient(heights, step)
-    slope = np.degrees(np.arctan(np.hypot(dh_deast, dh_dnorth)))
-    inside = np.hypot(east, north) <= radius_m + 1e-6
-    return SlopeStats(
-        elevation_m=float(heights[k, k]),
-        slope_mean_deg=float(slope[inside].mean()),
-        slope_max_deg=float(slope[inside].max()),
-    )
+    return slope_grid(dem, lat_deg, lon_deg, radius_m, spacing_m).disk_stats(radius_m)
