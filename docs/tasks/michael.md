@@ -4,7 +4,7 @@
 # Michael: tasks
 
 ## Status
-Not started.
+Setup done (branch `michael`, tests green). C2 done: Horizons chosen (D21). Next: EPH-1.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -23,7 +23,15 @@ Not started.
 7. CAT-3 (site descriptions), EPH-3 (cache warm-up script).
 
 ## Done
+- Setup: branch `michael`, `uv sync`, 15 tests green.
+- Submission rules: team already aware (skipped).
+- C2 (Horizons query check): works for topocentric lunar sites; limits and decision in D21.
+  Recorded responses for the EPH-1 test in `tests/ephemeris/fixtures/` (Apollo 11, Sun and Earth, 2026-12-01 00:00-01:00 UTC, 10 min).
 
 ## Blockers
 
 ## Requests
+- To Gian (spec owner), EPH-1: replace "spans up to about 60 days" with "any window (landing date plus
+  mission duration); the provider splits long windows into several Horizons requests (90,000-row cap)".
+  60 days at 10 min stays only as the acceptance test case. Reason: the window comes from the user, it
+  should not be capped by the spec; 1 year at 10 min is about 52,600 rows per body, still cheap.
