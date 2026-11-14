@@ -5,7 +5,7 @@
 
 ## Status
 EPH-1, EPH-2, CAT-1, CAT-2 done (`build_ephemeris_provider`, `build_catalog` exported, IF-5).
-Next: AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
+CAT-3 done (descriptions for all sites). Next: AI-5, EPH-3. Optional: landing times of recent missions.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -40,6 +40,11 @@ Next: AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
   (36 sites in total). NASA publishes no region centers, so each uses the IAU gazetteer center of
   the named feature, flagged APPROXIMATE in the description (Michael's decision). Named "first Artemis
   crewed landing", not "Artemis III", because the landing mission may change.
+- CAT-3: one-to-two sentence description on every site.
+- Historical verification: Apollo landing times added to the catalog (Orloff, via ALSJ); test
+  `tests/ephemeris/test_apollo_verification.py` compares Sun and Earth alt/az at the 6 Apollo landings
+  with the ALSJ table: Sun within 0.02 deg; Earth elevation 0.05-0.22 deg lower, explained by
+  topocentric parallax (the table uses the Moon-center direction). Good demo material.
 
 ## Blockers
 

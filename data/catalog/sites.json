@@ -11,13 +11,14 @@
     "status": "landed",
     "mission": "Apollo 11",
     "agency": "NASA",
-    "landing_date_utc": null,
+    "landing_date_utc": "1969-07-20T20:17:39Z",
     "landing_ellipse_m": null,
     "description": "First crewed lunar landing (1969), lunar module Eagle in southwestern Mare Tranquillitatis, a flat basaltic mare plain near the equator.",
     "sources": [
       "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 11 LM), https://www.lroc.asu.edu/posts/938",
       "Wagner et al. 2017, Icarus 283, 92-103 (LRO-derived Apollo coordinates, ME frame)",
-      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+      "ALSJ, Sun and Earth Alt/Az at Apollo landings (landing times from Orloff, Apollo by the Numbers, NASA SP-2000-4029), https://www.nasa.gov/wp-content/uploads/static/history/alsj/Scotti_AltAz.txt"
     ]
   },
   {
@@ -32,12 +33,13 @@
     "status": "landed",
     "mission": "Apollo 12",
     "agency": "NASA",
-    "landing_date_utc": null,
+    "landing_date_utc": "1969-11-19T06:54:36Z",
     "landing_ellipse_m": null,
     "description": "Second crewed landing (1969), a pinpoint landing in Oceanus Procellarum next to the Surveyor 3 probe; mare basalt plain.",
     "sources": [
       "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 12 LM, lon 336.5781 E), https://www.lroc.asu.edu/posts/938",
-      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+      "ALSJ, Sun and Earth Alt/Az at Apollo landings (landing times from Orloff, Apollo by the Numbers, NASA SP-2000-4029), https://www.nasa.gov/wp-content/uploads/static/history/alsj/Scotti_AltAz.txt"
     ]
   },
   {
@@ -52,12 +54,13 @@
     "status": "landed",
     "mission": "Apollo 14",
     "agency": "NASA",
-    "landing_date_utc": null,
+    "landing_date_utc": "1971-02-05T09:18:13Z",
     "landing_ellipse_m": null,
     "description": "Crewed landing (1971) in the Fra Mauro highlands, hummocky terrain thought to be Imbrium basin ejecta.",
     "sources": [
       "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 14 LM, lon 342.52806 E), https://www.lroc.asu.edu/posts/938",
-      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+      "ALSJ, Sun and Earth Alt/Az at Apollo landings (landing times from Orloff, Apollo by the Numbers, NASA SP-2000-4029), https://www.nasa.gov/wp-content/uploads/static/history/alsj/Scotti_AltAz.txt"
     ]
   },
   {
@@ -72,12 +75,13 @@
     "status": "landed",
     "mission": "Apollo 15",
     "agency": "NASA",
-    "landing_date_utc": null,
+    "landing_date_utc": "1971-07-30T22:16:29Z",
     "landing_ellipse_m": null,
     "description": "First J-mission with the Lunar Roving Vehicle (1971), between Hadley Rille and the Apennine Mountains at the edge of Mare Imbrium.",
     "sources": [
       "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 15 LM), https://www.lroc.asu.edu/posts/938",
-      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+      "ALSJ, Sun and Earth Alt/Az at Apollo landings (landing times from Orloff, Apollo by the Numbers, NASA SP-2000-4029), https://www.nasa.gov/wp-content/uploads/static/history/alsj/Scotti_AltAz.txt"
     ]
   },
   {
@@ -92,12 +96,13 @@
     "status": "landed",
     "mission": "Apollo 16",
     "agency": "NASA",
-    "landing_date_utc": null,
+    "landing_date_utc": "1972-04-21T02:23:35Z",
     "landing_ellipse_m": null,
     "description": "Only Apollo landing in the central lunar highlands (1972), Descartes region, with rover traverses to North Ray and Stone Mountain.",
     "sources": [
       "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 16 LM), https://www.lroc.asu.edu/posts/938",
-      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+      "ALSJ, Sun and Earth Alt/Az at Apollo landings (landing times from Orloff, Apollo by the Numbers, NASA SP-2000-4029), https://www.nasa.gov/wp-content/uploads/static/history/alsj/Scotti_AltAz.txt"
     ]
   },
   {
@@ -112,12 +117,13 @@
     "status": "landed",
     "mission": "Apollo 17",
     "agency": "NASA",
-    "landing_date_utc": null,
+    "landing_date_utc": "1972-12-11T19:54:58Z",
     "landing_ellipse_m": null,
     "description": "Last crewed landing (1972), a valley between massifs at the southeastern edge of Mare Serenitatis.",
     "sources": [
       "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 17 LM), https://www.lroc.asu.edu/posts/938",
-      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+      "ALSJ, Sun and Earth Alt/Az at Apollo landings (landing times from Orloff, Apollo by the Numbers, NASA SP-2000-4029), https://www.nasa.gov/wp-content/uploads/static/history/alsj/Scotti_AltAz.txt"
     ]
   },
   {
