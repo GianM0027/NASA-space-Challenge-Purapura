@@ -22,6 +22,9 @@ PDS_DATA_SET = "LRO-L-LOLA-4-GDR-V1.0"
 # At exactly +-90 deg azimuths are undefined (every direction is north or south); computations
 # start from this latitude instead, about 3 m from the pole, well below one DEM pixel.
 MAX_ABS_LAT_DEG = 90.0 - 1e-4
+# An absolute observer height may sit this far below the interpolated DEM surface (LOLA heights
+# are quantized to 0.5 m, plus bilinear rounding) before it is rejected as underground.
+BELOW_GROUND_TOLERANCE_M = 1.0
 
 
 def _off_pole(lat_deg: float) -> float:
@@ -37,6 +40,9 @@ class LolaTerrainProvider:
         regional_dems: Finer DEMs (e.g. south polar tiles); the finest one that contains the
             whole disk of rays around a site is used instead of the global one.
         max_distance_m: Ray length for horizon masks, meters.
+        observer_height_above_ground_m: Height of the observer (solar panel, antenna) above the
+            DEM surface when a location has no ``height_m``, meters, >= 0. The horizon is very
+            sensitive to it near the ground; 0 means the observer lies on the surface.
     """
 
     def __init__(
@@ -44,11 +50,17 @@ class LolaTerrainProvider:
         global_dem: Dem,
         regional_dems: Sequence[Dem] = (),
         max_distance_m: float = DEFAULT_MAX_DISTANCE_M,
+        observer_height_above_ground_m: float = 0.0,
     ):
         """See the class docstring."""
+        if observer_height_above_ground_m < 0.0:
+            raise ValueError(
+                f"observer_height_above_ground_m {observer_height_above_ground_m} must be >= 0"
+            )
         self.global_dem = global_dem
         self.regional_dems = sorted(regional_dems, key=lambda d: d.resolution_m)
         self.max_distance_m = max_distance_m
+        self.observer_height_above_ground_m = observer_height_above_ground_m
 
     @classmethod
     def from_raw_dir(cls, raw_dir: Path = DEFAULT_RAW_DIR) -> LolaTerrainProvider:
@@ -86,17 +98,28 @@ class LolaTerrainProvider:
         """Return the terrain horizon elevation around ``location`` at 1 degree azimuth steps.
 
         Args:
-            location: Observer on the Moon. ``height_m`` None means the observer stands on the
-                DEM surface; otherwise it is the height above the 1737.4 km sphere, meters.
+            location: Observer on the Moon. ``height_m`` None places the observer
+                ``observer_height_above_ground_m`` above the DEM surface; otherwise it is the
+                absolute height above the 1737.4 km sphere, meters.
 
         Returns:
             The horizon mask; ``location.height_m`` is filled with the observer height used.
+
+        Raises:
+            ValueError: If an absolute ``height_m`` lies below the terrain surface.
         """
         dem = self.dem_for(location, self.max_distance_m)
+        lat, lon = np.array([_off_pole(location.lat_deg)]), np.array([location.lon_deg])
+        ground_h = float(dem.height_m(lat, lon)[0])
         observer_h = location.height_m
         if observer_h is None:
-            lat, lon = np.array([_off_pole(location.lat_deg)]), np.array([location.lon_deg])
-            observer_h = float(dem.height_m(lat, lon)[0])
+            observer_h = ground_h + self.observer_height_above_ground_m
+        elif observer_h < ground_h - BELOW_GROUND_TOLERANCE_M:
+            raise ValueError(
+                f"observer height {observer_h:.1f} m is below the terrain ({ground_h:.1f} m above "
+                f"the 1737.4 km sphere in {dem.name}) at {location.lat_deg}, {location.lon_deg}; "
+                "leave height_m empty to stand on the surface"
+            )
         azimuth, elevation = horizon_profile(
             dem, _off_pole(location.lat_deg), location.lon_deg, observer_h, self.max_distance_m
         )
