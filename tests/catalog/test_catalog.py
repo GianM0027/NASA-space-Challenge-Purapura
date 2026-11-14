@@ -40,8 +40,20 @@ def test_curated_file_has_enough_sourced_sites(catalog: JsonSiteCatalog) -> None
 
 def test_curated_file_covers_required_programs(catalog: JsonSiteCatalog) -> None:
     origins = {s.origin for s in catalog.list_sites()}
-    required = {"apollo", "luna", "surveyor", "change", "chandrayaan", "slim", "clps"}
+    required = {"apollo", "luna", "surveyor", "change", "chandrayaan", "slim", "clps", "artemis"}
     assert required <= {o.value for o in origins}
+
+
+def test_artemis_regions_are_flagged_approximate(catalog: JsonSiteCatalog) -> None:
+    regions = [s for s in catalog.list_sites() if s.origin is Origin.ARTEMIS]
+    assert len(regions) == 9  # NASA list of 2024-10-28
+    for s in regions:
+        assert s.status == "candidate"
+        assert "APPROXIMATE" in s.description
+        assert s.location.lat_deg < -80  # all near the south pole
+    # Known answer: IAU gazetteer center of Mons Malapert (feature 16338)
+    malapert = catalog.get_site("artemis-malapert-massif")
+    assert (malapert.location.lat_deg, malapert.location.lon_deg) == (-85.98, -1.67)
 
 
 def test_curated_file_spans_whole_moon(catalog: JsonSiteCatalog) -> None:

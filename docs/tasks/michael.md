@@ -5,7 +5,7 @@
 
 ## Status
 EPH-1, EPH-2, CAT-1, CAT-2 done (`build_ephemeris_provider`, `build_catalog` exported, IF-5).
-Next: Artemis III regions (blocked, see Blockers), AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
+Next: AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -36,10 +36,12 @@ Next: Artemis III regions (blocked, see Blockers), AI-5, CAT-3 (Apollo and recen
   null (taken from the DEM). Landing times only where a source gives UT (Luna, Surveyor, Chang'e 5, Chandrayaan-3).
 - CAT-2: `JsonSiteCatalog`, user sites in `data/user/sites.json`; tests for list, get, add, duplicates, round trip.
 
+- Artemis candidate regions: the 9 regions of NASA's 2024-10-28 list added as `candidate` sites
+  (36 sites in total). NASA publishes no region centers, so each uses the IAU gazetteer center of
+  the named feature, flagged APPROXIMATE in the description (Michael's decision). Named "first Artemis
+  crewed landing", not "Artemis III", because the landing mission may change.
+
 ## Blockers
-- Artemis III candidate regions: NASA publishes names and maps (https://svs.gsfc.nasa.gov/5013) but no
-  center coordinates; not added rather than guessed. Options: digitize centers from the NASA map, or
-  use IAU feature coordinates labelled as approximate. Michael to decide.
 
 ## Requests
 - To Gian, tests (D23 impact): with the real `build_catalog` present, `test_add_user_site` writes the

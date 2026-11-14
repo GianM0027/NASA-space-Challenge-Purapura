@@ -2,7 +2,11 @@
   {
     "id": "apollo-11",
     "name": "Apollo 11 - Tranquility Base",
-    "location": {"lat_deg": 0.67416, "lon_deg": 23.47314, "height_m": null},
+    "location": {
+      "lat_deg": 0.67416,
+      "lon_deg": 23.47314,
+      "height_m": null
+    },
     "origin": "apollo",
     "status": "landed",
     "mission": "Apollo 11",
@@ -19,7 +23,11 @@
   {
     "id": "apollo-12",
     "name": "Apollo 12 - Ocean of Storms",
-    "location": {"lat_deg": -3.0128, "lon_deg": -23.4219, "height_m": null},
+    "location": {
+      "lat_deg": -3.0128,
+      "lon_deg": -23.4219,
+      "height_m": null
+    },
     "origin": "apollo",
     "status": "landed",
     "mission": "Apollo 12",
@@ -35,7 +43,11 @@
   {
     "id": "apollo-14",
     "name": "Apollo 14 - Fra Mauro",
-    "location": {"lat_deg": -3.64589, "lon_deg": -17.47194, "height_m": null},
+    "location": {
+      "lat_deg": -3.64589,
+      "lon_deg": -17.47194,
+      "height_m": null
+    },
     "origin": "apollo",
     "status": "landed",
     "mission": "Apollo 14",
@@ -51,7 +63,11 @@
   {
     "id": "apollo-15",
     "name": "Apollo 15 - Hadley-Apennine",
-    "location": {"lat_deg": 26.13239, "lon_deg": 3.6333, "height_m": null},
+    "location": {
+      "lat_deg": 26.13239,
+      "lon_deg": 3.6333,
+      "height_m": null
+    },
     "origin": "apollo",
     "status": "landed",
     "mission": "Apollo 15",
@@ -67,7 +83,11 @@
   {
     "id": "apollo-16",
     "name": "Apollo 16 - Descartes Highlands",
-    "location": {"lat_deg": -8.9734, "lon_deg": 15.5011, "height_m": null},
+    "location": {
+      "lat_deg": -8.9734,
+      "lon_deg": 15.5011,
+      "height_m": null
+    },
     "origin": "apollo",
     "status": "landed",
     "mission": "Apollo 16",
@@ -83,7 +103,11 @@
   {
     "id": "apollo-17",
     "name": "Apollo 17 - Taurus-Littrow",
-    "location": {"lat_deg": 20.1911, "lon_deg": 30.7723, "height_m": null},
+    "location": {
+      "lat_deg": 20.1911,
+      "lon_deg": 30.7723,
+      "height_m": null
+    },
     "origin": "apollo",
     "status": "landed",
     "mission": "Apollo 17",
@@ -99,7 +123,11 @@
   {
     "id": "luna-9",
     "name": "Luna 9",
-    "location": {"lat_deg": 7.08, "lon_deg": -64.37, "height_m": null},
+    "location": {
+      "lat_deg": 7.08,
+      "lon_deg": -64.37,
+      "height_m": null
+    },
     "origin": "luna",
     "status": "landed",
     "mission": "Luna 9",
@@ -114,7 +142,11 @@
   {
     "id": "luna-13",
     "name": "Luna 13",
-    "location": {"lat_deg": 18.87, "lon_deg": -62.05, "height_m": null},
+    "location": {
+      "lat_deg": 18.87,
+      "lon_deg": -62.05,
+      "height_m": null
+    },
     "origin": "luna",
     "status": "landed",
     "mission": "Luna 13",
@@ -129,7 +161,11 @@
   {
     "id": "luna-16",
     "name": "Luna 16",
-    "location": {"lat_deg": -0.5137, "lon_deg": 56.3638, "height_m": null},
+    "location": {
+      "lat_deg": -0.5137,
+      "lon_deg": 56.3638,
+      "height_m": null
+    },
     "origin": "luna",
     "status": "landed",
     "mission": "Luna 16",
@@ -145,7 +181,11 @@
   {
     "id": "luna-17",
     "name": "Luna 17 / Lunokhod 1",
-    "location": {"lat_deg": 38.23764, "lon_deg": -35.00163, "height_m": null},
+    "location": {
+      "lat_deg": 38.23764,
+      "lon_deg": -35.00163,
+      "height_m": null
+    },
     "origin": "luna",
     "status": "landed",
     "mission": "Luna 17",
@@ -161,7 +201,11 @@
   {
     "id": "luna-20",
     "name": "Luna 20",
-    "location": {"lat_deg": 3.7863, "lon_deg": 56.6242, "height_m": null},
+    "location": {
+      "lat_deg": 3.7863,
+      "lon_deg": 56.6242,
+      "height_m": null
+    },
     "origin": "luna",
     "status": "landed",
     "mission": "Luna 20",
@@ -177,7 +221,11 @@
   {
     "id": "luna-21",
     "name": "Luna 21 / Lunokhod 2",
-    "location": {"lat_deg": 25.9994, "lon_deg": 30.4076, "height_m": null},
+    "location": {
+      "lat_deg": 25.9994,
+      "lon_deg": 30.4076,
+      "height_m": null
+    },
     "origin": "luna",
     "status": "landed",
     "mission": "Luna 21",
@@ -193,7 +241,11 @@
   {
     "id": "luna-24",
     "name": "Luna 24",
-    "location": {"lat_deg": 12.7142, "lon_deg": 62.2129, "height_m": null},
+    "location": {
+      "lat_deg": 12.7142,
+      "lon_deg": 62.2129,
+      "height_m": null
+    },
     "origin": "luna",
     "status": "landed",
     "mission": "Luna 24",
@@ -209,7 +261,11 @@
   {
     "id": "surveyor-1",
     "name": "Surveyor 1",
-    "location": {"lat_deg": -2.4745, "lon_deg": -43.3398, "height_m": null},
+    "location": {
+      "lat_deg": -2.4745,
+      "lon_deg": -43.3398,
+      "height_m": null
+    },
     "origin": "surveyor",
     "status": "landed",
     "mission": "Surveyor 1",
@@ -225,7 +281,11 @@
   {
     "id": "surveyor-3",
     "name": "Surveyor 3",
-    "location": {"lat_deg": -3.0162, "lon_deg": -23.418, "height_m": null},
+    "location": {
+      "lat_deg": -3.0162,
+      "lon_deg": -23.418,
+      "height_m": null
+    },
     "origin": "surveyor",
     "status": "landed",
     "mission": "Surveyor 3",
@@ -241,7 +301,11 @@
   {
     "id": "surveyor-5",
     "name": "Surveyor 5",
-    "location": {"lat_deg": 1.4551, "lon_deg": 23.1943, "height_m": null},
+    "location": {
+      "lat_deg": 1.4551,
+      "lon_deg": 23.1943,
+      "height_m": null
+    },
     "origin": "surveyor",
     "status": "landed",
     "mission": "Surveyor 5",
@@ -257,7 +321,11 @@
   {
     "id": "surveyor-6",
     "name": "Surveyor 6",
-    "location": {"lat_deg": 0.4742, "lon_deg": -1.4275, "height_m": null},
+    "location": {
+      "lat_deg": 0.4742,
+      "lon_deg": -1.4275,
+      "height_m": null
+    },
     "origin": "surveyor",
     "status": "landed",
     "mission": "Surveyor 6",
@@ -273,7 +341,11 @@
   {
     "id": "surveyor-7",
     "name": "Surveyor 7",
-    "location": {"lat_deg": -40.9812, "lon_deg": -11.5127, "height_m": null},
+    "location": {
+      "lat_deg": -40.9812,
+      "lon_deg": -11.5127,
+      "height_m": null
+    },
     "origin": "surveyor",
     "status": "landed",
     "mission": "Surveyor 7",
@@ -289,7 +361,11 @@
   {
     "id": "change-3",
     "name": "Chang'e 3 / Yutu",
-    "location": {"lat_deg": 44.1214, "lon_deg": -19.5117, "height_m": null},
+    "location": {
+      "lat_deg": 44.1214,
+      "lon_deg": -19.5117,
+      "height_m": null
+    },
     "origin": "change",
     "status": "landed",
     "mission": "Chang'e 3",
@@ -304,7 +380,11 @@
   {
     "id": "change-4",
     "name": "Chang'e 4 / Yutu-2",
-    "location": {"lat_deg": -45.4561, "lon_deg": 177.5885, "height_m": null},
+    "location": {
+      "lat_deg": -45.4561,
+      "lon_deg": 177.5885,
+      "height_m": null
+    },
     "origin": "change",
     "status": "landed",
     "mission": "Chang'e 4",
@@ -320,7 +400,11 @@
   {
     "id": "change-5",
     "name": "Chang'e 5",
-    "location": {"lat_deg": 43.0576, "lon_deg": -51.9161, "height_m": null},
+    "location": {
+      "lat_deg": 43.0576,
+      "lon_deg": -51.9161,
+      "height_m": null
+    },
     "origin": "change",
     "status": "landed",
     "mission": "Chang'e 5",
@@ -336,7 +420,11 @@
   {
     "id": "change-6",
     "name": "Chang'e 6",
-    "location": {"lat_deg": -41.63, "lon_deg": -153.99, "height_m": null},
+    "location": {
+      "lat_deg": -41.63,
+      "lon_deg": -153.99,
+      "height_m": null
+    },
     "origin": "change",
     "status": "landed",
     "mission": "Chang'e 6",
@@ -352,7 +440,11 @@
   {
     "id": "chandrayaan-3",
     "name": "Chandrayaan-3 - Shiv Shakti Point",
-    "location": {"lat_deg": -69.3741, "lon_deg": 32.32, "height_m": null},
+    "location": {
+      "lat_deg": -69.3741,
+      "lon_deg": 32.32,
+      "height_m": null
+    },
     "origin": "chandrayaan",
     "status": "landed",
     "mission": "Chandrayaan-3",
@@ -368,7 +460,11 @@
   {
     "id": "slim",
     "name": "SLIM - near Shioli crater",
-    "location": {"lat_deg": -13.316, "lon_deg": 25.251, "height_m": null},
+    "location": {
+      "lat_deg": -13.316,
+      "lon_deg": 25.251,
+      "height_m": null
+    },
     "origin": "slim",
     "status": "landed",
     "mission": "SLIM",
@@ -384,7 +480,11 @@
   {
     "id": "im-1",
     "name": "IM-1 Odysseus - Malapert A region",
-    "location": {"lat_deg": -80.13, "lon_deg": 1.44, "height_m": null},
+    "location": {
+      "lat_deg": -80.13,
+      "lon_deg": 1.44,
+      "height_m": null
+    },
     "origin": "clps",
     "status": "landed",
     "mission": "IM-1",
@@ -399,7 +499,11 @@
   {
     "id": "blue-ghost-m1",
     "name": "Blue Ghost Mission 1 - Mons Latreille",
-    "location": {"lat_deg": 18.562, "lon_deg": 61.81, "height_m": null},
+    "location": {
+      "lat_deg": 18.562,
+      "lon_deg": 61.81,
+      "height_m": null
+    },
     "origin": "clps",
     "status": "landed",
     "mission": "Blue Ghost Mission 1",
@@ -414,7 +518,11 @@
   {
     "id": "im-2",
     "name": "IM-2 Athena - Mons Mouton",
-    "location": {"lat_deg": -84.7906, "lon_deg": 29.1957, "height_m": null},
+    "location": {
+      "lat_deg": -84.7906,
+      "lon_deg": 29.1957,
+      "height_m": null
+    },
     "origin": "clps",
     "status": "landed",
     "mission": "IM-2",
@@ -425,6 +533,186 @@
     "sources": [
       "LROC, IM-2 Landing Region, https://www.lroc.asu.edu/images/1401",
       "NASA, LRO Views IM-2 on Moon's Surface, https://www.nasa.gov/image-article/nasas-lunar-reconnaissance-orbiter-views-im-2-on-moons-surface/"
+    ]
+  },
+  {
+    "id": "artemis-peak-near-cabeus-b",
+    "name": "Artemis candidate region - Peak near Cabeus B",
+    "location": {
+      "lat_deg": -82.26,
+      "lon_deg": -54.58,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a peak next to the crater Cabeus B. APPROXIMATE location: center of the IAU feature Cabeus B (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Cabeus B (crater) (center -82.26, -54.58), https://planetarynames.wr.usgs.gov/Feature/8058"
+    ]
+  },
+  {
+    "id": "artemis-haworth",
+    "name": "Artemis candidate region - Haworth",
+    "location": {
+      "lat_deg": -87.45,
+      "lon_deg": -5.17,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the rim area of Haworth crater, which hosts permanently shadowed terrain. APPROXIMATE location: center of the IAU feature Haworth (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Haworth (crater) (center -87.45, -5.17), https://planetarynames.wr.usgs.gov/Feature/14502"
+    ]
+  },
+  {
+    "id": "artemis-malapert-massif",
+    "name": "Artemis candidate region - Malapert Massif",
+    "location": {
+      "lat_deg": -85.98,
+      "lon_deg": -1.67,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the Malapert Massif, a mountain facing the Earth. APPROXIMATE location: center of the IAU feature Mons Malapert, not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Mons Malapert (center -85.98, -1.67), https://planetarynames.wr.usgs.gov/Feature/16338"
+    ]
+  },
+  {
+    "id": "artemis-mons-mouton-plateau",
+    "name": "Artemis candidate region - Mons Mouton Plateau",
+    "location": {
+      "lat_deg": -84.6,
+      "lon_deg": 31.0,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the flat top of Mons Mouton (IM-2 landed on it in 2025). APPROXIMATE location: center of the IAU feature Mons Mouton, not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Mons Mouton (center -84.6, 31.0), https://planetarynames.wr.usgs.gov/Feature/16070"
+    ]
+  },
+  {
+    "id": "artemis-mons-mouton",
+    "name": "Artemis candidate region - Mons Mouton",
+    "location": {
+      "lat_deg": -84.6,
+      "lon_deg": 31.0,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the slopes of Mons Mouton. APPROXIMATE location: center of the IAU feature Mons Mouton, not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Mons Mouton (center -84.6, 31.0), https://planetarynames.wr.usgs.gov/Feature/16070"
+    ]
+  },
+  {
+    "id": "artemis-nobile-rim-1",
+    "name": "Artemis candidate region - Nobile Rim 1",
+    "location": {
+      "lat_deg": -85.28,
+      "lon_deg": 53.27,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a segment of the rim of Nobile crater. APPROXIMATE location: center of the IAU feature Nobile (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Nobile (crater) (center -85.28, 53.27), https://planetarynames.wr.usgs.gov/Feature/4321"
+    ]
+  },
+  {
+    "id": "artemis-nobile-rim-2",
+    "name": "Artemis candidate region - Nobile Rim 2",
+    "location": {
+      "lat_deg": -85.28,
+      "lon_deg": 53.27,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on another segment of the rim of Nobile crater. APPROXIMATE location: center of the IAU feature Nobile (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Nobile (crater) (center -85.28, 53.27), https://planetarynames.wr.usgs.gov/Feature/4321"
+    ]
+  },
+  {
+    "id": "artemis-de-gerlache-rim-2",
+    "name": "Artemis candidate region - de Gerlache Rim 2",
+    "location": {
+      "lat_deg": -88.48,
+      "lon_deg": -88.34,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a segment of the rim of de Gerlache crater, close to the pole. APPROXIMATE location: center of the IAU feature de Gerlache (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, de Gerlache (crater) (center -88.48, -88.34), https://planetarynames.wr.usgs.gov/Feature/1439"
+    ]
+  },
+  {
+    "id": "artemis-slater-plain",
+    "name": "Artemis candidate region - Slater Plain",
+    "location": {
+      "lat_deg": -88.08,
+      "lon_deg": 111.29,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a plain near Slater crater, close to the pole. APPROXIMATE location: center of the IAU feature Slater (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Slater (crater) (center -88.08, 111.29), https://planetarynames.wr.usgs.gov/Feature/15325"
     ]
   }
 ]
