@@ -1,4 +1,4 @@
-# ABOUTME: TER-3: downloads the LOLA DEMs of decision D24 from PDS Geosciences into data/raw/lola/
+# ABOUTME: TER-3: downloads the LOLA DEMs of decision D28 from PDS Geosciences into data/raw/lola/
 # ABOUTME: Owner: Federico. Idempotent: files already present with the expected size are skipped
 
 """Download the LOLA digital elevation models used by the terrain module (requirement TER-3).
@@ -8,7 +8,7 @@ Run once on every machine (about 650 MB in total)::
     uv run python scripts/terrain_download_dem.py            # all products
     uv run python scripts/terrain_download_dem.py ldem_64    # one product
 
-Products (decision D24; NASA LRO LOLA Gridded Data Records, PDS Geosciences Node,
+Products (decision D28; NASA LRO LOLA Gridded Data Records, PDS Geosciences Node,
 data set LRO-L-LOLA-4-GDR-V1.0):
 
 - ``ldem_64``: global, simple cylindrical, 64 px/deg (~474 m/px at the equator), 531 MB.

@@ -18,9 +18,9 @@ for tests write small fakes of both that return the example payloads.
 ## Done
 - Setup: branch `federico`, `uv sync --group terrain --group evaluation --group dev`, 15 tests green.
 - C1 (DEM feasibility): LDEM_64 global + LDEM_80S_80M south polar, rays to 150 km; ~0.02 s / 13 MB
-  and ~0.19 s / 76 MB per mask (`scripts/terrain_c1_benchmark.py`, decision D24). Polar stereographic
+  and ~0.19 s / 76 MB per mask (`scripts/terrain_c1_benchmark.py`, decision D28). Polar stereographic
   signs verified against LDEM_64 and Shackleton crater (an east-west mirror bug was caught this way).
-- TER-3: `scripts/terrain_download_dem.py` fetches the D24 DEMs from PDS into `data/raw/lola/` (~650 MB);
+- TER-3: `scripts/terrain_download_dem.py` fetches the D28 DEMs from PDS into `data/raw/lola/` (~650 MB);
   skips complete files, size-checked `.part` downloads; verified byte-identical re-download of LDEM_80S_80M.
 - TER-1: `LolaTerrainProvider.horizon_mask` (360 azimuths, rays to 150 km, curvature included); picks the
   south polar DEM when the whole ray disk fits, else LDEM_64; ~15 ms equator, ~160 ms pole. Known-answer
@@ -38,5 +38,5 @@ for tests write small fakes of both that return the example payloads.
 - Gian (README): `npm --prefix frontend install` fails on Windows with npm 10.9.2 (ENOENT package.json);
   `cd frontend && npm install` works.
 - Gian (README): add the setup step `uv run python scripts/terrain_download_dem.py` (~650 MB, once per machine).
-- Gian (spec section 7): LOLA DEM row can name the products of D24: LDEM_64 and LDEM_80S_80M,
+- Gian (spec section 7): LOLA DEM row can name the products of D28: LDEM_64 and LDEM_80S_80M,
   LRO-L-LOLA-4-GDR-V1.0, https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/

@@ -1,4 +1,4 @@
-# ABOUTME: LolaTerrainProvider: the TerrainProvider port backed by LOLA DEMs (decision D24)
+# ABOUTME: LolaTerrainProvider: the TerrainProvider port backed by LOLA DEMs (decision D28)
 # ABOUTME: Picks the finest DEM covering the whole ray disk; converts results to contract models
 
 """TerrainProvider implementation over LOLA digital elevation models."""
@@ -16,7 +16,7 @@ from lunarnav.terrain.horizon import horizon_profile
 from lunarnav.terrain.slope import slope_stats
 
 DEFAULT_RAW_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "lola"
-# Decision D24 (check C1): 150 km covers peaks of ~8 km seen over the lunar curvature.
+# Decision D28 (check C1): 150 km covers peaks of ~8 km seen over the lunar curvature.
 DEFAULT_MAX_DISTANCE_M = 150_000.0
 PDS_DATA_SET = "LRO-L-LOLA-4-GDR-V1.0"
 # At exactly +-90 deg azimuths are undefined (every direction is north or south); computations
@@ -52,7 +52,7 @@ class LolaTerrainProvider:
 
     @classmethod
     def from_raw_dir(cls, raw_dir: Path = DEFAULT_RAW_DIR) -> LolaTerrainProvider:
-        """Load the D24 products downloaded by ``scripts/terrain_download_dem.py``.
+        """Load the D28 products downloaded by ``scripts/terrain_download_dem.py``.
 
         Args:
             raw_dir: Folder with ``ldem_64.img`` and optionally ``ldem_80s_80m.img``.
