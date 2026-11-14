@@ -37,7 +37,7 @@ from lunarnav.contracts import (
 
 OUT = Path(__file__).resolve().parents[1] / "data" / "examples"
 LABEL = "SYNTHETIC EXAMPLE, not real data"
-STEP_MIN = 240.0
+STEP_MIN = 240
 
 
 def _runs_h(flags: list[bool], state: bool, step_h: float) -> float:
