@@ -148,6 +148,10 @@ export function SitePanel(props: Props) {
           </div>
 
           <h3>Terrain</h3>
+          <p className="muted small">
+            Regional slopes, measured over a {Math.round(evaluation.terrain.dem_resolution_m)} m
+            baseline (one elevation-model pixel); not lander-scale.
+          </p>
           <div className="metrics">
             <Metric label="max slope" value={`${evaluation.terrain.slope_max_deg.toFixed(1)}°`} />
             <Metric label="mean slope" value={`${evaluation.terrain.slope_mean_deg.toFixed(1)}°`} />

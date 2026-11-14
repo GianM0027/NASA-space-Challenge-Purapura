@@ -37,18 +37,30 @@ uv run ruff format . && uv run ruff check . && uv run pytest
 
 ## Run
 
-Two terminals, from the repo root:
+One-time data download (LOLA elevation models, about 650 MB, into the git-ignored `data/raw/`).
+Without it the app still runs, with placeholder terrain:
+
+```bash
+uv run python scripts/terrain_download_dem.py
+```
+
+Backend, from the repo root:
 
 ```bash
 uv sync --all-groups
 uv run uvicorn lunarnav.api.main:app --reload --port 8000
 ```
 
+Frontend, in a second terminal (run npm from inside `frontend/`: `npm --prefix` fails on Windows
+with some npm versions):
+
 ```bash
-npm --prefix frontend install
-npm --prefix frontend run dev
+cd frontend
+npm install
+npm run dev
 ```
 
 Open http://localhost:5173 (the dev server proxies `/api` to the backend).
-API docs: http://localhost:8000/docs. Until the engine modules are merged, the API serves the
-synthetic payloads in `data/examples/` (spec IF-2).
+API docs: http://localhost:8000/docs. The header badges show which modules are live; a module
+that is missing or fails falls back to a labelled placeholder (spec IF-5), and
+http://localhost:8000/api/modules gives the reason.

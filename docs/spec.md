@@ -216,7 +216,7 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 | Data | Provider | Use | Owner |
 |------|----------|-----|-------|
 | JPL Horizons API, https://ssd-api.jpl.nasa.gov/doc/horizons.html | NASA JPL | Sun and Earth topocentric directions | Michael |
-| LOLA DEMs (global and polar; product chosen in check C1, DEM feasibility) | NASA LRO / PDS, PGDA https://pgda.gsfc.nasa.gov | horizon masks, slopes | Federico |
+| LOLA gridded DEMs LDEM_64 (global, 64 px/deg, about 474 m) and LDEM_80S_80M (south pole, 80 m), data set LRO-L-LOLA-4-GDR-V1.0, https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/ | NASA LRO LOLA / PDS Geosciences Node | horizon masks, slopes | Federico |
 | Lunar Polar Illumination, https://pgda.gsfc.nasa.gov/products/69 (Mazarico et al. 2011, Icarus 211) | NASA GSFC PGDA | optional polar layers, sanity check | Federico |
 | LRO WAC global mosaic via Moon Trek WMTS, https://trek.nasa.gov/moon/ | NASA JPL / LROC (ASU) | globe texture | Gian |
 | Landing site coordinates | per-site sources in `sites.json` | catalog | Michael |

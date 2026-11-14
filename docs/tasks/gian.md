@@ -33,6 +33,13 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
 - Michael, new fields (`Site.region_radius_m`, `Site.feature`, `VisibilityMetrics.sun_and_earth_visible_fraction`):
   pending the team's review of the parameters to show; not added yet.
 
+- Federico, wiring test: already fixed on `main` (wiring tests start from "no factories"); merge `main`.
+- Federico, README (npm on Windows, DEM download step) and spec section 7 (LOLA products): done.
+- Federico, slope baseline in the panel: done ("regional slopes, N m baseline").
+- Federico and Michael, new contract fields (per-sample horizon elevation at the body azimuth,
+  `sun_and_earth_visible_fraction`, `earth_elevation_mean_visible_deg`, truncated-run flags):
+  waiting for Gian's go-ahead.
+
 ## Blockers
 
 ## Requests
