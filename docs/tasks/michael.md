@@ -4,7 +4,8 @@
 # Michael: tasks
 
 ## Status
-Not started.
+EPH-1, EPH-2, CAT-1, CAT-2 done (`build_ephemeris_provider`, `build_catalog` exported, IF-5).
+Next: AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -23,7 +24,31 @@ Not started.
 7. CAT-3 (site descriptions), EPH-3 (cache warm-up script).
 
 ## Done
+- Setup: branch `michael`, `uv sync`, 15 tests green.
+- Submission rules: team already aware (skipped).
+- C2 (Horizons query check): works for topocentric lunar sites; limits and decision in D24.
+  Recorded responses for the EPH-1 test in `tests/ephemeris/fixtures/` (Apollo 11, Sun and Earth, 2026-12-01 00:00-01:00 UTC, 10 min).
+- EPH-1: `HorizonsEphemerisProvider`, any window length (split at 80,000 rows), 1-sample windows work.
+  Tolerance vs Horizons: exact to the printed 1e-6 deg (values passed through; live check in the slow test).
+- EPH-2: disk cache `data/cache/ephemeris/`, also serves sub-windows and coarser steps on the same grid.
+- CAT-1: `data/catalog/sites.json`, 27 landed sites (Apollo 6, Luna 7, Surveyor 5, Chang'e 4,
+  Chandrayaan-3, SLIM, CLPS 3), coordinates from LROC/NSSDCA/NASA/JAXA, cited per site; heights left
+  null (taken from the DEM). Landing times only where a source gives UT (Luna, Surveyor, Chang'e 5, Chandrayaan-3).
+- CAT-2: `JsonSiteCatalog`, user sites in `data/user/sites.json`; tests for list, get, add, duplicates, round trip.
+
+- Artemis candidate regions: the 9 regions of NASA's 2024-10-28 list added as `candidate` sites
+  (36 sites in total). NASA publishes no region centers, so each uses the IAU gazetteer center of
+  the named feature, flagged APPROXIMATE in the description (Michael's decision). Named "first Artemis
+  crewed landing", not "Artemis III", because the landing mission may change.
 
 ## Blockers
 
 ## Requests
+- Resolved by Gian (merged 496a26b): EPH-1 wording, API tests off real modules, whole-minute step in
+  the contract (D25), `sky_state` truncates to the whole minute.
+- Contracts review decided by Michael (D27): `Site.region_radius_m` and `Site.feature` dropped.
+- To Gian (D23 impact): add `VisibilityMetrics.sun_and_earth_visible_fraction: float` in [0, 1],
+  fraction of samples with Sun and Earth both visible (same "visible" definition as D20); if wanted,
+  `MissionRequirements.min_sun_and_earth_visible_fraction` so the AI can constrain it (AI-5).
+- To Federico (D23 impact): once the field exists, compute it in the evaluator
+  (mean of `sun_visible AND earth_visible`).
