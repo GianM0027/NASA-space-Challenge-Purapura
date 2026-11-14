@@ -144,6 +144,7 @@ dependencies = [
 [package.dev-dependencies]
 api = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "uvicorn" },
 ]
 dev = [
@@ -173,6 +174,7 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.9" }]
 ai = []
 api = [
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "uvicorn", specifier = ">=0.32" },
 ]
 catalog = []
