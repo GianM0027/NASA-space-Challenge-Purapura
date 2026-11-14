@@ -61,3 +61,15 @@ CAT-3 and EPH-3 done. Next: AI-5. Optional: landing times of recent missions.
   `MissionRequirements.min_sun_and_earth_visible_fraction` so the AI can constrain it (AI-5).
 - To Federico (D23 impact): once the field exists, compute it in the evaluator
   (mean of `sun_visible AND earth_visible`).
+- To Federico, answer on observer height and catalog points (D23 impact):
+  1. Height above ground: default 2 m (D30, Gläser et al. 2014 use 2 m and 10 m as rover/lander
+     solar panel heights). Per archetype: rover 2 m, small CLPS lander 2 m, crewed lander 10 m;
+     the values will also go in `docs/domain/mission_archetypes.md` (AI-5).
+  2. `artemis-haworth` and `artemis-de-gerlache-rim-2`: kept, flagged NOT REPRESENTATIVE (crater
+     floor, not rim) in the description. Moving them onto the rim needs coordinates from the NASA
+     region maps; possible later.
+- To Gian (D23 impact): (a) whether observer height becomes a request field is your call (D30
+  gives the default and per-archetype values). (b) Ephemeris stays on per-site Horizons queries
+  (Michael's choice: fewer own formulas). A new date costs about 2-4 s per site; the warm-up makes
+  any window inside the warmed period instant if its start is on the 10-minute grid, so please
+  round window starts to 10 minutes in the UI (the globe already rounds to the minute).

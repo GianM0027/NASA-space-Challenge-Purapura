@@ -575,7 +575,7 @@
     "agency": "NASA",
     "landing_date_utc": null,
     "landing_ellipse_m": null,
-    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the rim area of Haworth crater, which hosts permanently shadowed terrain. APPROXIMATE location: center of the IAU feature Haworth (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the rim area of Haworth crater, which hosts permanently shadowed terrain. APPROXIMATE location: center of the IAU feature Haworth (crater), not the region center, which NASA does not publish; the region can be several km away. NOT REPRESENTATIVE: this point is on the crater floor (about -3.3 km), not on the rim, so it gets no Sun and no Earth; do not read its metrics as those of the landing region.",
     "sources": [
       "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
       "IAU/USGS Gazetteer of Planetary Nomenclature, Haworth (crater) (center -87.45, -5.17), https://planetarynames.wr.usgs.gov/Feature/14502"
@@ -695,7 +695,7 @@
     "agency": "NASA",
     "landing_date_utc": null,
     "landing_ellipse_m": null,
-    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a segment of the rim of de Gerlache crater, close to the pole. APPROXIMATE location: center of the IAU feature de Gerlache (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a segment of the rim of de Gerlache crater, close to the pole. APPROXIMATE location: center of the IAU feature de Gerlache (crater), not the region center, which NASA does not publish; the region can be several km away. NOT REPRESENTATIVE: this point is on the crater floor (about -1.2 km), not on the rim, so it gets no Sun and no Earth; do not read its metrics as those of the landing region.",
     "sources": [
       "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
       "IAU/USGS Gazetteer of Planetary Nomenclature, de Gerlache (crater) (center -88.48, -88.34), https://planetarynames.wr.usgs.gov/Feature/1439"
