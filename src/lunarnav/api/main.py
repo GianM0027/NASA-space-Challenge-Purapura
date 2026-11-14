@@ -10,6 +10,7 @@ exists, placeholder otherwise); ``GET /api/modules`` reports which is which.
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+from pydantic import AwareDatetime
 
 from lunarnav.api.requests import (
     AskRequest,
@@ -18,6 +19,7 @@ from lunarnav.api.requests import (
     MissionAnalysisRequest,
 )
 from lunarnav.api.services import Services
+from lunarnav.api.sky import sky_state
 from lunarnav.api.wiring import ModuleStatus, build_services
 from lunarnav.contracts import (
     AiAnswer,
@@ -27,6 +29,7 @@ from lunarnav.contracts import (
     RobustnessReport,
     Site,
     SiteRanking,
+    SkyState,
 )
 
 
@@ -71,6 +74,11 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
     def module_status() -> ModuleStatus:
         """Report, per service, whether it is "real", "example" or "error: ..."."""
         return modules
+
+    @app.get("/api/sky")
+    def sky(time_utc: AwareDatetime) -> SkyState:
+        """Subsolar and sub-Earth points at an instant (lights the globe)."""
+        return sky_state(svc.ephemeris, time_utc)
 
     @app.get("/api/sites")
     def list_sites() -> list[Site]:

@@ -127,4 +127,4 @@ def build_services() -> tuple[Services, ModuleStatus]:
     )
     ranker = _build(status, "ranking", "ai", "build_ranker", ExampleRanker, catalog, evaluator)
     assistant = _build(status, "assistant", "ai", "build_assistant", ExampleAssistant, ranker)
-    return Services(catalog, evaluator, analyzer, ranker, assistant), status
+    return Services(catalog, ephemeris, evaluator, analyzer, ranker, assistant), status

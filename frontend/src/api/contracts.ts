@@ -145,6 +145,13 @@ export type SiteScore = {
   rationale?: string | null
 }
 
+export type SkyState = {
+  time_utc: string
+  subsolar: GeoPoint
+  sub_earth: GeoPoint
+  source: string
+}
+
 export type TerrainStats = {
   location: GeoPoint
   radius_m: number

@@ -75,6 +75,7 @@ class Services:
 
     Attributes:
         catalog: Site catalog.
+        ephemeris: Sun and Earth directions (also lights the globe).
         evaluator: Site evaluation engine.
         analyzer: Mission analysis.
         ranker: Deterministic ranking.
@@ -82,6 +83,7 @@ class Services:
     """
 
     catalog: SiteCatalog
+    ephemeris: EphemerisProvider
     evaluator: Evaluator
     analyzer: MissionAnalyzer
     ranker: Ranker

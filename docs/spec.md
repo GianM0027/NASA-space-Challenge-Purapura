@@ -26,7 +26,7 @@ Priority levels: **P0** = the demo fails without it; **P1** = strong for judging
 ## 2. Architecture
 
 ```
-frontend (React + Vite + TypeScript + OpenLayers)          owner: Gian
+frontend (React + Vite + TypeScript + three.js)            owner: Gian
    |  REST/JSON (section 5)
 api (FastAPI, composition root)                             owner: Gian
    |-- ai ----------------> catalog, evaluation             owner: Gian
@@ -140,8 +140,10 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 
 ### 4.7 User interface (UI)
 
-- **UI-1** (P0, Gian): global Moon map (equirectangular) plus south and north polar views, with NASA
-  Moon Trek basemap tiles, catalog markers, and click-to-pick custom coordinates.
+- **UI-1** (P0, Gian): 3D Moon globe (decision D22, main view) textured with the NASA LRO WAC mosaic
+  from Moon Trek, lit by the Sun direction at the selected date (day/night terminator), with the
+  Earth direction shown; catalog markers; click on the surface to pick custom coordinates; quick
+  views of the near side and both poles.
 - **UI-2** (P0, Gian): site panel: date/time and window picker, metrics, Sun and Earth elevation
   timeline against the horizon, time to next sunset and Earthset prominently shown.
 - **UI-3** (P0, Gian): side-by-side comparison of 2 to 4 site-date scenarios.
@@ -153,6 +155,7 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
   the window (plug-in; data already in `Evaluation.horizon` and the series).
 - **UI-8** (P2, unassigned): AHP trade-off popup (method of Governale et al. 2021,
   doi:10.1007/s42401-021-00095-w), independent of the AI.
+- **UI-10** (P2, unassigned): 2D high-resolution polar inset next to the globe.
 - **UI-9** (P2, unassigned): PGDA polar layers (average illumination, Earth visibility, permanent shadow).
 
 ## 5. Interface requirements
@@ -184,6 +187,7 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 |-----------------|--------------|----------|
 | `GET /api/health` | none | `{"status": "ok"}` |
 | `GET /api/modules` | none | `{"<service>": "real" or "example" or "error: ..."}` |
+| `GET /api/sky?time_utc=<ISO 8601>` | none | `SkyState` (subsolar and sub-Earth points, derived from `EphemerisProvider`) |
 | `GET /api/sites` | none | `list[Site]` |
 | `POST /api/sites` | `Site` (origin `user`) | `Site` |
 | `POST /api/evaluate` | `{"site_id": str or null, "location": GeoPoint or null, "window": TimeWindow, "area": OperationsArea}` (one of site_id/location) | `Evaluation` |
@@ -211,7 +215,7 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 | JPL Horizons API, https://ssd-api.jpl.nasa.gov/doc/horizons.html | NASA JPL | Sun and Earth topocentric directions | Michael |
 | LOLA DEMs (global and polar; product chosen in check C1, DEM feasibility) | NASA LRO / PDS, PGDA https://pgda.gsfc.nasa.gov | horizon masks, slopes | Federico |
 | Lunar Polar Illumination, https://pgda.gsfc.nasa.gov/products/69 (Mazarico et al. 2011, Icarus 211) | NASA GSFC PGDA | optional polar layers, sanity check | Federico |
-| Moon Trek WMTS basemaps, https://trek.nasa.gov/moon/ | NASA JPL | map tiles | Gian |
+| LRO WAC global mosaic via Moon Trek WMTS, https://trek.nasa.gov/moon/ | NASA JPL / LROC (ASU) | globe texture | Gian |
 | Landing site coordinates | per-site sources in `sites.json` | catalog | Michael |
 
 ## 8. Early feasibility checks (first hours)
@@ -223,7 +227,7 @@ if it changes a plan, in `docs/decisions.md`.
 - **C2** (Michael, Horizons query): a Horizons query for a topocentric site on the Moon returns Sun and Earth
   azimuth/elevation; request limits; offline alternative if Horizons is too slow.
 - **C3** (Gian, LLM JSON): the LLM via Claude Code CLI headless returns schema-valid `MissionRequirements` JSON.
-- **C4** (Gian, map tiles): OpenLayers renders Moon Trek tiles in global and polar projections.
+- **C4** (Gian, map tiles): Moon Trek tiles load in the browser as the globe texture (done: CORS open, levels 0 to 8).
 
 ## 9. Out of scope
 
