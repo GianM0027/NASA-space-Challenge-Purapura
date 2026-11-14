@@ -143,3 +143,34 @@ def test_real_dems_place_shackleton_crater_correctly() -> None:
         center = dem.height_m(np.array([lat]), np.array([lon]))[0]
         rim = dem.height_m(rim_lat, rim_lon).mean()
         assert center - rim < -3000.0, dem.name
+
+
+# --- Observer height ---------------------------------------------------------------------------
+
+
+def test_height_above_ground_lifts_the_observer_over_flat_terrain() -> None:
+    # 1 km mast on a bare sphere: the classic dip acos(R / (R + H)) again, ~1.94 deg.
+    provider = LolaTerrainProvider(flat_global(), observer_height_above_ground_m=1000.0)
+    mask = provider.horizon_mask(GeoPoint(lat_deg=10.0, lon_deg=45.0))
+    assert mask.location.height_m == pytest.approx(1000.0)
+    dip_deg = np.degrees(np.arccos(MOON_RADIUS_M / (MOON_RADIUS_M + 1000.0)))
+    # Default ray step is one 3.8 km pixel, so the tangent point is sampled coarsely.
+    assert np.allclose(mask.horizon_elevation_deg, -dip_deg, atol=0.05)
+
+
+def test_absolute_height_overrides_height_above_ground() -> None:
+    provider = LolaTerrainProvider(flat_global(), observer_height_above_ground_m=1000.0)
+    mask = provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=5.0))
+    assert mask.location.height_m == 5.0
+
+
+def test_observer_below_the_terrain_is_rejected() -> None:
+    provider = LolaTerrainProvider(flat_global(height_m=100.0))
+    provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=99.5))  # within tolerance
+    with pytest.raises(ValueError, match="below the terrain"):
+        provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=50.0))
+
+
+def test_negative_height_above_ground_is_rejected() -> None:
+    with pytest.raises(ValueError, match="must be >= 0"):
+        LolaTerrainProvider(flat_global(), observer_height_above_ground_m=-2.0)
