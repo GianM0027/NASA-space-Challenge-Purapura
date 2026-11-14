@@ -37,4 +37,18 @@ uv run ruff format . && uv run ruff check . && uv run pytest
 
 ## Run
 
-To be completed when the API and frontend exist (owner: Gian).
+Two terminals, from the repo root:
+
+```bash
+uv sync --all-groups
+uv run uvicorn lunarnav.api.main:app --reload --port 8000
+```
+
+```bash
+npm --prefix frontend install
+npm --prefix frontend run dev
+```
+
+Open http://localhost:5173 (the dev server proxies `/api` to the backend).
+API docs: http://localhost:8000/docs. Until the engine modules are merged, the API serves the
+synthetic payloads in `data/examples/` (spec IF-2).
