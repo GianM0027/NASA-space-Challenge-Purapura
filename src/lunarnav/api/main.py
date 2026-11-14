@@ -3,8 +3,8 @@
 
 """LunarNav REST API.
 
-``build_services`` is the single place where concrete module classes are chosen and wired;
-swap an example-backed service for the real module there when it is merged.
+Concrete module classes are chosen in ``lunarnav.api.wiring`` (real module when its factory
+exists, placeholder otherwise); ``GET /api/modules`` reports which is which.
 """
 
 from __future__ import annotations
@@ -17,14 +17,8 @@ from lunarnav.api.requests import (
     EvaluateRequest,
     MissionAnalysisRequest,
 )
-from lunarnav.api.services import (
-    ExampleAnalyzer,
-    ExampleAssistant,
-    ExampleCatalog,
-    ExampleEvaluator,
-    ExampleRanker,
-    Services,
-)
+from lunarnav.api.services import Services
+from lunarnav.api.wiring import ModuleStatus, build_services
 from lunarnav.contracts import (
     AiAnswer,
     Evaluation,
@@ -36,31 +30,21 @@ from lunarnav.contracts import (
 )
 
 
-def build_services() -> Services:
-    """Build the concrete services (composition root).
-
-    Returns:
-        The services the API uses; example-backed until each real module is merged.
-    """
-    return Services(
-        catalog=ExampleCatalog(),
-        evaluator=ExampleEvaluator(),
-        analyzer=ExampleAnalyzer(),
-        ranker=ExampleRanker(),
-        assistant=ExampleAssistant(),
-    )
-
-
-def build_app(services: Services | None = None) -> FastAPI:
+def build_app(services: Services | None = None, status: ModuleStatus | None = None) -> FastAPI:
     """Create the FastAPI app.
 
     Args:
-        services: Services to use; built by ``build_services`` when None.
+        services: Services to use; built by ``wiring.build_services`` when None.
+        status: Per-service origin reported by ``GET /api/modules``; ignored unless
+            ``services`` is given.
 
     Returns:
         The configured application.
     """
-    svc = services or build_services()
+    if services is None:
+        svc, modules = build_services()
+    else:
+        svc, modules = services, status or {}
     app = FastAPI(title="LunarNav API", version="0.1.0")
 
     def resolve(request: EvaluateRequest) -> tuple[GeoPoint, str | None]:
@@ -82,6 +66,11 @@ def build_app(services: Services | None = None) -> FastAPI:
     def health() -> dict[str, str]:
         """Liveness check."""
         return {"status": "ok"}
+
+    @app.get("/api/modules")
+    def module_status() -> ModuleStatus:
+        """Report, per service, whether it is "real", "example" or "error: ..."."""
+        return modules
 
     @app.get("/api/sites")
     def list_sites() -> list[Site]:
