@@ -46,8 +46,9 @@ Next: AI-5, CAT-3 (Apollo and recent landing times), EPH-3.
 ## Requests
 - Resolved by Gian (merged 496a26b): EPH-1 wording, API tests off real modules, whole-minute step in
   the contract (D25), `sky_state` truncates to the whole minute.
-- To Gian, contracts review (pending the team's review) (optional fields, catalog side):
-  - `Site.region_radius_m: float | None`: Artemis III candidates are regions (about 15 km), not points.
-  - `Site.feature: str | None`: named feature (e.g. "Mare Tranquillitatis", "Shackleton rim") for UI and AI retrieval.
-  - `VisibilityMetrics.sun_and_earth_visible_fraction`: time with power and direct-to-Earth link
-    together, a common archetype constraint (AI-5).
+- Contracts review decided by Michael (D27): `Site.region_radius_m` and `Site.feature` dropped.
+- To Gian (D23 impact): add `VisibilityMetrics.sun_and_earth_visible_fraction: float` in [0, 1],
+  fraction of samples with Sun and Earth both visible (same "visible" definition as D20); if wanted,
+  `MissionRequirements.min_sun_and_earth_visible_fraction` so the AI can constrain it (AI-5).
+- To Federico (D23 impact): once the field exists, compute it in the evaluator
+  (mean of `sun_visible AND earth_visible`).
