@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from lunarnav.contracts import GeoPoint, HorizonMask
+from lunarnav.contracts import GeoPoint, HorizonMask, OperationsArea
 from lunarnav.terrain.dem import (
     MOON_RADIUS_M,
     CylindricalDem,
@@ -16,6 +16,7 @@ from lunarnav.terrain.horizon import elevation_angle_deg, horizon_profile
 from lunarnav.terrain.provider import DEFAULT_RAW_DIR, LolaTerrainProvider
 
 PPD = 8  # synthetic global grid: 1/8 degree pixels, ~3.8 km
+AREA0 = OperationsArea(observer_height_above_ground_m=0.0)  # observer on the surface
 
 
 def flat_global(height_m: float = 0.0) -> CylindricalDem:
@@ -96,8 +97,8 @@ def test_max_distance_below_one_step_is_rejected() -> None:
 def test_provider_uses_polar_dem_near_the_pole_and_global_elsewhere() -> None:
     polar = SouthPolarStereographicDem("synthetic polar", np.full((400, 400), 7.0), 1.0, 1000.0)
     provider = LolaTerrainProvider(flat_global(), [polar])
-    near_pole = provider.horizon_mask(GeoPoint(lat_deg=-89.9, lon_deg=0.0))
-    equator = provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0))
+    near_pole = provider.horizon_mask(GeoPoint(lat_deg=-89.9, lon_deg=0.0), AREA0)
+    equator = provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0), AREA0)
     assert near_pole.dem_source.startswith("synthetic polar")
     assert near_pole.location.height_m == pytest.approx(7.0)  # filled from the DEM
     assert equator.dem_source.startswith("synthetic flat")
@@ -120,8 +121,8 @@ needs_dems = pytest.mark.skipif(
 def test_real_dems_agree_at_the_south_pole() -> None:
     provider = LolaTerrainProvider.from_raw_dir()
     site = GeoPoint(lat_deg=-89.5, lon_deg=0.0)
-    polar = provider.horizon_mask(site)
-    global_mask = LolaTerrainProvider(provider.global_dem).horizon_mask(site)
+    polar = provider.horizon_mask(site, OperationsArea())
+    global_mask = LolaTerrainProvider(provider.global_dem).horizon_mask(site, OperationsArea())
     assert polar.dem_resolution_m in (20.0, 80.0)  # 20 m near field when ldem_85s_20m is present
     p, g = np.array(polar.horizon_elevation_deg), np.array(global_mask.horizon_elevation_deg)
     assert abs(p.max() - g.max()) < 0.3
@@ -150,8 +151,10 @@ def test_real_dems_place_shackleton_crater_correctly() -> None:
 
 def test_height_above_ground_lifts_the_observer_over_flat_terrain() -> None:
     # 1 km mast on a bare sphere: the classic dip acos(R / (R + H)) again, ~1.94 deg.
-    provider = LolaTerrainProvider(flat_global(), observer_height_above_ground_m=1000.0)
-    mask = provider.horizon_mask(GeoPoint(lat_deg=10.0, lon_deg=45.0))
+    mast = OperationsArea(observer_height_above_ground_m=1000.0)
+    mask = LolaTerrainProvider(flat_global()).horizon_mask(
+        GeoPoint(lat_deg=10.0, lon_deg=45.0), mast
+    )
     assert mask.location.height_m == pytest.approx(1000.0)
     dip_deg = np.degrees(np.arccos(MOON_RADIUS_M / (MOON_RADIUS_M + 1000.0)))
     # Default ray step is one 3.8 km pixel, so the tangent point is sampled coarsely.
@@ -159,30 +162,20 @@ def test_height_above_ground_lifts_the_observer_over_flat_terrain() -> None:
 
 
 def test_absolute_height_overrides_height_above_ground() -> None:
-    provider = LolaTerrainProvider(flat_global(), observer_height_above_ground_m=1000.0)
-    mask = provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=5.0))
-    assert mask.location.height_m == 5.0
+    mast = OperationsArea(observer_height_above_ground_m=1000.0)
+    site = GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=5.0)
+    assert LolaTerrainProvider(flat_global()).horizon_mask(site, mast).location.height_m == 5.0
+
+
+def test_default_area_places_the_observer_2_m_above_the_ground() -> None:
+    # Decision D30 via the contract default (decision D32): 2 m above the DEM surface.
+    provider = LolaTerrainProvider(flat_global(height_m=100.0))
+    mask = provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0), OperationsArea())
+    assert mask.location.height_m == pytest.approx(102.0)
 
 
 def test_observer_below_the_terrain_is_rejected() -> None:
     provider = LolaTerrainProvider(flat_global(height_m=100.0))
-    provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=99.5))  # within tolerance
+    provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=99.5), AREA0)  # tolerance
     with pytest.raises(ValueError, match="below the terrain"):
-        provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=50.0))
-
-
-def test_negative_height_above_ground_is_rejected() -> None:
-    with pytest.raises(ValueError, match="must be >= 0"):
-        LolaTerrainProvider(flat_global(), observer_height_above_ground_m=-2.0)
-
-
-@pytest.mark.slow
-@needs_dems
-def test_app_provider_places_the_observer_2_m_above_the_ground() -> None:
-    # Decision D30: the app default is 2 m above the DEM surface (Glaser et al. 2014).
-    app = LolaTerrainProvider.from_raw_dir(cache_dir=None)
-    surface = LolaTerrainProvider.from_raw_dir(cache_dir=None, observer_height_above_ground_m=0.0)
-    site = GeoPoint(lat_deg=0.674, lon_deg=23.473)
-    lifted = app.horizon_mask(site).location.height_m
-    ground = surface.horizon_mask(site).location.height_m
-    assert lifted - ground == pytest.approx(2.0)
+        provider.horizon_mask(GeoPoint(lat_deg=0.0, lon_deg=0.0, height_m=50.0), AREA0)

@@ -43,9 +43,9 @@ class FakeTerrain:
     def __init__(self, mask_az=None, mask_el=None):
         self.mask_az = mask_az or [float(a) for a in range(360)]
         self.mask_el = mask_el or [0.0] * len(self.mask_az)
-        self.radius_asked: float | None = None
+        self.area_asked: OperationsArea | None = None
 
-    def horizon_mask(self, location: GeoPoint) -> HorizonMask:
+    def horizon_mask(self, location: GeoPoint, area: OperationsArea) -> HorizonMask:
         return HorizonMask(
             location=location,
             azimuth_deg=self.mask_az,
@@ -55,11 +55,16 @@ class FakeTerrain:
             max_distance_m=1000.0,
         )
 
-    def terrain_stats(self, location: GeoPoint, radius_m: float) -> TerrainStats:
-        self.radius_asked = radius_m
+    def terrain_stats(self, location: GeoPoint, area: OperationsArea) -> TerrainStats:
+        self.area_asked = area
         return TerrainStats(
             location=location,
-            radius_m=radius_m,
+            radius_m=area.landing_precision_m + area.operating_range_m,
+            landing_radius_m=area.landing_precision_m,
+            landing_slope_mean_deg=0.5,
+            landing_slope_max_deg=1.0,
+            traverse_slope_limit_deg=area.traverse_slope_limit_deg,
+            reachable_fraction=None,
             elevation_m=0.0,
             slope_mean_deg=1.0,
             slope_max_deg=2.0,
@@ -172,7 +177,7 @@ def test_terrain_statistics_cover_landing_precision_plus_operating_range() -> No
     terrain = FakeTerrain()
     area = OperationsArea(landing_precision_m=100.0, operating_range_m=2_000.0)
     ev = LunarEvaluator(FakeEphemeris([1.0, 1.0]), terrain).evaluate(SITE, window(2), area, "s1")
-    assert terrain.radius_asked == 2_100.0
+    assert terrain.area_asked == area  # the evaluator hands the whole area to the terrain
     assert ev.terrain.radius_m == 2_100.0 and ev.site_id == "s1"
 
 

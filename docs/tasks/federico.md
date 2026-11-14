@@ -4,11 +4,10 @@
 # Federico: tasks
 
 ## Status
-Terrain (20 m near-site detail) and evaluation live; app observer 2 m above ground (D30). Next: Michael's slope requests.
+D32 done: ports take the area, landing-disk slopes and reachable share live. Next: waiting on slope-baseline decision.
 
 ## Next (in priority order)
-1. Michael's requests, once Gian adds the contract fields: max slope over the landing-precision disk;
-   reachable share of the operations disk (least-cost paths through cells below the traverse slope limit).
+1. Landing-slope baseline (see Requests) once Michael and Gian decide; then any UI support Gian needs.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -46,10 +45,27 @@ for tests write small fakes of both that return the example payloads.
 - Observer height (D30, Michael): the app provider (`from_raw_dir`, used by the factory) places the observer
   2 m above the DEM surface (Glaser et al. 2014); the constructor keeps 0 m as the geometric reference for
   the known-answer tests. Malapert 35.5% -> 37.2% light, IM-2 50.3% -> 51.9%. Duplicate D30 resolved by D31.
+- D32 (contract by Gian, Michael's slope decisions): `horizon_mask(location, area)` takes the observer height
+  from the area (default 2 m); `terrain_stats(location, area)` fills landing-disk slopes (finest DEM, pixel
+  baseline), full-disk slopes and `reachable_fraction` (Dijkstra on slope cells with `skimage.graph`, detour
+  corrected for 8-direction grid bias, corner squeezes closed; grid capped at 400 cells of radius). Crew area
+  (100 m / 2 km / 20 deg) ~20 ms; rover (20 km / 15 deg) <= 0.5 s, was 4-9 s uncapped. Examples, rover reach:
+  Apollo 11 100%, Apollo 15 58% (Hadley), Malapert 7%, Nobile rim 1 76%. scikit-image added to the terrain group.
 
 ## Blockers
 
 ## Requests
+- Gian (D32 follow-up, D23 impact): (1) merging this PR restores `main` (13 tests red and terrain out of
+  contract since PR #12); (2) the site panel can show `terrain.landing_slope_max_deg` (vs
+  `max_slope_deg`) and `terrain.reachable_fraction` as soon as the UI sends an `OperationsArea` with
+  `operating_range_m` > 0 (today the default area has 0, so the share is None); e.g. archetype presets
+  crew 100 m / 2 km / 20 deg, rover 100 m / 20 km / 15 deg; (3) `terrain.dem_source` now says when the full
+  disk was sampled on wider cells (large ranges, `MAX_GRID_RADIUS_CELLS` = 400); (4) landing-slope baseline:
+  please decide with Michael (item below).
+- Michael + Gian (landing-slope baseline): NASA's landing criterion is < 10 deg **over 100 m**; we measure over
+  one DEM pixel (20 m near the pole), which is stricter. Mons Mouton plateau, 100 m disk: max 31 deg and mean
+  11.7 deg at 20 m, max 10.2 deg at 80 m; Malapert 13.4 vs 8.9 deg. Proposal: compute `landing_slope_*` over a
+  100 m baseline (fit a plane to the heights within 50 m of each cell) to match the requirement.
 - Gian + Michael (slope max, contract meaning): on the 20 m DEM `slope_max_deg` catches isolated spikes
   (Shackleton: max 64 deg on 0.02% of pixels, 99th percentile 39 deg, mean 26 deg on both DEMs). A ranking
   filter on max slope could reject a site for one bad pixel. Proposal: define the reported maximum as the

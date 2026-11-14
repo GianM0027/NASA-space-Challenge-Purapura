@@ -49,8 +49,8 @@ class LunarEvaluator:
         Args:
             location: Point to evaluate.
             window: Time window; its step is the duration of one sample.
-            area: Operations area; terrain statistics cover the disk of radius
-                ``landing_precision_m + operating_range_m`` (EVA-2).
+            area: Operations area, passed to the terrain provider (observer height for the
+                horizon; landing disk, full disk and reachable share for the terrain, EVA-2).
             site_id: Catalog id to echo in the result, if the point is a catalog site.
 
         Returns:
@@ -62,9 +62,8 @@ class LunarEvaluator:
         series = self._ephemeris.sun_earth(location, window)
         if not series.times_utc:
             raise ValueError(f"ephemeris returned no samples for {window}")
-        horizon = self._terrain.horizon_mask(location)
-        radius_m = area.landing_precision_m + area.operating_range_m
-        terrain = self._terrain.terrain_stats(location, radius_m)
+        horizon = self._terrain.horizon_mask(location, area)
+        terrain = self._terrain.terrain_stats(location, area)
 
         mask_az = np.asarray(horizon.azimuth_deg)
         mask_el = np.asarray(horizon.horizon_elevation_deg)
