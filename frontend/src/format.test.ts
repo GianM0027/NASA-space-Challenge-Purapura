@@ -2,7 +2,14 @@
 // ABOUTME: Known answers; these strings are what a mission planner reads on screen
 
 import { describe, expect, it } from 'vitest'
-import { formatCoordinates, formatDuration, fromInputValue, hoursBetween, toInputValue } from './format'
+import {
+  formatAtLeast,
+  formatCoordinates,
+  formatDuration,
+  fromInputValue,
+  hoursBetween,
+  toInputValue,
+} from './format'
 
 describe('formatDuration', () => {
   it('shows minutes below one hour', () => expect(formatDuration(0.5)).toBe('30 min'))
@@ -28,4 +35,10 @@ describe('UTC date input', () => {
 describe('hoursBetween', () => {
   it('measures elapsed hours', () =>
     expect(hoursBetween('2027-01-01T00:00:00Z', '2027-01-02T06:00:00Z')).toBe(30))
+})
+
+describe('formatAtLeast', () => {
+  it('prefixes a truncated duration with ≥', () => expect(formatAtLeast(76, true)).toBe('≥ 3 d 4 h'))
+  it('leaves a complete duration as is', () => expect(formatAtLeast(76, false)).toBe('3 d 4 h'))
+  it('never marks a zero duration', () => expect(formatAtLeast(0, true)).toBe('0 min'))
 })

@@ -3,6 +3,7 @@
 
 import type { Evaluation, GeoPoint } from '../api/contracts'
 import {
+  formatAtLeast,
   formatCoordinates,
   formatDuration,
   formatPercent,
@@ -116,11 +117,25 @@ export function SitePanel(props: Props) {
           />
           <div className="metrics">
             <Metric label="time in sunlight" value={formatPercent(metrics.illumination_fraction)} />
-            <Metric label="longest light" value={formatDuration(metrics.longest_light_h)} />
-            <Metric label="longest dark" value={formatDuration(metrics.longest_dark_h)} />
+            <Metric
+              label="longest light"
+              value={formatAtLeast(metrics.longest_light_h, metrics.longest_light_truncated)}
+            />
+            <Metric
+              label="longest dark"
+              value={formatAtLeast(metrics.longest_dark_h, metrics.longest_dark_truncated)}
+            />
             <Metric
               label="max Sun elevation"
               value={`${metrics.sun_elevation_max_deg.toFixed(1)}°`}
+            />
+          </div>
+
+          <h3>Power and link together</h3>
+          <div className="metrics">
+            <Metric
+              label="time with Sun and Earth both visible"
+              value={formatPercent(metrics.sun_and_earth_visible_fraction)}
             />
           </div>
 
@@ -139,11 +154,25 @@ export function SitePanel(props: Props) {
             />
             <Metric
               label="longest contact"
-              value={formatDuration(metrics.longest_earth_visible_h)}
+              value={formatAtLeast(
+                metrics.longest_earth_visible_h,
+                metrics.longest_earth_visible_truncated,
+              )}
             />
             <Metric
               label="longest outage"
-              value={formatDuration(metrics.longest_earth_hidden_h)}
+              value={formatAtLeast(
+                metrics.longest_earth_hidden_h,
+                metrics.longest_earth_hidden_truncated,
+              )}
+            />
+            <Metric
+              label="mean Earth elevation when visible"
+              value={
+                metrics.earth_elevation_mean_visible_deg === null
+                  ? 'n/a'
+                  : `${metrics.earth_elevation_mean_visible_deg.toFixed(1)}°`
+              }
             />
           </div>
 
@@ -159,7 +188,7 @@ export function SitePanel(props: Props) {
           </div>
           <p className="muted small">
             Horizon: {evaluation.horizon.dem_source}. {evaluation.times_utc.length} samples from{' '}
-            {formatUtc(start)}.
+            {formatUtc(start)}. A ≥ marks a period cut by the window: it may last longer.
           </p>
         </div>
       )}

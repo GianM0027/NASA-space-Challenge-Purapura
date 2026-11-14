@@ -56,6 +56,9 @@ module's classes by itself.
 | Elevation | above the local horizontal plane; ephemeris values are geometric (no terrain) |
 | Visible | body **center** above the horizon mask interpolated at its azimuth |
 | Durations of runs | n consecutive samples in one state last n x step |
+| Truncated run | a longest run is truncated when at least one run of that length starts at the first sample or ends at the last one: its value is a lower bound (common at the poles) |
+| Joint visibility | a sample counts for `sun_and_earth_visible_fraction` when Sun and Earth are both visible (power and direct-to-Earth link together) |
+| Horizon per sample | `sun_horizon_elevation_deg` / `earth_horizon_elevation_deg` hold the mask interpolated (linearly, wrapping at 360 deg) at the body azimuth: the exact threshold used for `*_visible` |
 | Event time | time of the first sample in the new state after the window start |
 
 ## 4. Functional requirements
@@ -108,7 +111,8 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 
 - **EVA-1** (P0, Federico): an `Evaluator` that combines `EphemerisSeries` and `HorizonMask` into
   per-sample visibility of Sun and Earth and `VisibilityMetrics`, following section 3.
-  *Acceptance*: known-answer tests on synthetic series (fractions, longest runs, event times).
+  *Acceptance*: known-answer tests on synthetic series (fractions, longest runs, truncation, event times);
+  the reference definitions and tests are `lunarnav.api.placeholder_metrics` (decision D29, new contract fields).
 - **EVA-2** (P0, Federico): `Evaluation.terrain` computed over the disk of radius
   `landing_precision_m + operating_range_m`.
 - **EVA-3** (P1, Federico): one site over one lunar day (about 30 days at a 1 hour step) evaluates in
