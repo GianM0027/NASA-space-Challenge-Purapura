@@ -4,7 +4,7 @@
 # Michael: tasks
 
 ## Status
-Setup done (branch `michael`, tests green). C2 done: Horizons chosen (D24). Next: EPH-1.
+EPH-1 and EPH-2 done (`build_ephemeris_provider` exported, IF-5). Next: CAT-1, CAT-2.
 
 ## Next (in priority order)
 1. Setup: `git checkout -b michael`, `uv sync --group ephemeris --group catalog --group dev`, `uv run pytest` green.
@@ -27,6 +27,9 @@ Setup done (branch `michael`, tests green). C2 done: Horizons chosen (D24). Next
 - Submission rules: team already aware (skipped).
 - C2 (Horizons query check): works for topocentric lunar sites; limits and decision in D24.
   Recorded responses for the EPH-1 test in `tests/ephemeris/fixtures/` (Apollo 11, Sun and Earth, 2026-12-01 00:00-01:00 UTC, 10 min).
+- EPH-1: `HorizonsEphemerisProvider`, any window length (split at 80,000 rows), 1-sample windows work.
+  Tolerance vs Horizons: exact to the printed 1e-6 deg (values passed through; live check in the slow test).
+- EPH-2: disk cache `data/cache/ephemeris/`, also serves sub-windows and coarser steps on the same grid.
 
 ## Blockers
 
@@ -35,3 +38,18 @@ Setup done (branch `michael`, tests green). C2 done: Horizons chosen (D24). Next
   mission duration); the provider splits long windows into several Horizons requests (90,000-row cap)".
   60 days at 10 min stays only as the acceptance test case. Reason: the window comes from the user, it
   should not be capped by the spec; 1 year at 10 min is about 52,600 rows per body, still cheap.
+- To Gian, tests (D23 impact): with the real `build_ephemeris_provider` present, 3 API tests fail
+  (`test_placeholder_earth_is_at_zenith_at_the_sub_earth_point`, `test_placeholder_earth_is_hidden_on_the_far_side`,
+  `test_real_evaluator_receives_ephemeris_and_terrain`): they assume the placeholder ephemeris, and the
+  test client now calls live Horizons and writes `data/cache/`. Suggested fix: in those tests force the
+  example provider (e.g. `_fake_module(monkeypatch, "lunarnav.ephemeris")` or patch `find_factory`).
+- To Gian, globe (D23 impact): a new date costs 2 Horizons requests (about 2-4 s) the first time; the
+  cache hits only the same instant on the same grid. If `sky_state` rounds `time_utc` to the whole
+  minute, an EPH-3 warm-up at lat 0, lon 0 with a 1-minute step makes every date change instant.
+- To Gian and Federico (D23 impact): `step_minutes` must be a whole number of minutes (Horizons
+  limit); a fractional step raises `ValueError`.
+- To Gian, contracts review (optional fields, catalog side):
+  - `Site.region_radius_m: float | None`: Artemis III candidates are regions (about 15 km), not points.
+  - `Site.feature: str | None`: named feature (e.g. "Mare Tranquillitatis", "Shackleton rim") for UI and AI retrieval.
+  - `VisibilityMetrics.sun_and_earth_visible_fraction`: time with power and direct-to-Earth link
+    together, a common archetype constraint (AI-5).
