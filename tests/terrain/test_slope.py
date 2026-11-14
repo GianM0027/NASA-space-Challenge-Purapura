@@ -114,6 +114,6 @@ def test_real_slopes_mare_is_gentle_and_shackleton_walls_are_steep() -> None:
     # Shackleton (approx. 89.67 S, 129.78 E, radius ~10.5 km): inner walls of roughly 30 degrees.
     crater = provider.terrain_stats(GeoPoint(lat_deg=-89.67, lon_deg=129.78), 10_500.0)
     assert mare.slope_mean_deg < 5.0
-    assert crater.dem_resolution_m == 80.0
+    assert crater.dem_resolution_m in (20.0, 80.0)  # finest polar DEM available
     assert crater.slope_max_deg > 25.0
     assert crater.slope_mean_deg > mare.slope_mean_deg
