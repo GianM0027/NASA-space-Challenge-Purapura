@@ -1,0 +1,718 @@
+[
+  {
+    "id": "apollo-11",
+    "name": "Apollo 11 - Tranquility Base",
+    "location": {
+      "lat_deg": 0.67416,
+      "lon_deg": 23.47314,
+      "height_m": null
+    },
+    "origin": "apollo",
+    "status": "landed",
+    "mission": "Apollo 11",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "First crewed lunar landing (1969), lunar module Eagle in southwestern Mare Tranquillitatis, a flat basaltic mare plain near the equator.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 11 LM), https://www.lroc.asu.edu/posts/938",
+      "Wagner et al. 2017, Icarus 283, 92-103 (LRO-derived Apollo coordinates, ME frame)",
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+    ]
+  },
+  {
+    "id": "apollo-12",
+    "name": "Apollo 12 - Ocean of Storms",
+    "location": {
+      "lat_deg": -3.0128,
+      "lon_deg": -23.4219,
+      "height_m": null
+    },
+    "origin": "apollo",
+    "status": "landed",
+    "mission": "Apollo 12",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Second crewed landing (1969), a pinpoint landing in Oceanus Procellarum next to the Surveyor 3 probe; mare basalt plain.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 12 LM, lon 336.5781 E), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+    ]
+  },
+  {
+    "id": "apollo-14",
+    "name": "Apollo 14 - Fra Mauro",
+    "location": {
+      "lat_deg": -3.64589,
+      "lon_deg": -17.47194,
+      "height_m": null
+    },
+    "origin": "apollo",
+    "status": "landed",
+    "mission": "Apollo 14",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Crewed landing (1971) in the Fra Mauro highlands, hummocky terrain thought to be Imbrium basin ejecta.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 14 LM, lon 342.52806 E), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+    ]
+  },
+  {
+    "id": "apollo-15",
+    "name": "Apollo 15 - Hadley-Apennine",
+    "location": {
+      "lat_deg": 26.13239,
+      "lon_deg": 3.6333,
+      "height_m": null
+    },
+    "origin": "apollo",
+    "status": "landed",
+    "mission": "Apollo 15",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "First J-mission with the Lunar Roving Vehicle (1971), between Hadley Rille and the Apennine Mountains at the edge of Mare Imbrium.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 15 LM), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+    ]
+  },
+  {
+    "id": "apollo-16",
+    "name": "Apollo 16 - Descartes Highlands",
+    "location": {
+      "lat_deg": -8.9734,
+      "lon_deg": 15.5011,
+      "height_m": null
+    },
+    "origin": "apollo",
+    "status": "landed",
+    "mission": "Apollo 16",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Only Apollo landing in the central lunar highlands (1972), Descartes region, with rover traverses to North Ray and Stone Mountain.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 16 LM), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+    ]
+  },
+  {
+    "id": "apollo-17",
+    "name": "Apollo 17 - Taurus-Littrow",
+    "location": {
+      "lat_deg": 20.1911,
+      "lon_deg": 30.7723,
+      "height_m": null
+    },
+    "origin": "apollo",
+    "status": "landed",
+    "mission": "Apollo 17",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Last crewed landing (1972), a valley between massifs at the southeastern edge of Mare Serenitatis.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Apollo 17 LM), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Apollo Landing Sites, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html"
+    ]
+  },
+  {
+    "id": "luna-9",
+    "name": "Luna 9",
+    "location": {
+      "lat_deg": 7.08,
+      "lon_deg": -64.37,
+      "height_m": null
+    },
+    "origin": "luna",
+    "status": "landed",
+    "mission": "Luna 9",
+    "agency": "USSR",
+    "landing_date_utc": "1966-02-03T18:44:52Z",
+    "landing_ellipse_m": null,
+    "description": "First soft landing on the Moon (1966) and first surface panoramas, in western Oceanus Procellarum. Coordinates are the older NSSDCA estimate (0.01 deg precision).",
+    "sources": [
+      "NSSDCA, Soviet Lunar Missions (Luna 9, 295.63 E), https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html"
+    ]
+  },
+  {
+    "id": "luna-13",
+    "name": "Luna 13",
+    "location": {
+      "lat_deg": 18.87,
+      "lon_deg": -62.05,
+      "height_m": null
+    },
+    "origin": "luna",
+    "status": "landed",
+    "mission": "Luna 13",
+    "agency": "USSR",
+    "landing_date_utc": "1966-12-24T18:01:00Z",
+    "landing_ellipse_m": null,
+    "description": "Soft lander (1966) in Oceanus Procellarum that measured soil density with a penetrometer. Coordinates are the older NSSDCA estimate (0.01 deg precision).",
+    "sources": [
+      "NSSDCA, Soviet Lunar Missions (Luna 13, 297.95 E), https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html"
+    ]
+  },
+  {
+    "id": "luna-16",
+    "name": "Luna 16",
+    "location": {
+      "lat_deg": -0.5137,
+      "lon_deg": 56.3638,
+      "height_m": null
+    },
+    "origin": "luna",
+    "status": "landed",
+    "mission": "Luna 16",
+    "agency": "USSR",
+    "landing_date_utc": "1970-09-20T05:18:00Z",
+    "landing_ellipse_m": null,
+    "description": "First robotic sample return (1970), from Mare Fecunditatis near the equator.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Luna 16), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Soviet Lunar Missions (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html"
+    ]
+  },
+  {
+    "id": "luna-17",
+    "name": "Luna 17 / Lunokhod 1",
+    "location": {
+      "lat_deg": 38.23764,
+      "lon_deg": -35.00163,
+      "height_m": null
+    },
+    "origin": "luna",
+    "status": "landed",
+    "mission": "Luna 17",
+    "agency": "USSR",
+    "landing_date_utc": "1970-11-17T03:47:00Z",
+    "landing_ellipse_m": null,
+    "description": "Delivered Lunokhod 1, the first remotely driven rover on another world (1970), in northwestern Mare Imbrium.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Luna 17, lon 324.99837 E), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Soviet Lunar Missions (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html"
+    ]
+  },
+  {
+    "id": "luna-20",
+    "name": "Luna 20",
+    "location": {
+      "lat_deg": 3.7863,
+      "lon_deg": 56.6242,
+      "height_m": null
+    },
+    "origin": "luna",
+    "status": "landed",
+    "mission": "Luna 20",
+    "agency": "USSR",
+    "landing_date_utc": "1972-02-21T19:19:00Z",
+    "landing_ellipse_m": null,
+    "description": "Robotic sample return (1972) from the Apollonius highlands north of Mare Fecunditatis.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Luna 20), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Soviet Lunar Missions (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html"
+    ]
+  },
+  {
+    "id": "luna-21",
+    "name": "Luna 21 / Lunokhod 2",
+    "location": {
+      "lat_deg": 25.9994,
+      "lon_deg": 30.4076,
+      "height_m": null
+    },
+    "origin": "luna",
+    "status": "landed",
+    "mission": "Luna 21",
+    "agency": "USSR",
+    "landing_date_utc": "1973-01-15T23:35:00Z",
+    "landing_ellipse_m": null,
+    "description": "Delivered the Lunokhod 2 rover (1973) inside Le Monnier crater on the eastern edge of Mare Serenitatis.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Luna 21), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Soviet Lunar Missions (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html"
+    ]
+  },
+  {
+    "id": "luna-24",
+    "name": "Luna 24",
+    "location": {
+      "lat_deg": 12.7142,
+      "lon_deg": 62.2129,
+      "height_m": null
+    },
+    "origin": "luna",
+    "status": "landed",
+    "mission": "Luna 24",
+    "agency": "USSR",
+    "landing_date_utc": "1976-08-18T02:00:00Z",
+    "landing_ellipse_m": null,
+    "description": "Last Soviet lunar mission and sample return (1976), drilling about 2 m into Mare Crisium.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Luna 24), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Soviet Lunar Missions (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html"
+    ]
+  },
+  {
+    "id": "surveyor-1",
+    "name": "Surveyor 1",
+    "location": {
+      "lat_deg": -2.4745,
+      "lon_deg": -43.3398,
+      "height_m": null
+    },
+    "origin": "surveyor",
+    "status": "landed",
+    "mission": "Surveyor 1",
+    "agency": "NASA",
+    "landing_date_utc": "1966-06-02T06:17:36Z",
+    "landing_ellipse_m": null,
+    "description": "First US soft landing (1966), inside the Flamsteed P ring in Oceanus Procellarum.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Surveyor 1, lon 316.6602 E), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Surveyor Program (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/surveyor.html"
+    ]
+  },
+  {
+    "id": "surveyor-3",
+    "name": "Surveyor 3",
+    "location": {
+      "lat_deg": -3.0162,
+      "lon_deg": -23.418,
+      "height_m": null
+    },
+    "origin": "surveyor",
+    "status": "landed",
+    "mission": "Surveyor 3",
+    "agency": "NASA",
+    "landing_date_utc": "1967-04-20T00:04:53Z",
+    "landing_ellipse_m": null,
+    "description": "Lander (1967) in Oceanus Procellarum, later visited by the Apollo 12 crew who returned parts of it to Earth.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Surveyor 3, lon 336.5820 E), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Surveyor Program (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/surveyor.html"
+    ]
+  },
+  {
+    "id": "surveyor-5",
+    "name": "Surveyor 5",
+    "location": {
+      "lat_deg": 1.4551,
+      "lon_deg": 23.1943,
+      "height_m": null
+    },
+    "origin": "surveyor",
+    "status": "landed",
+    "mission": "Surveyor 5",
+    "agency": "NASA",
+    "landing_date_utc": "1967-09-11T00:46:44Z",
+    "landing_ellipse_m": null,
+    "description": "Lander (1967) in Mare Tranquillitatis that made the first chemical analysis of lunar soil, near the later Apollo 11 site.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Surveyor 5), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Surveyor Program (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/surveyor.html"
+    ]
+  },
+  {
+    "id": "surveyor-6",
+    "name": "Surveyor 6",
+    "location": {
+      "lat_deg": 0.4742,
+      "lon_deg": -1.4275,
+      "height_m": null
+    },
+    "origin": "surveyor",
+    "status": "landed",
+    "mission": "Surveyor 6",
+    "agency": "NASA",
+    "landing_date_utc": "1967-11-10T01:01:06Z",
+    "landing_ellipse_m": null,
+    "description": "Lander (1967) in Sinus Medii near the center of the near side; first liftoff and short hop from the lunar surface.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Surveyor 6, lon 358.5725 E), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Surveyor Program (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/surveyor.html"
+    ]
+  },
+  {
+    "id": "surveyor-7",
+    "name": "Surveyor 7",
+    "location": {
+      "lat_deg": -40.9812,
+      "lon_deg": -11.5127,
+      "height_m": null
+    },
+    "origin": "surveyor",
+    "status": "landed",
+    "mission": "Surveyor 7",
+    "agency": "NASA",
+    "landing_date_utc": "1968-01-10T01:05:36Z",
+    "landing_ellipse_m": null,
+    "description": "Only Surveyor in the highlands (1968), on the ejecta blanket north of the young crater Tycho.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Surveyor 7, lon 348.4873 E), https://www.lroc.asu.edu/posts/938",
+      "NSSDCA, Surveyor Program (landing time), https://nssdc.gsfc.nasa.gov/planetary/lunar/surveyor.html"
+    ]
+  },
+  {
+    "id": "change-3",
+    "name": "Chang'e 3 / Yutu",
+    "location": {
+      "lat_deg": 44.1214,
+      "lon_deg": -19.5117,
+      "height_m": null
+    },
+    "origin": "change",
+    "status": "landed",
+    "mission": "Chang'e 3",
+    "agency": "CNSA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "First Chinese soft landing (2013), with the Yutu rover, in northern Mare Imbrium.",
+    "sources": [
+      "LROC, Spacecraft Related Coordinates - 2016 Update (Chang'e 3, lon 340.4883 E), https://www.lroc.asu.edu/posts/938"
+    ]
+  },
+  {
+    "id": "change-4",
+    "name": "Chang'e 4 / Yutu-2",
+    "location": {
+      "lat_deg": -45.4561,
+      "lon_deg": 177.5885,
+      "height_m": null
+    },
+    "origin": "change",
+    "status": "landed",
+    "mission": "Chang'e 4",
+    "agency": "CNSA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "First landing on the far side (2019), in Von Karman crater inside the South Pole-Aitken basin; no direct Earth visibility, relayed via the Queqiao satellite.",
+    "sources": [
+      "LROC, Topographic Map of the Chang'e 4 Site, https://www.lroc.asu.edu/images/1100",
+      "NASA M2M-30044 Lunar Surface Data Book, https://ntrs.nasa.gov/api/citations/20250002845/downloads/M2M-30044%20Lunar%20Surface%20Data%20Book%20Baseline_Final.pdf"
+    ]
+  },
+  {
+    "id": "change-5",
+    "name": "Chang'e 5",
+    "location": {
+      "lat_deg": 43.0576,
+      "lon_deg": -51.9161,
+      "height_m": null
+    },
+    "origin": "change",
+    "status": "landed",
+    "mission": "Chang'e 5",
+    "agency": "CNSA",
+    "landing_date_utc": "2020-12-01T15:13:00Z",
+    "landing_ellipse_m": null,
+    "description": "Sample return (2020) from young mare basalts near Mons Rumker in northern Oceanus Procellarum.",
+    "sources": [
+      "LROC, First Look: Chang'e 5 (lon 308.0839 E), https://www.lroc.asu.edu/posts/1172",
+      "NSSDCA, Chang'e 5 (landing time about 15:13 UT), https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2020-087A"
+    ]
+  },
+  {
+    "id": "change-6",
+    "name": "Chang'e 6",
+    "location": {
+      "lat_deg": -41.63,
+      "lon_deg": -153.99,
+      "height_m": null
+    },
+    "origin": "change",
+    "status": "landed",
+    "mission": "Chang'e 6",
+    "agency": "CNSA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "First sample return from the far side (2024), near the southern edge of the Apollo basin inside South Pole-Aitken; no direct Earth visibility.",
+    "sources": [
+      "NASA Lunar Discovery and Exploration Program Update 2025 (41.63 S, 153.99 W), https://assets.science.nasa.gov/content/dam/science/cds/researchers/nac/pac/2025/20-%20ESSIO-Lunar%20Update%20-%20LDEP_TAGGED.pdf",
+      "NASA, LRO Spots China's Chang'e 6 Spacecraft on Lunar Far Side, https://www.nasa.gov/missions/lro/nasas-lro-spots-chinas-change-6-spacecraft-on-lunar-far-side/"
+    ]
+  },
+  {
+    "id": "chandrayaan-3",
+    "name": "Chandrayaan-3 - Shiv Shakti Point",
+    "location": {
+      "lat_deg": -69.3741,
+      "lon_deg": 32.32,
+      "height_m": null
+    },
+    "origin": "chandrayaan",
+    "status": "landed",
+    "mission": "Chandrayaan-3",
+    "agency": "ISRO",
+    "landing_date_utc": "2023-08-23T12:33:00Z",
+    "landing_ellipse_m": null,
+    "description": "First landing at high southern latitude (2023), Vikram lander and Pragyan rover in the highlands about 600 km from the south pole.",
+    "sources": [
+      "LROC, Chandrayaan-3 Landing Site, https://www.lroc.asu.edu/images/1314",
+      "NSSDCA, Chandrayaan 3 (landing time 12:33 UT), https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2023-098A"
+    ]
+  },
+  {
+    "id": "slim",
+    "name": "SLIM - near Shioli crater",
+    "location": {
+      "lat_deg": -13.316,
+      "lon_deg": 25.251,
+      "height_m": null
+    },
+    "origin": "slim",
+    "status": "landed",
+    "mission": "SLIM",
+    "agency": "JAXA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Japanese precision-landing demonstrator (2024) on a sloped crater rim near Shioli crater; landed within about 100 m of its target but tipped onto its nose.",
+    "sources": [
+      "LROC, JAXA SLIM Landing, https://www.lroc.asu.edu/posts/1358",
+      "JAXA, SLIM press conference 2024-01-25, https://www.isas.jaxa.jp/en/outreach/announcements/files/SLIM-pressconf-20240125.pdf"
+    ]
+  },
+  {
+    "id": "im-1",
+    "name": "IM-1 Odysseus - Malapert A region",
+    "location": {
+      "lat_deg": -80.13,
+      "lon_deg": 1.44,
+      "height_m": null
+    },
+    "origin": "clps",
+    "status": "landed",
+    "mission": "IM-1",
+    "agency": "Intuitive Machines / NASA CLPS",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "First commercial lunar landing (2024), near the south pole in a degraded crater; the lander came to rest tilted on its side.",
+    "sources": [
+      "NASA, LRO Images Intuitive Machines' Odysseus Lander (80.13 S, 1.44 E), https://www.nasa.gov/missions/lro/nasas-lro-images-intuitive-machines-odysseus-lander/"
+    ]
+  },
+  {
+    "id": "blue-ghost-m1",
+    "name": "Blue Ghost Mission 1 - Mons Latreille",
+    "location": {
+      "lat_deg": 18.562,
+      "lon_deg": 61.81,
+      "height_m": null
+    },
+    "origin": "clps",
+    "status": "landed",
+    "mission": "Blue Ghost Mission 1",
+    "agency": "Firefly Aerospace / NASA CLPS",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "First fully successful commercial landing (2025), in Mare Crisium about 4 km from Mons Latreille; operated through a full lunar day.",
+    "sources": [
+      "NSSDCA, Blue Ghost Mission 1, https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=BLUEGHOST"
+    ]
+  },
+  {
+    "id": "im-2",
+    "name": "IM-2 Athena - Mons Mouton",
+    "location": {
+      "lat_deg": -84.7906,
+      "lon_deg": 29.1957,
+      "height_m": null
+    },
+    "origin": "clps",
+    "status": "landed",
+    "mission": "IM-2",
+    "agency": "Intuitive Machines / NASA CLPS",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "Southernmost landing so far (2025), on the Mons Mouton plateau near the south pole; the lander ended on its side in a small crater.",
+    "sources": [
+      "LROC, IM-2 Landing Region, https://www.lroc.asu.edu/images/1401",
+      "NASA, LRO Views IM-2 on Moon's Surface, https://www.nasa.gov/image-article/nasas-lunar-reconnaissance-orbiter-views-im-2-on-moons-surface/"
+    ]
+  },
+  {
+    "id": "artemis-peak-near-cabeus-b",
+    "name": "Artemis candidate region - Peak near Cabeus B",
+    "location": {
+      "lat_deg": -82.26,
+      "lon_deg": -54.58,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a peak next to the crater Cabeus B. APPROXIMATE location: center of the IAU feature Cabeus B (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Cabeus B (crater) (center -82.26, -54.58), https://planetarynames.wr.usgs.gov/Feature/8058"
+    ]
+  },
+  {
+    "id": "artemis-haworth",
+    "name": "Artemis candidate region - Haworth",
+    "location": {
+      "lat_deg": -87.45,
+      "lon_deg": -5.17,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the rim area of Haworth crater, which hosts permanently shadowed terrain. APPROXIMATE location: center of the IAU feature Haworth (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Haworth (crater) (center -87.45, -5.17), https://planetarynames.wr.usgs.gov/Feature/14502"
+    ]
+  },
+  {
+    "id": "artemis-malapert-massif",
+    "name": "Artemis candidate region - Malapert Massif",
+    "location": {
+      "lat_deg": -85.98,
+      "lon_deg": -1.67,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the Malapert Massif, a mountain facing the Earth. APPROXIMATE location: center of the IAU feature Mons Malapert, not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Mons Malapert (center -85.98, -1.67), https://planetarynames.wr.usgs.gov/Feature/16338"
+    ]
+  },
+  {
+    "id": "artemis-mons-mouton-plateau",
+    "name": "Artemis candidate region - Mons Mouton Plateau",
+    "location": {
+      "lat_deg": -84.6,
+      "lon_deg": 31.0,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the flat top of Mons Mouton (IM-2 landed on it in 2025). APPROXIMATE location: center of the IAU feature Mons Mouton, not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Mons Mouton (center -84.6, 31.0), https://planetarynames.wr.usgs.gov/Feature/16070"
+    ]
+  },
+  {
+    "id": "artemis-mons-mouton",
+    "name": "Artemis candidate region - Mons Mouton",
+    "location": {
+      "lat_deg": -84.6,
+      "lon_deg": 31.0,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on the slopes of Mons Mouton. APPROXIMATE location: center of the IAU feature Mons Mouton, not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Mons Mouton (center -84.6, 31.0), https://planetarynames.wr.usgs.gov/Feature/16070"
+    ]
+  },
+  {
+    "id": "artemis-nobile-rim-1",
+    "name": "Artemis candidate region - Nobile Rim 1",
+    "location": {
+      "lat_deg": -85.28,
+      "lon_deg": 53.27,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a segment of the rim of Nobile crater. APPROXIMATE location: center of the IAU feature Nobile (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Nobile (crater) (center -85.28, 53.27), https://planetarynames.wr.usgs.gov/Feature/4321"
+    ]
+  },
+  {
+    "id": "artemis-nobile-rim-2",
+    "name": "Artemis candidate region - Nobile Rim 2",
+    "location": {
+      "lat_deg": -85.28,
+      "lon_deg": 53.27,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on another segment of the rim of Nobile crater. APPROXIMATE location: center of the IAU feature Nobile (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Nobile (crater) (center -85.28, 53.27), https://planetarynames.wr.usgs.gov/Feature/4321"
+    ]
+  },
+  {
+    "id": "artemis-de-gerlache-rim-2",
+    "name": "Artemis candidate region - de Gerlache Rim 2",
+    "location": {
+      "lat_deg": -88.48,
+      "lon_deg": -88.34,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a segment of the rim of de Gerlache crater, close to the pole. APPROXIMATE location: center of the IAU feature de Gerlache (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, de Gerlache (crater) (center -88.48, -88.34), https://planetarynames.wr.usgs.gov/Feature/1439"
+    ]
+  },
+  {
+    "id": "artemis-slater-plain",
+    "name": "Artemis candidate region - Slater Plain",
+    "location": {
+      "lat_deg": -88.08,
+      "lon_deg": 111.29,
+      "height_m": null
+    },
+    "origin": "artemis",
+    "status": "candidate",
+    "mission": "Artemis crewed landing",
+    "agency": "NASA",
+    "landing_date_utc": null,
+    "landing_ellipse_m": null,
+    "description": "NASA candidate region for the first Artemis crewed landing near the south pole, on a plain near Slater crater, close to the pole. APPROXIMATE location: center of the IAU feature Slater (crater), not the region center, which NASA does not publish; the region can be several km away.",
+    "sources": [
+      "NASA, NASA Provides Update on Artemis III Moon Landing Regions (2024-10-28), https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "IAU/USGS Gazetteer of Planetary Nomenclature, Slater (crater) (center -88.08, 111.29), https://planetarynames.wr.usgs.gov/Feature/15325"
+    ]
+  }
+]
