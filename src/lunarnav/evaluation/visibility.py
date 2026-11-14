@@ -8,6 +8,8 @@ Definitions (spec section 3, decision D20):
 * A body is visible when its center elevation is strictly above the horizon mask interpolated
   at its azimuth (linear interpolation, periodic over 360 degrees).
 * A run of n consecutive samples in one state lasts n * step.
+* A longest run is truncated when at least one run of that length starts at the first sample or
+  ends at the last one: the window may cut it, so its duration is a lower bound (decision D29).
 * An event (sunset, sunrise, ...) is the time of the first sample in the new state after the
   window start; None when no such transition happens inside the window.
 """
@@ -40,8 +42,8 @@ def is_visible(elevation_deg: np.ndarray, horizon_deg: np.ndarray) -> np.ndarray
     return np.asarray(elevation_deg) > np.asarray(horizon_deg)
 
 
-def longest_run_h(flags: np.ndarray, state: bool, step_h: float) -> float:
-    """Longest run of consecutive samples equal to ``state``, hours.
+def longest_run(flags: np.ndarray, state: bool, step_h: float) -> tuple[float, bool]:
+    """Longest run of consecutive samples equal to ``state``, and whether the window may cut it.
 
     Args:
         flags: Per-sample booleans.
@@ -49,13 +51,21 @@ def longest_run_h(flags: np.ndarray, state: bool, step_h: float) -> float:
         step_h: Sampling step, hours.
 
     Returns:
-        n * step_h for the longest run of n samples; 0 when the state never occurs.
+        (n * step_h for the longest run of n samples, truncated). ``truncated`` is True when at
+        least one run of the maximal length starts at the first sample or ends at the last one.
+        A state that never occurs gives (0.0, False).
     """
-    hits = np.concatenate(([0], (np.asarray(flags) == state).astype(np.int8), [0]))
-    edges = np.flatnonzero(np.diff(hits))  # alternating run starts and ends
+    f = np.asarray(flags) == state
+    hits = np.concatenate(([0], f.astype(np.int8), [0]))
+    edges = np.flatnonzero(np.diff(hits))  # alternating run starts and ends (exclusive)
     if edges.size == 0:
-        return 0.0
-    return float((edges[1::2] - edges[::2]).max() * step_h)
+        return 0.0, False
+    starts, ends = edges[::2], edges[1::2]
+    lengths = ends - starts
+    best = lengths.max()
+    longest = lengths == best
+    truncated = bool(np.any(longest & ((starts == 0) | (ends == f.size))))
+    return float(best * step_h), truncated
 
 
 def first_transition(times: list[datetime], flags: np.ndarray, to: bool) -> datetime | None:
