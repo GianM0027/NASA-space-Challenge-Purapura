@@ -51,10 +51,15 @@ for tests write small fakes of both that return the example payloads.
   corrected for 8-direction grid bias, corner squeezes closed; grid capped at 400 cells of radius). Crew area
   (100 m / 2 km / 20 deg) ~20 ms; rover (20 km / 15 deg) <= 0.5 s, was 4-9 s uncapped. Examples, rover reach:
   Apollo 11 100%, Apollo 15 58% (Hadley), Malapert 7%, Nobile rim 1 76%. scikit-image added to the terrain group.
+- Terrain warm-up: `scripts/terrain_warm_cache.py` precomputes the horizon masks of all catalog sites at the
+  D30 heights (2 m and 10 m) into `data/cache/terrain/`; 72 masks in ~5 s cold, ~1.3 s when cached; failing
+  sites are reported, the run continues. Before a demo: DEM download, then this script.
 
 ## Blockers
 
 ## Requests
+- Gian (README, demo checklist): after `scripts/terrain_download_dem.py`, run
+  `uv run python scripts/terrain_warm_cache.py` (next to Michael's `scripts/ephemeris_warm_cache.py`).
 - Gian (D32 follow-up, D23 impact): (1) merging this PR restores `main` (13 tests red and terrain out of
   contract since PR #12); (2) the site panel can show `terrain.landing_slope_max_deg` (vs
   `max_slope_deg`) and `terrain.reachable_fraction` as soon as the UI sends an `OperationsArea` with
