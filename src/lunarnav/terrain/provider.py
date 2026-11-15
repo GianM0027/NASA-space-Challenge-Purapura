@@ -15,7 +15,7 @@ from lunarnav.terrain.cache import HorizonCache, cache_key
 from lunarnav.terrain.dem import Dem, load_lola_cylindrical, load_lola_south_polar
 from lunarnav.terrain.horizon import RaySegment, segmented_horizon_profile
 from lunarnav.terrain.reachability import reachable_fraction
-from lunarnav.terrain.slope import slope_grid
+from lunarnav.terrain.slope import LANDING_BASELINE_M, slope_grid
 
 DEFAULT_RAW_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "lola"
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "cache" / "terrain"
@@ -188,11 +188,12 @@ class LolaTerrainProvider:
     def terrain_stats(self, location: GeoPoint, area: OperationsArea) -> TerrainStats:
         """Return elevation, slope and reachability statistics over the operations area (D32).
 
-        The landing-precision disk (the hard landing constraint) always uses the finest DEM at
-        its pixel spacing. The full disk (radius ``landing_precision_m + operating_range_m``,
-        informational slopes) and the reachable share of the disk of radius ``operating_range_m``
-        (see ``lunarnav.terrain.reachability``) share one grid, whose cells widen beyond
-        ``MAX_GRID_RADIUS_CELLS``. Slopes are measured over one grid cell.
+        The landing-precision disk (the hard landing constraint) always uses the finest DEM, with
+        slopes on a 100 m baseline (decision D36). The full disk (radius ``landing_precision_m +
+        operating_range_m``, informational slopes) and the reachable share of the disk of radius
+        ``operating_range_m`` (see ``lunarnav.terrain.reachability``) share one grid, whose cells
+        widen beyond ``MAX_GRID_RADIUS_CELLS``; their slopes use the pixel baseline. Every
+        reported maximum is the 99th percentile over its disk (decision D36).
 
         Args:
             location: Center of the operations area; its ``height_m`` is ignored.
@@ -202,8 +203,10 @@ class LolaTerrainProvider:
             The terrain statistics.
         """
         lat, lon = _off_pole(location.lat_deg), location.lon_deg
-        landing_dem = self._dem_for_grid(location, area.landing_precision_m)
-        landing_grid = slope_grid(landing_dem, lat, lon, area.landing_precision_m)
+        landing_dem = self._dem_for_grid(location, area.landing_precision_m + LANDING_BASELINE_M)
+        landing_grid = slope_grid(
+            landing_dem, lat, lon, area.landing_precision_m, baseline_m=LANDING_BASELINE_M
+        )
         landing = landing_grid.disk_stats(area.landing_precision_m)
         full_radius = area.landing_precision_m + area.operating_range_m
         dem = self._dem_for_grid(location, full_radius)
