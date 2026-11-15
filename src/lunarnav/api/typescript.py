@@ -39,7 +39,7 @@ def _models() -> list[tuple[type[BaseModel], JsonSchemaMode]]:
         requests.CompareRequest,
         requests.MissionAnalysisRequest,
         requests.ExplainRequest,
-        requests.RenameSiteRequest,
+        requests.UpdateSiteRequest,
     ]
     return [(model, "serialization") for model in received] + [
         (model, "validation") for model in sent

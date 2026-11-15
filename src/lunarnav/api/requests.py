@@ -73,13 +73,30 @@ class ExplainRequest(BaseModel):
     language_hint: str = Field(default="", max_length=4000)
 
 
-class RenameSiteRequest(BaseModel):
-    """Rename a user site; the id never changes.
+SiteName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+SiteDescription = Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)]
+
+
+class UpdateSiteRequest(BaseModel):
+    """Edit the name and/or description of a user site; the id never changes.
 
     Attributes:
-        name: New display name, stripped of surrounding whitespace, at least one character.
+        name: New display name, stripped, at least one character; None keeps the current one.
+        description: New description, stripped; None keeps it, "" clears it.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    name: SiteName | None = None
+    description: SiteDescription | None = None
+
+    @model_validator(mode="after")
+    def _one_field(self) -> Self:
+        """Reject a body that changes nothing.
+
+        Raises:
+            ValueError: If neither ``name`` nor ``description`` is given.
+        """
+        if self.name is None and self.description is None:
+            raise ValueError("give a name, a description, or both")
+        return self

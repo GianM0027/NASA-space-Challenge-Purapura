@@ -158,6 +158,28 @@ class SiteCatalog(Protocol):
         """
         ...
 
+    def update_user_site(
+        self, site_id: str, *, name: str | None = None, description: str | None = None
+    ) -> Site:
+        """Change the name and/or description of a user-defined site, persistently.
+
+        ``id`` is the stable key and stays the same.
+
+        Args:
+            site_id: Id of the site to edit.
+            name: New display name, stripped; None keeps the current one.
+            description: New description, stripped; None keeps it, "" clears it.
+
+        Returns:
+            The updated site.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is not a user site (``origin != "user"``).
+            ValueError: If ``name`` is given but empty after stripping.
+        """
+        ...
+
 
 class MissionAnalyzer(Protocol):
     """Robustness of a site to date slips and landing dispersion (owner: Gian)."""

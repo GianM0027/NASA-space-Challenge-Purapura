@@ -8,10 +8,10 @@ import type {
   Evaluation,
   ExplainRequest,
   MissionRequirementsInput,
-  RenameSiteRequest,
   Site,
   SiteRanking,
   SkyState,
+  UpdateSiteRequest,
 } from './contracts'
 
 /** Per-service origin reported by the backend: "real", "example" or "error: ...". */
@@ -66,7 +66,7 @@ export const api = {
   modules: () => request<ModuleStatus>('/api/modules'),
   sites: () => request<Site[]>('/api/sites'),
   addSite: (site: Site) => request<Site>('/api/sites', site),
-  renameSite: (siteId: string, body: RenameSiteRequest) =>
+  updateSite: (siteId: string, body: UpdateSiteRequest) =>
     request<Site>(`/api/sites/${encodeURIComponent(siteId)}`, body, 'PATCH'),
   removeSite: (siteId: string) => request<void>(`/api/sites/${encodeURIComponent(siteId)}`, undefined, 'DELETE'),
   sky: (timeUtc: string) => request<SkyState>(`/api/sky?time_utc=${encodeURIComponent(timeUtc)}`),

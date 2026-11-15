@@ -41,11 +41,16 @@ class LlmClient(Protocol):
         ...
 
 
-def find_claude_executable() -> str | None:
+def find_claude_executable(windows: bool | None = None) -> str | None:
     """Locate the Claude Code CLI.
 
     Looks at ``LUNARNAV_CLAUDE_BIN``, then ``PATH``, then the native installer's default folder
-    (``~/.local/bin``), which is not always on ``PATH`` on Windows.
+    (``~/.local/bin``), which is not always on ``PATH`` on Windows. On Windows the npm install
+    puts an extensionless shell script ``claude`` next to ``claude.cmd``; ``subprocess`` cannot
+    run the former, so ``claude.exe`` and ``claude.cmd`` are looked up first.
+
+    Args:
+        windows: Whether to apply the Windows lookup order; None detects it from ``os.name``.
 
     Returns:
         Path of the executable, or None if not found.
@@ -53,9 +58,13 @@ def find_claude_executable() -> str | None:
     configured = os.environ.get("LUNARNAV_CLAUDE_BIN")
     if configured:
         return configured
-    found = shutil.which("claude")
-    if found:
-        return found
+    if windows is None:
+        windows = os.name == "nt"
+    names = ("claude.exe", "claude.cmd") if windows else ("claude",)
+    for name in names:
+        found = shutil.which(name)
+        if found:
+            return found
     for name in ("claude.exe", "claude"):
         candidate = Path.home() / ".local" / "bin" / name
         if candidate.is_file():

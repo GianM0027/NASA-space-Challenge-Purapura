@@ -20,7 +20,7 @@ from lunarnav.api.requests import (
     EvaluateRequest,
     ExplainRequest,
     MissionAnalysisRequest,
-    RenameSiteRequest,
+    UpdateSiteRequest,
 )
 from lunarnav.api.services import Services
 from lunarnav.api.sky import sky_state
@@ -133,11 +133,16 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         return Response(status_code=204)
 
     @app.patch("/api/sites/{site_id}")
-    def rename_site(site_id: str, request: RenameSiteRequest) -> Site:
-        """Rename a user site (id unchanged); 404 if unknown, 403 if curated, 422 if no name."""
-        require_editable_catalog("rename_user_site")
+    def update_site(site_id: str, request: UpdateSiteRequest) -> Site:
+        """Edit a user site's name and/or description (id unchanged).
+
+        404 if unknown, 403 if curated, 422 if the body is empty or the name blank.
+        """
+        require_editable_catalog("update_user_site")
         try:
-            return svc.catalog.rename_user_site(site_id, request.name)
+            return svc.catalog.update_user_site(
+                site_id, name=request.name, description=request.description
+            )
         except UnknownSiteError as error:
             raise HTTPException(404, f"unknown site id {site_id!r}") from error
         except ReadOnlySiteError as error:

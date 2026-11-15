@@ -1,4 +1,4 @@
-// ABOUTME: Coordinates box (analyze or save a typed or clicked point) and "My locations" (rename, delete)
+// ABOUTME: Coordinates box (analyze or save a typed or clicked point) and "My locations" (edit, delete)
 // ABOUTME: Owner: Gian. Presentational: the parent makes the API calls and returns an error message or null
 
 import { useState } from 'react'
@@ -99,27 +99,28 @@ export function CoordinatesBox(props: {
   )
 }
 
-/** One user location: pick, rename inline, delete after an inline confirmation. */
+/** One user location: pick, edit name and description inline, delete after an inline confirmation. */
 function LocationRow(props: {
   site: Site
   active: boolean
   onPick: (siteId: string) => void
-  onRename: Action<[siteId: string, name: string]>
+  onEdit: Action<[siteId: string, name: string, description: string]>
   onDelete: Action<[siteId: string]>
 }) {
-  const { site, active, onPick, onRename, onDelete } = props
-  const [mode, setMode] = useState<'view' | 'rename' | 'confirm'>('view')
+  const { site, active, onPick, onEdit, onDelete } = props
+  const [mode, setMode] = useState<'view' | 'edit' | 'confirm'>('view')
   const [draft, setDraft] = useState(site.name)
+  const [draftDescription, setDraftDescription] = useState(site.description)
   const [message, setMessage] = useState<string | null>(null)
 
-  async function rename() {
+  async function save() {
     if (!draft.trim()) {
       setMessage('The name cannot be empty.')
       return
     }
     setMessage(null)
     // An API error is shown by the section, which outlives this row (e.g. after a 404).
-    if (!(await onRename(site.id, draft))) setMode('view')
+    if (!(await onEdit(site.id, draft, draftDescription))) setMode('view')
   }
 
   async function remove() {
@@ -130,20 +131,26 @@ function LocationRow(props: {
 
   return (
     <li>
-      {mode === 'rename' ? (
+      {mode === 'edit' ? (
         <form
-          className="row"
+          className="row edit"
           onSubmit={(event) => {
             event.preventDefault()
-            void rename()
+            void save()
           }}
+          onKeyDown={(e) => e.key === 'Escape' && setMode('view')}
         >
           <input
             autoFocus
             value={draft}
             aria-label={`New name for ${site.name}`}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === 'Escape' && setMode('view')}
+          />
+          <input
+            value={draftDescription}
+            aria-label={`Description of ${site.name}`}
+            placeholder="Description (optional)"
+            onChange={(e) => setDraftDescription(e.target.value)}
           />
           <button type="submit">Save</button>
           <button type="button" onClick={() => setMode('view')}>
@@ -156,16 +163,18 @@ function LocationRow(props: {
             <i className="dot custom" />
             {site.name}
             <span className="muted small"> {formatCoordinates(site.location)}</span>
+            {site.description && <span className="site-description small">{site.description}</span>}
           </button>
           <button
-            title="Rename"
+            title="Edit name and description"
             onClick={() => {
               setDraft(site.name)
+              setDraftDescription(site.description)
               setMessage(null)
-              setMode('rename')
+              setMode('edit')
             }}
           >
-            Rename
+            Edit
           </button>
           <button title="Delete" onClick={() => setMode('confirm')}>
             Delete
@@ -189,11 +198,11 @@ export function MyLocations(props: {
   sites: Site[]
   selectedId: string | null
   onPick: (siteId: string) => void
-  onRename: Action<[siteId: string, name: string]>
+  onEdit: Action<[siteId: string, name: string, description: string]>
   onDelete: Action<[siteId: string]>
 }) {
-  const { sites, selectedId, onPick, onRename, onDelete } = props
-  // The last rename or delete error, kept here because the row it concerns may be gone.
+  const { sites, selectedId, onPick, onEdit, onDelete } = props
+  // The last edit or delete error, kept here because the row it concerns may be gone.
   const [notice, setNotice] = useState<string | null>(null)
 
   /** Wrap an action so that its outcome replaces the section's notice. */
@@ -219,7 +228,7 @@ export function MyLocations(props: {
               site={site}
               active={site.id === selectedId}
               onPick={onPick}
-              onRename={reporting(onRename)}
+              onEdit={reporting(onEdit)}
               onDelete={reporting(onDelete)}
             />
           ))}

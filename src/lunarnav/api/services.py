@@ -314,12 +314,37 @@ class ExampleCatalog:
             ReadOnlySiteError: If the site is not a user site.
             ValueError: If ``name`` is empty after stripping.
         """
+        return self.update_user_site(site_id, name=name)
+
+    def update_user_site(
+        self, site_id: str, *, name: str | None = None, description: str | None = None
+    ) -> Site:
+        """Change the name and/or description of a user site in memory; the id stays the same.
+
+        Args:
+            site_id: Id of the site to edit.
+            name: New display name, stripped; None keeps the current one.
+            description: New description, stripped; None keeps it, "" clears it.
+
+        Returns:
+            The updated site.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is not a user site.
+            ValueError: If ``name`` is given but empty after stripping.
+        """
         site = self._user_site(site_id)
-        if not name.strip():
-            raise ValueError("site name must not be empty")
-        renamed = site.model_copy(update={"name": name.strip()})
-        self._sites[self._sites.index(site)] = renamed
-        return renamed
+        update: dict[str, str] = {}
+        if name is not None:
+            if not name.strip():
+                raise ValueError("site name must not be empty")
+            update["name"] = name.strip()
+        if description is not None:
+            update["description"] = description.strip()
+        edited = site.model_copy(update=update)
+        self._sites[self._sites.index(site)] = edited
+        return edited
 
     def _user_site(self, site_id: str) -> Site:
         """Return the site with id ``site_id`` if it may be changed.

@@ -150,8 +150,27 @@ def test_rename_errors(client: TestClient) -> None:
     assert client.patch(f"/api/sites/{_curated_id(client)}", json={"name": "X"}).status_code == 403
 
 
+def test_update_description_keeps_name_and_id(client: TestClient) -> None:
+    client.post("/api/sites", json=USER_SITE)
+    response = client.patch("/api/sites/user-crater-rim", json={"description": "  near the ridge "})
+    assert response.status_code == 200
+    site = Site.model_validate(response.json())
+    assert (site.id, site.name, site.description) == (
+        "user-crater-rim",
+        USER_SITE["name"],
+        "near the ridge",
+    )
+    cleared = client.patch("/api/sites/user-crater-rim", json={"name": "Rim", "description": ""})
+    assert (cleared.json()["name"], cleared.json()["description"]) == ("Rim", "")
+
+
+def test_update_needs_a_field(client: TestClient) -> None:
+    client.post("/api/sites", json=USER_SITE)
+    assert client.patch("/api/sites/user-crater-rim", json={}).status_code == 422
+
+
 class _AddOnlyCatalog:
-    """A catalog written before remove and rename joined the port."""
+    """A catalog written before remove and update joined the port."""
 
     def list_sites(self) -> list[Site]:
         return []
@@ -170,7 +189,7 @@ def test_catalog_without_remove_or_rename_is_501() -> None:
     assert client.delete("/api/sites/x").status_code == 501
     response = client.patch("/api/sites/x", json={"name": "X"})
     assert response.status_code == 501
-    assert "rename_user_site" in response.json()["detail"]
+    assert "update_user_site" in response.json()["detail"]
 
 
 def test_rank(client: TestClient) -> None:
