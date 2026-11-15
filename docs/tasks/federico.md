@@ -9,7 +9,8 @@ popup opened from a dock pill. Waiting on Gian to mount it in the App dock.
 
 ## Next (in priority order)
 1. Once mounted by Gian: polish the comparison view from team feedback; TO-6 sensitivity view is already in the table.
-2. If the PDF report is assigned to me: the trade-off section (ranking + details per criterion).
+2. PDF report (UI-13, D42, P2): ReportBuilder popup with live A4 preview, report.css print rules, cover and
+   mission parameters, site evaluation, trade-off, sources and methods. Shapes are fixed in `report/types.ts`.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -82,6 +83,9 @@ for tests write small fakes of both that return the example payloads.
 - UI-3 redesign: guided popup (1 scenarios with full-width site select, 2 mission settings collapsed with a
   summary, 3 criteria with one-line hints and custom criteria, 4 weights as equal / pairwise sliders with a
   Saaty readout / direct), results column with ranking bars and per-criterion table. Opened from a dock pill.
+- Trade-off Reset button (Gian's request): back to the initial setup, clears the result.
+- Report shapes (D42): `report/types.ts` (ReportInputs, ReportBuilderProps, SectionProps<T> and the data of
+  each section, rendering rules) and `report/selection.ts` (availability, print order, numbering; 3 tests).
 
 ## Blockers
 
