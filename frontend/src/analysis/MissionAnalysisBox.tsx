@@ -1,6 +1,7 @@
 // ABOUTME: Mission analysis window (spec UI-5, AI-6): one tab per analyzed site, minimizable
 // ABOUTME: Owner: Gian. Shows the AI comment, Michael's summary, date-slip and dispersion tables
 
+import { AiBadge } from '../ai/AiBadge'
 import type { DispersionSample, GeoPoint, RobustnessReport, TimeWindow, VisibilityMetrics } from '../api/contracts'
 import { formatDuration, formatPercent, formatShiftDays, formatUtc } from '../format'
 import { bearingDeg, classify, compass, isSteep, SAME_FRACTION, SLOPE_LIMIT_DEG, touchdownVerdict } from './dispersion'
@@ -49,7 +50,7 @@ function AnalysisText({ report, done }: { report: RobustnessReport; done: boolea
   if (report.ai_comment) {
     return (
       <p className="analysis-comment">
-        <span className="analysis-tag">AI</span>
+        <AiBadge />
         {report.ai_comment}
       </p>
     )

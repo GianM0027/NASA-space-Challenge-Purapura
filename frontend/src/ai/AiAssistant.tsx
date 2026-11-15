@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
+import { AiBadge } from './AiBadge'
 import type { ChatMessage, MissionRequirements, Site, SiteRanking, SiteScore, TimeWindow } from '../api/contracts'
 import { formatUtc, hoursBetween } from '../format'
 import {
@@ -104,7 +105,14 @@ function RankRow(props: {
       </button>
       {open && (
         <div className="rank-detail">
-          <p className="rationale">{score.rationale ?? 'Explanation on the way…'}</p>
+          {score.rationale ? (
+            <p className="rationale">
+              <AiBadge />
+              {score.rationale}
+            </p>
+          ) : (
+            <p className="rationale muted">Explanation on the way…</p>
+          )}
           <table className="checks">
             <tbody>
               {Object.entries(score.constraints_met).map(([field, ok]) => {
@@ -260,7 +268,7 @@ export function AiAssistant(props: {
   if (minimized) {
     return (
       <button className="ai-pill" onClick={() => setMinimized(false)}>
-        AI assistant{ranking ? ` · ${ranking.results.length} sites` : ''}
+        AI assistant{ranking ? ` · ${ranking.results.length} landing sites` : ''}
       </button>
     )
   }
@@ -354,9 +362,9 @@ export function AiAssistant(props: {
         </div>
       ) : (
         <div className="ranking">
-          {!ranking && <p className="muted small">No ranking yet: ask for sites in the chat.</p>}
+          {!ranking && <p className="muted small">No ranking yet: ask for landing sites in the chat.</p>}
           {ranking && passing.length === 0 && missing.length > 0 && (
-            <p className="muted small">No site meets every constraint; the closest are below.</p>
+            <p className="muted small">No landing site meets every constraint; the closest are below.</p>
           )}
           <ol className="rank-list">{passing.map(row)}</ol>
           {missing.length > 0 && (
@@ -369,7 +377,7 @@ export function AiAssistant(props: {
           )}
           {ranking && Object.keys(ranking.unavailable).length > 0 && (
             <p className="muted small" title={Object.entries(ranking.unavailable).map((e) => e.join(': ')).join('\n')}>
-              Not evaluated: {Object.keys(ranking.unavailable).length} sites (hover for why).
+              Not evaluated: {Object.keys(ranking.unavailable).length} landing sites (hover for why).
             </p>
           )}
           {busy && <p className="muted small">{busy}</p>}

@@ -170,10 +170,10 @@ export function SitePanel(props: Props) {
   if (!location) {
     return (
       <section className="panel">
-        <h2>Location</h2>
+        <h2>Landing site</h2>
         {controls}
         {wheel}
-        <p className="muted">Pick a site marker or click anywhere on the globe.</p>
+        <p className="muted">Pick a landing site marker or click anywhere on the globe.</p>
       </section>
     )
   }

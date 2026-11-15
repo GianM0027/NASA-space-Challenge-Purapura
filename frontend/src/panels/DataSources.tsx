@@ -22,7 +22,7 @@ const SOURCES: DataSource[] = [
   {
     what: 'JPL Horizons',
     provider: 'NASA JPL',
-    use: 'Sun and Earth directions from each site',
+    use: 'Sun and Earth directions from each landing site',
     url: 'https://ssd-api.jpl.nasa.gov/doc/horizons.html',
   },
   {
@@ -32,7 +32,7 @@ const SOURCES: DataSource[] = [
   },
   {
     what: 'Landing site coordinates, mission types, named regions',
-    provider: 'cited per entry (site panel, docs/domain)',
+    provider: 'cited per entry (landing site panel, docs/domain)',
     use: 'catalog, AI defaults and search scope',
   },
   {

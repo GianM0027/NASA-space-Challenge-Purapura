@@ -621,14 +621,15 @@ class ChatAssistant:
     def _summary(self, ranking: SiteRanking) -> str:
         """Deterministic sentence on the ranking outcome."""
         if not ranking.results:
-            return "No catalog site is in the search scope."
+            return "No landing site of the catalog is in the search scope."
         names = {site.id: site.name for site in self.catalog.list_sites()}
         best = ranking.results[0]
         name = names.get(best.site_id, best.site_id)
         passing = sum(score.all_constraints_met for score in ranking.results)
         if passing == 0:
-            return f"No site meets every constraint; the closest is {name}."
-        return f"{passing} of {len(ranking.results)} sites meet every constraint; best: {name}."
+            return f"No landing site meets every constraint; the closest is {name}."
+        total = len(ranking.results)
+        return f"{passing} of {total} landing sites meet every constraint; best: {name}."
 
     def ask(self, request: AiRequest) -> AiAnswer:
         """Answer one chat turn.

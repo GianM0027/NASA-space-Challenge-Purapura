@@ -67,7 +67,7 @@ export function AiRanking({ data, sites, number }: AiRankingSectionProps) {
         <thead>
           <tr>
             <th>#</th>
-            <th>Site</th>
+            <th>Landing site</th>
             <th>Constraints met</th>
             <th>Score</th>
             <th>Why (AI, numbers checked)</th>
@@ -91,10 +91,10 @@ export function AiRanking({ data, sites, number }: AiRankingSectionProps) {
         </tbody>
       </table>
       <p className="rpt-note">
-        Every set criterion is a hard filter; sites that meet them all are scored 0 to 1 by the weighted share of
+        Every set criterion is a hard filter; landing sites that meet them all are scored 0 to 1 by the weighted share of
         headroom used (decision D33), the others follow, closest first.
-        {data.results.length > PRINTED_SITES && ` ${data.results.length - PRINTED_SITES} more sites not listed.`}
-        {unavailable > 0 && ` ${unavailable} sites could not be evaluated.`}
+        {data.results.length > PRINTED_SITES && ` ${data.results.length - PRINTED_SITES} more landing sites not listed.`}
+        {unavailable > 0 && ` ${unavailable} landing sites could not be evaluated.`}
         {Object.keys(data.weights).length > 0 &&
           ` Weights: ${Object.entries(data.weights)
             .map(([field, weight]) => `${fieldSpec(field)?.label ?? field} ${weight.toFixed(2)}`)
