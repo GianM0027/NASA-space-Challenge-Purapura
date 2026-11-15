@@ -9,8 +9,8 @@ popup opened from a dock pill. Waiting on Gian to mount it in the App dock.
 
 ## Next (in priority order)
 1. Once mounted by Gian: polish the comparison view from team feedback; TO-6 sensitivity view is already in the table.
-2. PDF report (UI-13, D42, P2): ReportBuilder popup with live A4 preview, report.css print rules, cover and
-   mission parameters, site evaluation, trade-off, sources and methods. Shapes are fixed in `report/types.ts`.
+2. PDF report: register Michael's `MissionAnalysis` and Gian's `AiRanking` in `COMPONENTS` of
+   `report/ReportBuilder.tsx` once their files land.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -86,6 +86,14 @@ for tests write small fakes of both that return the example payloads.
 - Trade-off Reset button (Gian's request): back to the initial setup, clears the result.
 - Report shapes (D42): `report/types.ts` (ReportInputs, ReportBuilderProps, SectionProps<T> and the data of
   each section, rendering rules) and `report/selection.ts` (availability, print order, numbering; 3 tests).
+- ReportBuilder (UI-13): dock pill "Report", popup with title, section checkboxes (disabled with "run it first"
+  or "coming soon") and a live A4 preview; "Download PDF" prints only a portal copy of the same document
+  (`@page` A4, 15 mm). Sections: cover with contents, site evaluation (Sun/Earth visibility strip, metrics,
+  terrain), trade-off (ranking + details per criterion), sources and methods. Smoke tests via server rendering.
+  Dev page `/src/report/preview.html` (real evaluation + trade-off view). Checked in the browser: ticking
+  Trade-off adds the section at once. Print to PDF checked by Federico (Chrome, A4, report only).
+- Trade-off fix: sites loaded after mounting (App loads them async) left the scenarios empty; opening the popup
+  before a first run now fills them.
 
 ## Blockers
 
@@ -95,8 +103,8 @@ for tests write small fakes of both that return the example payloads.
   It is self-contained like the AI assistant: a "Trade-off" pill that opens a full-app popup (fixed, z-index 50,
   Esc or Minimize keeps the setup and result). Optional `onResult` prop hands every result to App (e.g. for a
   PDF report). Optionally move `runTradeoff` / `downloadTradeoff` from `compare/tradeoffApi.ts` into `api/client.ts`.
-- Gian (proposal, owner to decide): PDF report builder, a dock pill "Report" with checkboxes per output
-  (site evaluation, mission analysis, AI ranking, trade-off) and a live preview; full brief sent by Federico.
+- Gian (D42): mount `<ReportBuilder sites window={panelWindow} evaluation={outcome?.evaluation ?? null}
+  analyses ranking tradeoff />` in the dock; pass `onResult` to CompareView for `tradeoff`.
 - Gian (README, demo checklist): after `scripts/terrain_download_dem.py`, run
   `uv run python scripts/terrain_warm_cache.py` (next to Michael's `scripts/ephemeris_warm_cache.py`).
 - Gian (D32 follow-up, D23 impact): (1) merging this PR restores `main` (13 tests red and terrain out of

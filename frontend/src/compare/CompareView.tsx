@@ -181,10 +181,18 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
   }
 
   const openPopup = () => {
-    // Before a first run, follow the site selected on the globe in scenario A.
-    const picked = sites.find((s) => s.id === initialSiteId)
-    if (!result && picked && draft.scenarios[0].siteId !== picked.id) {
-      setScenario(0, { siteId: picked.id, label: shortLabel(picked.name) })
+    if (!result) {
+      // Before a first run: the sites may have arrived after mounting (App loads them async), so fill the
+      // scenarios still without a site from a fresh setup, and let scenario A follow the globe selection.
+      const fresh = initialDraft()
+      const picked = sites.find((s) => s.id === initialSiteId)
+      setDraft((d) => ({
+        ...d,
+        scenarios: d.scenarios.map((s, k) => {
+          if (k === 0 && picked) return { ...s, siteId: picked.id, label: shortLabel(picked.name) }
+          return s.siteId ? s : (fresh.scenarios[k] ?? s)
+        }),
+      }))
     }
     setOpen(true)
   }

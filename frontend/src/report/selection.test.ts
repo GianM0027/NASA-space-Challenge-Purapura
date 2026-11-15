@@ -45,4 +45,8 @@ describe('report sections', () => {
       ['tradeoff', 2],
     ])
   })
+  it('leaves the cover unnumbered', () => {
+    const picked = selectedSections(inputs({ tradeoff: {} as TradeoffResult }), new Set(['cover', 'tradeoff', 'sources']))
+    expect(picked.map((s) => s.number)).toEqual([0, 1, 2])
+  })
 })
