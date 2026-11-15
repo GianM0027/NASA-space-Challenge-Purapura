@@ -65,6 +65,19 @@ recent missions, Haworth/de Gerlache points on the rim.
 ## Blockers
 
 ## Requests
+- To Gian (user-site description, D23 impact): "Save as location" asks for a description, the
+  catalog stores it, but the GUI never shows it and nothing can edit it. Proposal:
+  - port: `SiteCatalog.update_user_site(site_id, *, name: str | None = None, description: str | None
+    = None) -> Site` (None keeps a field, "" clears the description, blank name rejected, same
+    errors as rename); `rename_user_site` can stay as a shortcut. Already implemented and tested in
+    `JsonSiteCatalog` (`tests/catalog/test_catalog.py`), so the real catalog is ready;
+  - API: `PATCH /api/sites/{id}` accepting `{"name"?, "description"?}`;
+  - GUI: show the description in the site panel and in "My locations", with an edit action.
+- To Gian (Claude CLI on Windows): `find_claude_executable` returns the extensionless npm shim
+  `%APPDATA%\npm\claude` (Python 3.12 `shutil.which` matches the bare name first), which
+  `subprocess` cannot run; on Windows prefer `claude.cmd` / `claude.exe`. Workaround here:
+  `LUNARNAV_CLAUDE_BIN` set to `claude.cmd`. Also nothing loads `.env`: the variables must be in the
+  backend's environment (or add `uvicorn --env-file .env`, which needs python-dotenv).
 - To Gian (D23 impact): D34 done in `JsonSiteCatalog`, so rename and delete on the real catalog no
   longer answer 501; the two-backends overwrite is fixed too. Nothing to change on your side.
 - To Gian, AI-5 priority (D23 impact): no archetype has a `priority` list (Michael's decision): for

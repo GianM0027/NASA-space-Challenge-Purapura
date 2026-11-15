@@ -201,6 +201,8 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 | `GET /api/sky?time_utc=<ISO 8601>` | none | `SkyState` (subsolar and sub-Earth points, derived from `EphemerisProvider`) |
 | `GET /api/sites` | none | `list[Site]` |
 | `POST /api/sites` | `Site` (origin `user`) | `Site` |
+| `PATCH /api/sites/{id}` | `{"name"?: str, "description"?: str}` (at least one; `""` clears the description) | `Site` (user sites only: 403 if curated, 404 if unknown) |
+| `DELETE /api/sites/{id}` | none | 204 (user sites only: 403 if curated, 404 if unknown) |
 | `POST /api/evaluate` | `{"site_id": str or null, "location": GeoPoint or null, "window": TimeWindow, "area": OperationsArea}` (one of site_id/location) | `Evaluation` |
 | `POST /api/compare` | `{"scenarios": [evaluate request, ...]}` (2 to 4) | `list[Evaluation]` |
 | `POST /api/rank` | `MissionRequirements` | `SiteRanking` |

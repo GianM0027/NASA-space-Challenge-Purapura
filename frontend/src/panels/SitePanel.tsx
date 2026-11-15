@@ -19,6 +19,8 @@ export type WindowSettings = { startUtc: string; durationHours: number; stepMinu
 
 type Props = {
   title: string | null
+  /** Description of the selected catalog site, empty for none. */
+  description: string
   location: GeoPoint | null
   settings: WindowSettings
   onSettings: (settings: WindowSettings) => void
@@ -59,7 +61,7 @@ function Metric(props: { label: string; value: string }) {
 
 /** Window controls plus the metrics of the selected point. */
 export function SitePanel(props: Props) {
-  const { title, location, settings, onSettings, evaluation, loading, error } = props
+  const { title, description, location, settings, onSettings, evaluation, loading, error } = props
   // A mission window from the AI box may have a length outside the fixed choices.
   const durations = DURATIONS_H.includes(settings.durationHours)
     ? DURATIONS_H
@@ -122,6 +124,7 @@ export function SitePanel(props: Props) {
     <section className="panel">
       <h2>{title ?? 'Custom location'}</h2>
       <p className="muted">{formatCoordinates(location)}</p>
+      {description && <p className="site-description">{description}</p>}
       {controls}
 
       {error && <p className="error">{error}</p>}

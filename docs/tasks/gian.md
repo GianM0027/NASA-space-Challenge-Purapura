@@ -10,6 +10,9 @@ ranking (AI-2), extraction and explanations through the Claude Code CLI (AI-1, A
 archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a placeholder.
 
 ## Next (in priority order)
+0. AI: a region named in words ("near the south pole") sets no latitude bound, so the ranking runs
+   over all 36 sites (found 2026-11-16: top three Chang'e 6, Chang'e 4, Luna 13). Needs named
+   regions mapped to bounds in code, each bound with a cited source.
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
    checked through the DOM and network only, not by eye.
 3. AI-1 acceptance: 5 scripted requests through the real CLI, recorded with their timings.
@@ -18,6 +21,12 @@ archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- User-site description (Michael's request, decision D35): `SiteCatalog.update_user_site` in the
+  port, `PATCH /api/sites/{id}` takes `{name?, description?}`, "My locations" rows show the
+  description and edit name and description together, the site panel shows it. Checked in the
+  browser on the real catalog (save, edit, persisted, shown in row and panel).
+- Claude CLI lookup on Windows (Michael's finding): `claude.exe`, then `claude.cmd`, before the
+  extensionless npm shim that `subprocess` cannot run; 5 tests.
 - User locations (Federico's request, decision D34): coordinates box (lat [-90, 90], east-positive
   lon [-180, 180), checked client-side) that analyzes a point like a globe click and is prefilled by
   a click; "Save as location" (id `user-<slug>`); "My locations" section with inline rename and
@@ -38,6 +47,9 @@ archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a
 - Minor: Starlette warns that `httpx` with its TestClient is deprecated in favour of `httpx2`; switch after verifying the `httpx2` package.
 
 ## Answers to requests from others
+- Michael, user-site description: done (D35); your `JsonSiteCatalog.update_user_site` is merged into
+  `gian` and now implements the port method. Your CLI shim finding: fixed, `LUNARNAV_CLAUDE_BIN` no
+  longer needed for an npm install.
 - Michael, EPH-1 wording: done in the spec (any window length, 60 days at 10 min only as the speed case).
 - Michael, API tests against the real provider: done; API tests build placeholder-only services
   (`build_services(use_real=False)`), wiring tests start from "no factories".

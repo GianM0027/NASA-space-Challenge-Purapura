@@ -160,10 +160,10 @@ function App() {
     [refreshSites],
   )
 
-  const renameLocation = useCallback(
-    async (siteId: string, name: string): Promise<string | null> => {
+  const editLocation = useCallback(
+    async (siteId: string, name: string, description: string): Promise<string | null> => {
       try {
-        await api.renameSite(siteId, { name })
+        await api.updateSite(siteId, { name, description })
         await refreshSites()
         return null
       } catch (reason: unknown) {
@@ -309,7 +309,7 @@ function App() {
             sites={userSites}
             selectedId={selectedSite?.id ?? null}
             onPick={pickSite}
-            onRename={renameLocation}
+            onEdit={editLocation}
             onDelete={deleteLocation}
           />
           <CoordinatesBox
@@ -320,6 +320,7 @@ function App() {
           />
           <SitePanel
             title={selectedSite?.name ?? null}
+            description={selectedSite?.description ?? ''}
             location={selectedLocation}
             settings={settings}
             onSettings={setSettings}

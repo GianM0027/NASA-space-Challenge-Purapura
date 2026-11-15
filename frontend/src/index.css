@@ -592,3 +592,16 @@ button.link {
   color: var(--text);
   font: inherit;
 }
+
+/* Description of a user site: under the name in "My locations", under the title in the site panel. */
+.site-description {
+  display: block;
+  color: var(--muted);
+  font-style: italic;
+  margin: 0.15rem 0 0.4rem;
+  white-space: normal;
+}
+
+.row.edit {
+  flex-wrap: wrap;
+}
