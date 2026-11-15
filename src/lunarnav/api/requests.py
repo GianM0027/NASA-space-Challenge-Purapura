@@ -9,7 +9,14 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from lunarnav.contracts import GeoPoint, OperationsArea, SiteRanking, TimeWindow, TradeoffSettings
+from lunarnav.contracts import (
+    GeoPoint,
+    OperationsArea,
+    RobustnessReport,
+    SiteRanking,
+    TimeWindow,
+    TradeoffSettings,
+)
 
 
 class EvaluateRequest(BaseModel):
@@ -78,10 +85,27 @@ class MissionAnalysisRequest(EvaluateRequest):
     """Evaluate a scenario's robustness to date shifts and landing dispersion.
 
     Attributes:
-        shifts_days: Window shifts to evaluate, days (positive = later).
+        shifts_days: Window shifts to evaluate, days (positive = later); empty (the default)
+            lets the mission-analysis module use its own default shifts.
     """
 
-    shifts_days: list[float] = Field(default_factory=lambda: [1.0, 3.0, 7.0, 14.0])
+    shifts_days: list[float] = Field(default_factory=list)
+
+
+class CommentAnalysisRequest(BaseModel):
+    """Ask the AI for a short comment on a mission-analysis report (spec AI-6).
+
+    Attributes:
+        report: A report returned by ``/api/mission-analysis``.
+        site_name: Display name of the analyzed site or point.
+        language_hint: The user's latest message, so the text matches their language.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    report: RobustnessReport
+    site_name: str = Field(max_length=200)
+    language_hint: str = Field(default="", max_length=4000)
 
 
 class ExplainRequest(BaseModel):

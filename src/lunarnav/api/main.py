@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
 from lunarnav.api.requests import (
+    CommentAnalysisRequest,
     CompareRequest,
     EvaluateRequest,
     ExplainRequest,
@@ -197,6 +198,13 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
             content,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": 'attachment; filename="lunarnav-tradeoff.xlsx"'},
+        )
+
+    @app.post("/api/ai/comment-analysis")
+    def comment_analysis(request: CommentAnalysisRequest) -> RobustnessReport:
+        """Add a short AI comment to a mission-analysis report (numbers checked)."""
+        return svc.assistant.comment_analysis(
+            request.report, request.site_name, request.language_hint
         )
 
     @app.post("/api/mission-analysis")

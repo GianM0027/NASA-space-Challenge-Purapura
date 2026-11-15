@@ -39,6 +39,7 @@ def _models() -> list[tuple[type[BaseModel], JsonSchemaMode]]:
         requests.CompareRequest,
         requests.MissionAnalysisRequest,
         requests.ExplainRequest,
+        requests.CommentAnalysisRequest,
         requests.UpdateSiteRequest,
         requests.TradeoffRequest,
     ]

@@ -4,10 +4,13 @@
 import type {
   AiAnswer,
   AiRequest,
+  CommentAnalysisRequest,
   EvaluateRequest,
   Evaluation,
   ExplainRequest,
+  MissionAnalysisRequest,
   MissionRequirementsInput,
+  RobustnessReport,
   Site,
   SiteRanking,
   SkyState,
@@ -74,4 +77,6 @@ export const api = {
   rank: (body: MissionRequirementsInput) => request<SiteRanking>('/api/rank', body),
   ask: (body: AiRequest) => request<AiAnswer>('/api/ai/ask', body),
   explain: (body: ExplainRequest) => request<SiteRanking>('/api/ai/explain', body),
+  missionAnalysis: (body: MissionAnalysisRequest) => request<RobustnessReport>('/api/mission-analysis', body),
+  commentAnalysis: (body: CommentAnalysisRequest) => request<RobustnessReport>('/api/ai/comment-analysis', body),
 }

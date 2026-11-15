@@ -607,6 +607,8 @@ class RobustnessReport(_Contract):
         date_shifts: One entry per evaluated shift.
         dispersion: One entry per sampled point of the operations area.
         summary: Short plain-language conclusion; numbers only from the fields above.
+        ai_comment: Short AI comment for the planner (spec AI-6); every number in it is checked
+            against this report, else there is none (None).
     """
 
     site_id: str | None
@@ -614,6 +616,7 @@ class RobustnessReport(_Contract):
     date_shifts: list[DateShiftResult]
     dispersion: list[DispersionSample]
     summary: str | None = None
+    ai_comment: str | None = None
 
 
 # --- Globe view -------------------------------------------------------------------------------
