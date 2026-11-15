@@ -45,7 +45,9 @@
   font-size: 17px;
 }
 
-.cmp-head button {
+.cmp-head-actions {
+  display: flex;
+  gap: 6px;
   margin-left: auto;
 }
 

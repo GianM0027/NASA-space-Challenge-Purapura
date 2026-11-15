@@ -82,7 +82,8 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
   const hours = Math.round(
     (new Date(defaultWindow.end_utc).getTime() - new Date(defaultWindow.start_utc).getTime()) / 3_600_000,
   )
-  const [draft, setDraft] = useState<TradeoffDraft>(() => {
+  /** The initial setup: scenario A on the selected site, B on another, default mission and weights. */
+  const initialDraft = (): TradeoffDraft => {
     const first = sites.find((s) => s.id === initialSiteId) ?? sites[0]
     const second = sites.find((s) => s.id !== first?.id)
     const start = defaultWindow.start_utc
@@ -105,7 +106,8 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
       judgments: {},
       weights: {},
     }
-  })
+  }
+  const [draft, setDraft] = useState<TradeoffDraft>(initialDraft)
   const [result, setResult] = useState<TradeoffResult | null>(null)
   const [busy, setBusy] = useState<'run' | 'export' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -172,6 +174,12 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
     }
   }
 
+  const resetAll = () => {
+    setDraft(initialDraft())
+    setResult(null)
+    setError(null)
+  }
+
   const openPopup = () => {
     // Before a first run, follow the site selected on the globe in scenario A.
     const picked = sites.find((s) => s.id === initialSiteId)
@@ -197,9 +205,14 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
           <h2>Compare landing scenarios</h2>
           <p className="muted small">Pick 2 to 4 sites, choose what matters, and get a ranked trade-off.</p>
         </div>
-        <button onClick={() => setOpen(false)} aria-label="Minimize comparison" title="Keeps your setup and result (Esc)">
-          Minimize
-        </button>
+        <div className="cmp-head-actions">
+          <button onClick={resetAll} disabled={busy !== null} title="Back to the initial setup; clears the result">
+            Reset
+          </button>
+          <button onClick={() => setOpen(false)} aria-label="Minimize comparison" title="Keeps your setup and result (Esc)">
+            Minimize
+          </button>
+        </div>
       </header>
 
       <div className="cmp-layout">
