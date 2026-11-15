@@ -12,7 +12,16 @@ PATTERN = re.compile(
     r"<!--\s*REGIONS_JSON_BEGIN\s*-->\s*```json\s*(.*?)\s*```\s*<!--\s*REGIONS_JSON_END\s*-->",
     re.DOTALL,
 )
-BOUNDS = ("lat_min_deg", "lat_max_deg", "lon_min_deg", "lon_max_deg")
+KEYS = {
+    "id",
+    "label",
+    "summary",
+    "latitude_min_deg",
+    "latitude_max_deg",
+    "lon_min_deg",
+    "lon_max_deg",
+    "source",
+}
 
 
 def _regions() -> dict[str, dict]:
@@ -24,14 +33,15 @@ def _regions() -> dict[str, dict]:
 
 
 def inside(region: dict, lat: float, lon: float) -> bool:
-    """Reference implementation of the documented rule (inclusive bounds, wrap when min > max)."""
-    if region["lat_min_deg"] is not None and lat < region["lat_min_deg"]:
-        return False
-    if region["lat_max_deg"] is not None and lat > region["lat_max_deg"]:
+    """Reference implementation of the documented rule (inclusive, null = no limit, wrap)."""
+    lo_lat, hi_lat = region["latitude_min_deg"], region["latitude_max_deg"]
+    if (lo_lat is not None and lat < lo_lat) or (hi_lat is not None and lat > hi_lat):
         return False
     lo, hi = region["lon_min_deg"], region["lon_max_deg"]
-    if lo is None:
+    if lo is None and hi is None:
         return True
+    lo = -180.0 if lo is None else lo
+    hi = 180.0 if hi is None else hi
     return lo <= lon <= hi if lo <= hi else (lon >= lo or lon <= hi)
 
 
@@ -39,32 +49,45 @@ def _catalog() -> list[dict]:
     return json.loads((ROOT / "data/catalog/sites.json").read_text(encoding="utf-8"))
 
 
+def _ll(site: dict) -> dict:
+    return {"lat": site["location"]["lat_deg"], "lon": site["location"]["lon_deg"]}
+
+
 REGIONS = _regions()
 
 
 @pytest.mark.parametrize("region", REGIONS.values(), ids=lambda r: r["id"])
-def test_bounds_are_valid_and_sourced(region: dict) -> None:
-    assert region["name"] and region["aliases"]
-    for key in BOUNDS:
-        value = region[key]
-        if value is None:
-            continue
-        limit = 90 if key.startswith("lat") else 180
-        assert -limit <= value <= limit, f"{region['id']}.{key} out of range"
-        assert region["sources"].get(key, "").strip(), f"{region['id']}.{key} has no source"
-    if region["lat_min_deg"] is not None and region["lat_max_deg"] is not None:
-        assert region["lat_min_deg"] < region["lat_max_deg"]
+def test_schema_bounds_and_source(region: dict) -> None:
+    assert set(region) == KEYS, set(region) ^ KEYS
+    assert region["label"].strip() and region["summary"].strip() and region["source"].strip()
+    for key in ("latitude_min_deg", "latitude_max_deg"):
+        if region[key] is not None:
+            assert -90 <= region[key] <= 90
+    for key in ("lon_min_deg", "lon_max_deg"):
+        if region[key] is not None:
+            assert -180 <= region[key] < 180 or region[key] == 180
+    bounds = [region[k] for k in KEYS if k.endswith("_deg")]
+    assert any(b is not None for b in bounds), "a region needs at least one bound"
 
 
 def test_ai7_acceptance_south_pole_keeps_only_polar_sites() -> None:
     # Spec AI-7: "two-week robotic lander near the south pole" ranks only south-polar sites.
     sites = _catalog()
-    polar = {s["id"] for s in sites if inside(REGIONS["south-pole"], **_ll(s))}
-    assert polar, "no catalog site in the south-polar region"
-    assert all(s["location"]["lat_deg"] <= -84 for s in sites if s["id"] in polar)
-    assert {"change-6", "change-4", "luna-13", "chandrayaan-3"}.isdisjoint(polar)
-    assert {"im-2", "artemis-malapert-massif"} <= polar
-    assert "im-1" not in polar  # -80.13 deg: south-polar in common speech, outside the 6 deg band
+    near = {s["id"] for s in sites if inside(REGIONS["south-polar-region"], **_ll(s))}
+    at = {s["id"] for s in sites if inside(REGIONS["south-pole"], **_ll(s))}
+    assert {"change-6", "change-4", "luna-13", "chandrayaan-3"}.isdisjoint(near)
+    assert all(s["location"]["lat_deg"] <= -80 for s in sites if s["id"] in near)
+    assert all(s["location"]["lat_deg"] <= -84 for s in sites if s["id"] in at)
+    assert at < near  # "at" is the stricter Artemis band
+    assert {"im-2", "artemis-malapert-massif"} <= at
+    # IM-1 (-80.13) and the approximate Cabeus B point (-82.26): near the pole, not at it
+    assert {"im-1", "artemis-peak-near-cabeus-b"} <= near - at
+
+
+def test_summaries_steer_near_and_at_the_south_pole() -> None:
+    assert "near the south pole" in REGIONS["south-polar-region"]["summary"]
+    assert "at the south pole" in REGIONS["south-pole"]["summary"]
+    assert REGIONS["south-pole"]["latitude_max_deg"] == -84  # NASA Artemis: within 6 deg
 
 
 def test_known_sites_fall_in_the_expected_regions() -> None:
@@ -77,10 +100,4 @@ def test_known_sites_fall_in_the_expected_regions() -> None:
     assert inside(REGIONS["apollo-zone"], **by_id["apollo-11"])
     assert not inside(REGIONS["apollo-zone"], **by_id["apollo-16"])  # -8.97 deg, outside +/-5
     assert inside(REGIONS["equatorial"], **by_id["luna-16"])
-    assert not any(
-        inside(REGIONS["north-pole"], **ll) for ll in by_id.values()
-    )  # none so far north
-
-
-def _ll(site: dict) -> dict:
-    return {"lat": site["location"]["lat_deg"], "lon": site["location"]["lon_deg"]}
+    assert not any(inside(REGIONS["north-pole"], **ll) for ll in by_id.values())
