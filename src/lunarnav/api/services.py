@@ -86,6 +86,10 @@ class Assistant(Protocol):
         """Return ``report`` with a short checked AI comment (spec AI-6)."""
         ...
 
+    def comment_tradeoff(self, result: TradeoffResult, language_hint: str = "") -> TradeoffResult:
+        """Return ``result`` with a short checked AI comment (spec TO-5)."""
+        ...
+
 
 @dataclass(frozen=True)
 class Services:
@@ -451,3 +455,7 @@ class ExampleAssistant:
     ) -> RobustnessReport:
         """Return ``report`` with a fixed example comment (no LLM)."""
         return report.model_copy(update={"ai_comment": "Example comment (no LLM)."})
+
+    def comment_tradeoff(self, result: TradeoffResult, language_hint: str = "") -> TradeoffResult:
+        """Return ``result`` with a fixed example comment (no LLM)."""
+        return result.model_copy(update={"ai_comment": "Example comment (no LLM)."})

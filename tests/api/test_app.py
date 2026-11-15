@@ -12,6 +12,7 @@ pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
 
 from lunarnav.api.main import build_app
+from lunarnav.api.services import ExampleAssistant, ExampleTradeoff
 from lunarnav.api.wiring import build_services
 from lunarnav.contracts import (
     AiAnswer,
@@ -99,6 +100,41 @@ def test_tradeoff_with_the_placeholder(client: TestClient) -> None:
     assert result.labels == ["A", "B"] and len(result.scores) == 2
     mismatch = {"scenarios": [scenario, scenario], "settings": {"labels": ["A", "B", "C"]}}
     assert client.post("/api/tradeoff", json=mismatch).status_code == 422
+
+
+class _CountingAssistant(ExampleAssistant):
+    """The example assistant, counting the trade-off comments it writes."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.comments = 0
+
+    def comment_tradeoff(self, result: TradeoffResult, language_hint: str = "") -> TradeoffResult:
+        self.comments += 1
+        return result.model_copy(update={"ai_comment": "Checked comment."})
+
+
+class _ExportingTradeoff(ExampleTradeoff):
+    """The placeholder trade-off, with an export that writes the AI comment it receives."""
+
+    def export_xlsx(self, result: TradeoffResult, evaluations: list[Evaluation]) -> bytes:
+        return (result.ai_comment or "").encode()
+
+
+def test_tradeoff_comment_is_written_once_and_reused_by_the_export() -> None:
+    services, status = build_services(use_real=False)
+    assistant = _CountingAssistant()
+    app = build_app(
+        dataclasses.replace(services, assistant=assistant, tradeoff=_ExportingTradeoff()), status
+    )
+    api = TestClient(app)
+    scenario = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    body = {"scenarios": [scenario, scenario], "settings": {"labels": ["A", "B"]}}
+    result = api.post("/api/tradeoff", json=body)
+    assert result.json()["ai_comment"] == "Checked comment."
+    export = api.post("/api/tradeoff/export", json=body)
+    assert export.content == b"Checked comment."
+    assert assistant.comments == 1
 
 
 def test_tradeoff_export_needs_the_real_module(client: TestClient) -> None:
