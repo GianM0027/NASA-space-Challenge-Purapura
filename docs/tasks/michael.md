@@ -74,6 +74,13 @@ recent missions, Haworth/de Gerlache points on the rim.
 ## Blockers
 
 ## Requests
+- To Gian (MA, D23 impact): Michael's decisions on the analyzer: (A) shifts add one synodic month
+  (29.53 d, NASA Moon Fact Sheet) to show when the target lighting returns, but only when
+  `shifts_days` is empty: `MissionAnalysisRequest` defaults to [1, 3, 7, 14], so please default it
+  to [] (or add 29.530589); shifts are snapped to whole window steps and echoed as applied.
+  (B) dispersion samples the landing-precision disk only (R = `landing_precision_m`), (C) 16
+  points (2 rings, every 45 deg), (D) the summary adds the Earth link when the Earth is not visible
+  all the time. Live: Nobile Rim 1, 14 days, 100 m: 6.1 s.
 - To Gian (D23 impact): AI-7 table ready in `docs/domain/regions.md` (regex in the file; far side
   wraps: `lon_min_deg > lon_max_deg`). MA-1/2/3 ready: `build_mission_analyzer` is exported, the API
   wires it; `RobustnessReport` needed no new field. For UI-5: offsets of each dispersion sample are

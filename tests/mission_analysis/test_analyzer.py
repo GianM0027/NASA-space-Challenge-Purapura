@@ -14,7 +14,13 @@ from lunarnav.mission_analysis import (
     RobustnessAnalyzer,
     build_mission_analyzer,
 )
-from lunarnav.mission_analysis.analyzer import destination, sample_points, shift_window
+from lunarnav.mission_analysis.analyzer import (
+    SYNODIC_MONTH_D,
+    destination,
+    sample_points,
+    shift_window,
+    snap_shift_days,
+)
 
 EXAMPLE = Evaluation.model_validate_json(
     (Path(__file__).parents[2] / "data/examples/evaluation.json").read_text(encoding="utf-8")
@@ -28,7 +34,8 @@ METERS_PER_DEG = 1_737_400.0 * math.pi / 180  # arc length of 1 deg on the refer
 class FakeEvaluator:
     """Illumination = 0.50 + 0.01 * shift_days - 0.1 * km from SITE; slope = 2 deg per km."""
 
-    def __init__(self) -> None:
+    def __init__(self, earth: float = 1.0) -> None:
+        self.earth = earth
         self.calls: list[tuple[GeoPoint, TimeWindow, OperationsArea]] = []
 
     def evaluate(self, location, window, area, site_id=None) -> Evaluation:
@@ -39,6 +46,10 @@ class FakeEvaluator:
             update={
                 "illumination_fraction": round(0.50 + 0.01 * shift - 0.1 * km, 6),
                 "longest_dark_h": 10.0 + shift,
+                "earth_visibility_fraction": 1.0
+                if self.earth >= 1
+                else round(self.earth - 0.05 * km, 6),
+                "longest_earth_hidden_h": 0.0 if self.earth >= 1 else 20.0 + 5 * km,
             }
         )
         terrain = EXAMPLE.terrain.model_copy(update={"landing_slope_max_deg": 2.0 * km})
@@ -52,8 +63,8 @@ def _distance_m(a: GeoPoint, b: GeoPoint) -> float:
     return 1_737_400.0 * math.acos(max(-1.0, min(1.0, c)))
 
 
-def _analyze(area: OperationsArea, shifts: list[float]):
-    fake = FakeEvaluator()
+def _analyze(area: OperationsArea, shifts: list[float], earth: float = 1.0):
+    fake = FakeEvaluator(earth)
     report = RobustnessAnalyzer(fake).analyze(SITE, WINDOW, area, shifts, site_id="test-site")
     return report, fake
 
@@ -77,11 +88,11 @@ def test_destination_keeps_distance_near_the_pole() -> None:
 
 
 def test_sample_points_rings_and_count() -> None:
-    points = sample_points(SITE, 2000.0, rings=2, points_per_ring=4)
-    assert [r for r, _ in points] == [1000.0] * 4 + [2000.0] * 4
+    points = sample_points(SITE, 2000.0, rings=2, points_per_ring=8)
+    assert [r for r, _ in points] == [1000.0] * 8 + [2000.0] * 8
     for r, p in points:
         assert _distance_m(SITE, p) == pytest.approx(r, rel=1e-6)
-    assert sample_points(SITE, 0.0, 2, 4) == []
+    assert sample_points(SITE, 0.0, 2, 8) == []
 
 
 def test_shift_window_keeps_length_and_step() -> None:
@@ -91,7 +102,14 @@ def test_shift_window_keeps_length_and_step() -> None:
     assert w.step_minutes == WINDOW.step_minutes
 
 
-# --- MA-1, MA-2 -------------------------------------------------------------------------------
+def test_synodic_shift_snaps_to_the_window_step() -> None:
+    # 29.530589 d = 708.73 h; a 60-minute step snaps it to 709 h, a 10-minute step to 708 h 40 min
+    assert snap_shift_days(SYNODIC_MONTH_D, 60) == pytest.approx(709 / 24)
+    assert snap_shift_days(SYNODIC_MONTH_D, 10) == pytest.approx((708 * 60 + 40) / 1440)
+    assert snap_shift_days(7, 60) == 7
+
+
+# --- MA-1 -------------------------------------------------------------------------------------
 
 
 def test_date_shifts_evaluate_the_shifted_windows() -> None:
@@ -103,26 +121,32 @@ def test_date_shifts_evaluate_the_shifted_windows() -> None:
     assert report.site_id == "test-site"
 
 
-def test_empty_shift_list_uses_the_spec_defaults() -> None:
+def test_empty_shift_list_uses_spec_defaults_plus_one_lunar_cycle() -> None:
     report, _ = _analyze(OperationsArea(), [])
-    assert [s.shift_days for s in report.date_shifts] == list(DEFAULT_SHIFTS_DAYS) == [1, 3, 7, 14]
+    assert DEFAULT_SHIFTS_DAYS == (1, 3, 7, 14, SYNODIC_MONTH_D)
+    days = [s.shift_days for s in report.date_shifts]
+    assert days[:4] == [1, 3, 7, 14]
+    assert days[4] == pytest.approx(709 / 24)  # snapped to the 60-minute step
 
 
-def test_dispersion_samples_the_operations_disk() -> None:
-    area = OperationsArea(landing_precision_m=100, operating_range_m=1900)
+# --- MA-2 -------------------------------------------------------------------------------------
+
+
+def test_dispersion_samples_the_landing_precision_disk_only() -> None:
+    area = OperationsArea(landing_precision_m=2000, operating_range_m=5000)
     report, fake = _analyze(area, [1])
-    assert len(report.dispersion) == 8  # 2 rings x 4 points, center excluded
-    assert {s.offset_m for s in report.dispersion} == {1000.0, 2000.0}
+    assert len(report.dispersion) == 16  # 2 rings x 8 points (every 45 deg), center excluded
+    assert {s.offset_m for s in report.dispersion} == {1000.0, 2000.0}  # operating range ignored
     edge = [s for s in report.dispersion if s.offset_m == 2000.0]
     assert all(s.metrics.illumination_fraction == pytest.approx(0.30) for s in edge)
     assert all(s.slope_max_deg == pytest.approx(4.0) for s in edge)
     # samples are evaluated as landing points: operating range dropped, rest of the area kept
     sample_areas = [a for _, _, a in fake.calls[2:]]
-    assert all(a.operating_range_m == 0 and a.landing_precision_m == 100 for a in sample_areas)
+    assert all(a.operating_range_m == 0 and a.landing_precision_m == 2000 for a in sample_areas)
 
 
-def test_no_dispersion_without_an_area() -> None:
-    report, fake = _analyze(OperationsArea(), [1])
+def test_no_dispersion_without_landing_precision() -> None:
+    report, fake = _analyze(OperationsArea(operating_range_m=2000), [1])
     assert report.dispersion == []
     assert len(fake.calls) == 2  # nominal + one shift
 
@@ -130,22 +154,48 @@ def test_no_dispersion_without_an_area() -> None:
 # --- MA-3 -------------------------------------------------------------------------------------
 
 
+def _report_numbers(report) -> set[str]:
+    """Every number the summary may quote, formatted as the summary formats it."""
+    cases = [report.nominal, *(s.metrics for s in report.date_shifts)]
+    cases += [s.metrics for s in report.dispersion]
+    out = set()
+    for m in cases:
+        out |= {f"{100 * m.illumination_fraction:.0f}", f"{100 * m.earth_visibility_fraction:.0f}"}
+        out |= {f"{m.longest_dark_h:.0f}", f"{m.longest_earth_hidden_h:.0f}"}
+    for s in report.date_shifts:
+        d = s.shift_days
+        out.add(f"{d:+.0f}" if abs(d - round(d)) < 1e-9 else f"{d:+.1f}")
+    for s in report.dispersion:
+        out |= {f"{s.offset_m:.0f}", f"{s.slope_max_deg:.1f}"}
+    out.add(str(len(report.dispersion)))
+    return out
+
+
 def test_summary_quotes_only_report_numbers() -> None:
-    area = OperationsArea(landing_precision_m=0, operating_range_m=2000)
-    report, _ = _analyze(area, [1, 14])
+    area = OperationsArea(landing_precision_m=2000)
+    report, _ = _analyze(area, [1, 14, SYNODIC_MONTH_D])
     s = report.summary
     assert s is not None
     assert "50%" in s  # nominal sunlight
-    assert "51%" in s and "64%" in s  # shifts +1 d and +14 d
-    assert "24 h" in s  # longest darkness at +14 d = 10 + 14
+    assert "51%" in s and "80%" in s  # shifts +1 d and +29.5 d (0.50 + 0.01 * 29.54 = 0.795)
+    assert "One lunar cycle later (+29.5 d)" in s
     assert "30%" in s and "40%" in s  # dispersion worst (2 km) and best (1 km)
     assert "4.0 deg" in s
-    # Every number in the text must come from the report: metric values, shifts, offsets, counts.
-    n = report.nominal
-    allowed = {"50", "51", "64", "24", "30", "40", "4.0", "8", "2000", "1000", "+1", "+14"}
-    allowed |= {f"{100 * n.earth_visibility_fraction:.0f}", f"{n.longest_dark_h:.0f}"}
     numbers = set(re.findall(r"[+-]?\d+(?:\.\d+)?", s))
-    assert numbers <= allowed, numbers - allowed
+    assert numbers <= _report_numbers(report), numbers - _report_numbers(report)
+
+
+def test_earth_link_reported_only_when_earth_is_not_always_visible() -> None:
+    area = OperationsArea(landing_precision_m=2000)
+    always, _ = _analyze(area, [1], earth=1.0)
+    assert "Direct-to-Earth" not in always.summary
+    partial, _ = _analyze(area, [1], earth=0.4)
+    s = partial.summary
+    assert "Direct-to-Earth link: Earth visible 40%" in s
+    assert "down to 30%" in s  # 0.4 - 0.05 * 2 km at the disk edge
+    assert "longest outage is 30 h" in s  # 20 + 5 * 2 km
+    numbers = set(re.findall(r"[+-]?\d+(?:\.\d+)?", s))
+    assert numbers <= _report_numbers(partial)
 
 
 def test_factory_returns_the_port() -> None:
