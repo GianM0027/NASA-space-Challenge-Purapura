@@ -89,7 +89,11 @@ Structure of each archetype:
    15 deg slopes, survives at most 50 h of darkness, needs line-of-sight to Earth. Source: NASA VIPER
    mission planning papers.
 4. **Small robotic lander** (CLPS-class, e.g. Blue Ghost): operates one lunar day, about 14 Earth
-   days, on solar power. Source: NASA Blue Ghost Mission 1 press kit.
+   days, on solar power. Source: NASA Blue Ghost Mission 1 press kit. **Low and middle latitudes
+   only** (Michael's decision): its "lit for the whole mission" constraint fits a sunrise-to-sunset
+   lander like Blue Ghost (Mare Crisium, 18.6 deg N). Near the south pole no catalog site meets
+   336 h of continuous light (engine, December 2027 to January 2028: best IM-2 with 322 h), so
+   polar requests use the polar rover (survival = longest darkness) or no archetype.
 5. **Robotic ISRU** (water-ice mining): qualitative only. The propellant plant sits in a highly
    illuminated area, the mine in a permanently shadowed region, not co-located with the customer;
    NASA states the exact illumination need depends on the technology. Source: Kleinhenz and
@@ -188,7 +192,7 @@ decision, revisit if sources are found).
     {
       "id": "small-robotic-lander",
       "name": "Small robotic lander (CLPS-class)",
-      "summary": "Commercial solar-powered lander carrying science payloads, operating for one lunar day (about 14 Earth days) and ending at sunset.",
+      "summary": "Commercial solar-powered lander carrying science payloads at low or middle latitudes, operating for one lunar day (about 14 Earth days) from sunrise to sunset. NOT for the polar regions (beyond 80 degrees latitude), where the Sun grazes the horizon and terrain shadows break the daylight: for polar requests use the polar rover or no archetype.",
       "mission_duration_h": 336,
       "requirements": {
         "min_continuous_light_h": 336,
