@@ -4,7 +4,9 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import { createPortal } from 'react-dom'
 import './report.css'
+import { AiRanking } from './sections/AiRanking'
 import { Cover } from './sections/Cover'
+import { MissionAnalysis } from './sections/MissionAnalysis'
 import { SiteEvaluation } from './sections/SiteEvaluation'
 import { Sources } from './sections/Sources'
 import { Tradeoff } from './sections/Tradeoff'
@@ -12,12 +14,14 @@ import { isAvailable, SECTIONS, selectedSections } from './selection'
 import type { ReportBuilderProps, ReportInputs, SectionId, SectionProps } from './types'
 
 /**
- * Section components, by id. Mission analysis (Michael) and AI ranking (Gian) join here once their files exist
- * (D42); until then their checkbox reads "coming soon".
+ * Section components, by id: mission analysis by Michael, AI ranking by Gian, the others by Federico (D42).
+ * A section without a component here shows "coming soon" in the checkbox list.
  */
 // oxlint-disable-next-line typescript/no-explicit-any -- each entry receives the data its id selects below
 const COMPONENTS: Partial<Record<SectionId, ComponentType<SectionProps<any>>>> = {
   site: SiteEvaluation,
+  analysis: MissionAnalysis,
+  ranking: AiRanking,
   tradeoff: Tradeoff,
   sources: Sources,
 }

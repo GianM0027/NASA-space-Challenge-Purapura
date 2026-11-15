@@ -195,6 +195,25 @@
   margin: 0;
 }
 
+/* rpt-kv also as a table (th = label, td = value), as in the mission analysis section. */
+table.rpt-kv {
+  display: table;
+  border-collapse: collapse;
+}
+
+table.rpt-kv th,
+table.rpt-kv td {
+  padding: 0.5mm 5mm 0.5mm 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.rpt-kv th {
+  color: #555;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
 .rpt-contents,
 .rpt-list {
   margin: 0 0 4mm;

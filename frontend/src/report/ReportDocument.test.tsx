@@ -51,7 +51,7 @@ describe('report document', () => {
     expect(render(['site'], { evaluation: null })).toContain('Tick at least one section')
   })
 
-  it('does not print sections still to be written (mission analysis, AI ranking)', () => {
+  it('skips mission analysis without a finished tab', () => {
     const html = render(['analysis', 'sources'], { evaluation: null })
     expect(html).toContain('1. Sources and methods')
     expect(html).not.toContain('Mission analysis')
