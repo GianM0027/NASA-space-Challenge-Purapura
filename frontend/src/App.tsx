@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiAssistant } from './ai/AiAssistant'
 import { MissionAnalysisBox, type AnalysisTab } from './analysis/MissionAnalysisBox'
+import { CompareView } from './compare/CompareView'
 import { api, ApiError, type ModuleStatus } from './api/client'
 import type { Evaluation, GeoPoint, Site, SkyState, TimeWindow } from './api/contracts'
 import { formatCoordinates, formatUtc, hoursBetween } from './format'
@@ -357,6 +358,7 @@ function App() {
           </div>
           <div className="dock">
             <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} />
+            <CompareView sites={sites} defaultWindow={panelWindow} initialSiteId={selectedSite?.id ?? null} />
             <MissionAnalysisBox
               tabs={analyses}
               activeId={activeAnalysis}

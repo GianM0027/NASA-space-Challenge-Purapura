@@ -2,7 +2,7 @@
 // ABOUTME: Owner: Gian. Shows the AI comment, Michael's summary, date-slip and dispersion tables
 
 import type { DispersionSample, GeoPoint, RobustnessReport, TimeWindow, VisibilityMetrics } from '../api/contracts'
-import { formatDuration, formatPercent, formatUtc } from '../format'
+import { formatDuration, formatPercent, formatShiftDays, formatUtc } from '../format'
 import { bearingDeg, classify, compass, isSteep, SAME_FRACTION, SLOPE_LIMIT_DEG, touchdownVerdict } from './dispersion'
 
 /** One analysis tab: its request, then the report and the AI comment as they arrive. */
@@ -214,7 +214,7 @@ function AnalysisView({ tab }: { tab: AnalysisTab }) {
               {report.date_shifts.map((shift) => (
                 <ShiftRow
                   key={shift.shift_days}
-                  label={`${shift.shift_days > 0 ? '+' : ''}${shift.shift_days} d`}
+                  label={formatShiftDays(shift.shift_days)}
                   metrics={shift.metrics}
                   nominal={report.nominal}
                 />

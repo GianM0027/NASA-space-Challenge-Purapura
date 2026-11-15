@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatAtLeast,
+  formatShiftDays,
   formatCoordinates,
   formatDuration,
   fromInputValue,
@@ -41,4 +42,13 @@ describe('formatAtLeast', () => {
   it('prefixes a truncated duration with ≥', () => expect(formatAtLeast(76, true)).toBe('≥ 3 d 4 h'))
   it('leaves a complete duration as is', () => expect(formatAtLeast(76, false)).toBe('3 d 4 h'))
   it('never marks a zero duration', () => expect(formatAtLeast(0, true)).toBe('0 min'))
+})
+
+describe('formatShiftDays', () => {
+  it('keeps at most one decimal and a sign', () => {
+    expect(formatShiftDays(29.541666666666668)).toBe('+29.5 d')
+    expect(formatShiftDays(7)).toBe('+7 d')
+    expect(formatShiftDays(-3)).toBe('-3 d')
+    expect(formatShiftDays(0)).toBe('0 d')
+  })
 })

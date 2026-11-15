@@ -10,10 +10,12 @@ ranking (AI-2), extraction and explanations through the Claude Code CLI (AI-1, A
 archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a placeholder.
 
 ## Next (in priority order)
+- TO-5: AI comment on the trade-off result (`/api/tradeoff` fills `ai_comment`, numbers checked).
+- UI-13 hookup (decision D42): pass outcome, analyses and the last trade-off to Federico's report
+  builder; `onRanking` from the AI box; `report/sections/AiRanking.tsx`.
 Work split of day 2 (decision D37): Federico takes UI-3 and the trade-off (spec 4.8), Michael
 MA-1 to MA-3; Gian: AI-7 (named regions) and AI-1 acceptance, UI-11 (time wheel), contracts and
 API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, then UI-12.
-0. AI-7: wire Michael's `docs/domain/regions.md` when it lands (no code change expected).
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
    checked through the DOM and network only, not by eye.
 3. AI-1 acceptance: 5 scripted requests through the real CLI, recorded with their timings.
@@ -22,6 +24,13 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Federico's Trade-off view wired in the dock (`CompareView`, PR #27); all 8 modules real; trade-off
+  and Excel export answer on real data. Date-shift labels rounded to one decimal ("+29.5 d").
+- AI-7 with Michael's real `regions.md`, real CLI: "near the south pole" -> south-polar-region
+  (11 sites, lat <= -80), "at the south pole" -> south-pole (9 sites, lat <= -84), "far side" ->
+  far-side (3 sites, lon 90 to -90 across 180).
+- Site panel terrain after D36: one "landing slope" value against the 10 deg limit (red above),
+  with a note on how it was measured (100 m baseline on the 20 m DEM, else the DEM cells).
 - UI-5 and AI-6 (decision D40): "Mission analysis" button in the site panel, one tab per analysis
   in a minimizable window next to the AI box (close one, or Reset), AI comment checked against the
   report with Michael's summary as fallback, date-slip and dispersion tables. Checked in the
