@@ -20,6 +20,7 @@ from lunarnav.api.requests import (
     EvaluateRequest,
     ExplainRequest,
     MissionAnalysisRequest,
+    TradeoffRequest,
     UpdateSiteRequest,
 )
 from lunarnav.api.services import Services
@@ -36,6 +37,7 @@ from lunarnav.contracts import (
     Site,
     SiteRanking,
     SkyState,
+    TradeoffResult,
     UnknownSiteError,
 )
 
@@ -172,6 +174,30 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
     def explain(request: ExplainRequest) -> SiteRanking:
         """Add a short AI rationale to every ranked site (numbers checked against the ranking)."""
         return svc.assistant.explain(request.ranking, request.language_hint)
+
+    def tradeoff(request: TradeoffRequest) -> tuple[TradeoffResult, list[Evaluation]]:
+        """Evaluate the scenarios and run the trade-off on them."""
+        evaluations = [evaluate(scenario) for scenario in request.scenarios]
+        return svc.tradeoff.analyze(evaluations, request.settings), evaluations
+
+    @app.post("/api/tradeoff")
+    def tradeoff_result(request: TradeoffRequest) -> TradeoffResult:
+        """AHP trade-off of 2 to 4 scenarios (spec section 4.8)."""
+        return tradeoff(request)[0]
+
+    @app.post("/api/tradeoff/export")
+    def tradeoff_export(request: TradeoffRequest) -> Response:
+        """The same trade-off as a live Excel workbook (spec TO-4); 501 without the module."""
+        export = getattr(svc.tradeoff, "export_xlsx", None)
+        if not callable(export):
+            raise HTTPException(501, f"{type(svc.tradeoff).__name__} cannot export a workbook yet")
+        result, evaluations = tradeoff(request)
+        content = export(result, evaluations)
+        return Response(
+            content,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": 'attachment; filename="lunarnav-tradeoff.xlsx"'},
+        )
 
     @app.post("/api/mission-analysis")
     def mission_analysis(request: MissionAnalysisRequest) -> RobustnessReport:

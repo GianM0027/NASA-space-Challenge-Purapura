@@ -77,6 +77,28 @@ export type ExplainRequest = {
   language_hint?: string
 }
 
+export type FigureOfMerit = {
+  id: string
+  name: string
+  unit: string
+  direction: FomDirection
+  user_supplied: boolean
+  source: string
+}
+
+export type FomDirection = "higher" | "lower"
+
+export type FomScore = {
+  value: number | null
+  normalized: number
+}
+
+export type FomSensitivity = {
+  fom_id: string
+  min_change_percent: number | null
+  sensitivity: number | null
+}
+
 export type GeoPointInput = {
   lat_deg: number
   lon_deg: number
@@ -169,6 +191,13 @@ export type OperationsArea = {
 }
 
 export type Origin = "apollo" | "luna" | "surveyor" | "change" | "chandrayaan" | "slim" | "clps" | "artemis" | "other" | "user"
+
+export type PairwiseJudgment = {
+  a: string
+  b: string
+  value: number
+  source: string
+}
 
 export type RequirementSource = "user" | "archetype" | "region" | "default"
 
@@ -266,9 +295,59 @@ export type TimeWindow = {
   step_minutes: number
 }
 
+export type TradeoffRequest = {
+  scenarios: EvaluateRequest[]
+  settings: TradeoffSettingsInput
+}
+
+export type TradeoffResult = {
+  labels: string[]
+  foms: FigureOfMerit[]
+  weights: Record<string, number>
+  weight_method: "default" | "judgments" | "direct"
+  judgments: PairwiseJudgment[]
+  consistency_ratio: number | null
+  table: Record<string, FomScore>[]
+  scores: number[]
+  ranking: number[]
+  method: string
+  sensitivity: FomSensitivity[]
+  ai_comment: string | null
+}
+
+export type TradeoffSettingsInput = {
+  labels: string[]
+  judgments?: PairwiseJudgment[] | null
+  weights?: Record<string, number> | null
+  user_foms?: UserFomInput[]
+  excluded_foms?: string[]
+}
+
+export type TradeoffSettings = {
+  labels: string[]
+  judgments: PairwiseJudgment[] | null
+  weights: Record<string, number> | null
+  user_foms: UserFom[]
+  excluded_foms: string[]
+}
+
 export type UpdateSiteRequest = {
   name?: string | null
   description?: string | null
+}
+
+export type UserFomInput = {
+  name: string
+  unit?: string
+  direction: FomDirection
+  values: number[]
+}
+
+export type UserFom = {
+  name: string
+  unit: string
+  direction: FomDirection
+  values: number[]
 }
 
 export type VisibilityMetrics = {

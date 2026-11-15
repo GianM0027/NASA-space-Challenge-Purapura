@@ -16,7 +16,7 @@ Conventions shared by every model (see also CLAUDE.md, Domain conventions):
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -633,3 +633,158 @@ class SkyState(_Contract):
     subsolar: GeoPoint
     sub_earth: GeoPoint
     source: str
+
+
+# --- Trade-off (spec section 4.8, owner of the module: Federico, decision D37) ----------------
+
+
+class FomDirection(StrEnum):
+    """Which way a figure of merit improves."""
+
+    HIGHER = "higher"
+    LOWER = "lower"
+
+
+class FigureOfMerit(_Contract):
+    """One criterion of the trade-off (spec TO-1, TO-3).
+
+    Attributes:
+        id: Stable key, e.g. "illumination_fraction" or "user-1".
+        name: Display name.
+        unit: Unit text: "h", "deg", "" for fractions, or the user's text.
+        direction: Whether higher or lower values are better.
+        user_supplied: True for a FoM added by the user (TO-3), shown as such everywhere.
+        source: Where the values come from, e.g. "Evaluation.metrics.longest_dark_h" or "user".
+    """
+
+    id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    unit: str
+    direction: FomDirection
+    user_supplied: bool = False
+    source: str
+
+
+class UserFom(_Contract):
+    """A figure of merit the user adds, with one value per compared scenario (spec TO-3).
+
+    Attributes:
+        name: Display name.
+        unit: Unit text, free.
+        direction: Whether higher or lower values are better.
+        values: One value per scenario, in the scenario order, each >= 0.
+    """
+
+    name: str = Field(min_length=1)
+    unit: str = ""
+    direction: FomDirection
+    values: list[Annotated[float, Field(ge=0.0)]]
+
+
+class PairwiseJudgment(_Contract):
+    """One AHP pairwise comparison on the Saaty 1-9 scale (spec TO-2).
+
+    Attributes:
+        a: FoM id of the first criterion.
+        b: FoM id of the second criterion.
+        value: Importance of ``a`` over ``b``, in [1/9, 9]; ``b`` over ``a`` is ``1 / value``.
+        source: Citation of the judgment, or "user".
+    """
+
+    a: str
+    b: str
+    value: float = Field(ge=1.0 / 9.0, le=9.0)
+    source: str
+
+
+class TradeoffSettings(_Contract):
+    """What the user sets for one trade-off: labels, weights or judgments, extra FoMs.
+
+    Attributes:
+        labels: One display label per scenario, in the scenario order.
+        judgments: Pairwise judgments; missing pairs default to 1 (equal). Exclusive with
+            ``weights``.
+        weights: Direct weights by FoM id, normalized by the trade-off module.
+        user_foms: FoMs added by the user (TO-3), at most 3.
+        excluded_foms: Computed FoM ids left out of the trade-off.
+    """
+
+    labels: list[str] = Field(min_length=2, max_length=4)
+    judgments: list[PairwiseJudgment] | None = None
+    weights: dict[str, Annotated[float, Field(ge=0.0)]] | None = None
+    user_foms: list[UserFom] = Field(default_factory=list, max_length=3)
+    excluded_foms: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _consistent(self) -> Self:
+        """Check that weights and judgments are not both given and user values fit the labels.
+
+        Raises:
+            ValueError: If both ``weights`` and ``judgments`` are set, or a user FoM has a value
+                count different from the number of labels.
+        """
+        if self.weights is not None and self.judgments is not None:
+            raise ValueError("give either weights or judgments, not both")
+        for fom in self.user_foms:
+            if len(fom.values) != len(self.labels):
+                raise ValueError(f"user FoM {fom.name!r} needs one value per scenario")
+        return self
+
+
+class FomScore(_Contract):
+    """One cell of the trade-off table.
+
+    Attributes:
+        value: Raw value in the FoM unit; None when not applicable to this scenario.
+        normalized: Share of the column after the direction is applied; sums to 1 over scenarios.
+    """
+
+    value: float | None
+    normalized: float = Field(ge=0.0, le=1.0)
+
+
+class FomSensitivity(_Contract):
+    """Sensitivity of the ranking to one weight (spec TO-6, Triantaphyllou method).
+
+    Attributes:
+        fom_id: The FoM whose weight changes.
+        min_change_percent: Smallest change of its weight, percent, that swaps two scenarios;
+            None when no change up to 100 % does.
+        sensitivity: ``1 / min_change_percent``; None when that is None.
+    """
+
+    fom_id: str
+    min_change_percent: float | None
+    sensitivity: float | None
+
+
+class TradeoffResult(_Contract):
+    """Result of one trade-off over 2 to 4 scenarios (spec TO-1 to TO-6).
+
+    Attributes:
+        labels: Scenario labels, in the scenario order.
+        foms: The FoMs used, computed ones first.
+        weights: FoM id -> weight; the weights sum to 1.
+        weight_method: "default" (equal judgments), "judgments" (AHP) or "direct".
+        judgments: The judgments used, defaults included with their sources.
+        consistency_ratio: AHP consistency ratio; None for direct weights.
+        table: Per scenario, FoM id -> cell.
+        scores: Weighted score per scenario.
+        ranking: Scenario indices, best first.
+        method: The stated method and its sources.
+        sensitivity: Per-FoM sensitivity (TO-6), empty when not computed.
+        ai_comment: Short AI comment on the result (TO-5), numbers checked against the table.
+    """
+
+    labels: list[str]
+    foms: list[FigureOfMerit]
+    weights: dict[str, float]
+    weight_method: Literal["default", "judgments", "direct"]
+    judgments: list[PairwiseJudgment]
+    consistency_ratio: float | None
+    table: list[dict[str, FomScore]]
+    scores: list[float]
+    ranking: list[int]
+    method: str
+    sensitivity: list[FomSensitivity] = Field(default_factory=list)
+    ai_comment: str | None = None

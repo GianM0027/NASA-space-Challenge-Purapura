@@ -9,7 +9,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from lunarnav.contracts import GeoPoint, OperationsArea, SiteRanking, TimeWindow
+from lunarnav.contracts import GeoPoint, OperationsArea, SiteRanking, TimeWindow, TradeoffSettings
 
 
 class EvaluateRequest(BaseModel):
@@ -47,6 +47,31 @@ class CompareRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     scenarios: list[EvaluateRequest] = Field(min_length=2, max_length=4)
+
+
+class TradeoffRequest(BaseModel):
+    """Trade-off of 2 to 4 scenarios (spec section 4.8).
+
+    Attributes:
+        scenarios: The scenarios, evaluated like ``/api/evaluate``, in the order of the labels.
+        settings: Labels, weights or pairwise judgments, user FoMs, excluded FoMs.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    scenarios: list[EvaluateRequest] = Field(min_length=2, max_length=4)
+    settings: TradeoffSettings
+
+    @model_validator(mode="after")
+    def _one_label_per_scenario(self) -> Self:
+        """Reject labels that do not match the scenarios one to one.
+
+        Raises:
+            ValueError: If the label count differs from the scenario count.
+        """
+        if len(self.settings.labels) != len(self.scenarios):
+            raise ValueError("give one label per scenario")
+        return self
 
 
 class MissionAnalysisRequest(EvaluateRequest):

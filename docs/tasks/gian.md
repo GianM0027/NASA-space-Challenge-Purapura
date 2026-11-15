@@ -59,6 +59,11 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 - Minor: Starlette warns that `httpx` with its TestClient is deprecated in favour of `httpx2`; switch after verifying the `httpx2` package.
 
 ## Answers to requests from others
+- Federico, trade-off contract (revised request): done as D39. Models, `TradeoffAnalyzer` port,
+  `build_tradeoff()` factory slot, `POST /api/tradeoff` and `/api/tradeoff/export` (placeholder
+  until your module lands: empty result, export 501), TO-2 says geometric mean. Two changes to
+  your draft: list defaults use `default_factory`; `UserFom.values` are checked >= 0 one by one.
+  TO-5 (AI comment) comes from Gian after the mission-analysis window.
 - Federico, landing-slope baseline and slope max: decided in D36 (100 m baseline as in the NASA
   criterion; reported maxima are the 99th percentile). Implementation is yours. Spec section 7 now
   lists LDEM_85S_20M; the README demo steps include `terrain_warm_cache.py`.
