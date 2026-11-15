@@ -1,6 +1,7 @@
 // ABOUTME: Site panel (spec UI-2): time window (date, duration, step), power and comms metrics
 // ABOUTME: Owner: Gian. Shows numbers from Evaluation only; the elevation timeline is a separate component
 
+import { useState } from 'react'
 import type { Evaluation, GeoPoint } from '../api/contracts'
 import { ElevationTimeline } from '../timeline/ElevationTimeline'
 import { TimeWheel } from '../timeline/TimeWheel'
@@ -29,10 +30,16 @@ type Props = {
   /** Instant shown on the globe, hours after the window start (time wheel, spec UI-11). */
   viewOffsetHours: number
   onViewOffset: (offsetHours: number) => void
+  /** Start a mission analysis of this point over the panel window (spec UI-5). */
+  onMissionAnalysis: (landingPrecisionM: number) => void
   evaluation: Evaluation | null
   loading: boolean
   error: string | null
 }
+
+// Landing precision choices for the dispersion samples, meters. 100 m is NASA's HLS criterion
+// "Land within 100 m of a target" (HLS Overview 2025, p. 21), the default.
+const PRECISIONS_M = [100, 500, 1000, 5000]
 
 const DURATIONS_H = [1, 7, 14, 30, 60].map((days) => days * 24)
 const STEPS = [10, 30, 60, 240]
@@ -66,8 +73,20 @@ function Metric(props: { label: string; value: string }) {
 
 /** Window controls plus the metrics of the selected point. */
 export function SitePanel(props: Props) {
-  const { title, description, location, settings, onSettings, viewOffsetHours, onViewOffset, evaluation, loading, error } =
-    props
+  const {
+    title,
+    description,
+    location,
+    settings,
+    onSettings,
+    viewOffsetHours,
+    onViewOffset,
+    onMissionAnalysis,
+    evaluation,
+    loading,
+    error,
+  } = props
+  const [precisionM, setPrecisionM] = useState(PRECISIONS_M[0])
   // A mission window from the AI box may have a length outside the fixed choices.
   const durations = DURATIONS_H.includes(settings.durationHours)
     ? DURATIONS_H
@@ -140,6 +159,25 @@ export function SitePanel(props: Props) {
     <section className="panel">
       <h2>{title ?? 'Custom location'}</h2>
       <p className="muted">{formatCoordinates(location)}</p>
+      <div className="row analysis-start">
+        <button
+          className="analysis-button"
+          title="Date slips and landing dispersion over this window; opens a tab next to the AI box"
+          onClick={() => onMissionAnalysis(precisionM)}
+        >
+          ⧉ Mission analysis
+        </button>
+        <label className="muted small" title="Landing precision: radius of the dispersion samples">
+          landing ±
+          <select value={precisionM} onChange={(event) => setPrecisionM(Number(event.target.value))}>
+            {PRECISIONS_M.map((meters) => (
+              <option key={meters} value={meters}>
+                {meters >= 1000 ? `${meters / 1000} km` : `${meters} m`}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       {description && <p className="site-description">{description}</p>}
       {controls}
       {wheel}

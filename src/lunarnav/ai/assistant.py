@@ -46,6 +46,7 @@ from lunarnav.contracts import (
     MissionRequirements,
     OperationsArea,
     RequirementSource,
+    RobustnessReport,
     SiteCatalog,
     SiteRanking,
     SiteScore,
@@ -167,6 +168,13 @@ def _extraction_schema(
         },
     }
 
+
+_COMMENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["comment"],
+    "properties": {"comment": {"type": "string"}},
+}
 
 _EXPLAIN_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -449,6 +457,34 @@ def template_rationale(score: SiteScore, requirements: MissionRequirements) -> s
     )
 
 
+def report_numbers(report: RobustnessReport) -> list[float]:
+    """Every number of a robustness report, plus its counts, for the number check of a comment.
+
+    Args:
+        report: The mission-analysis report.
+
+    Returns:
+        All numeric values in the report (fractions, hours, degrees, meters, shift days) and the
+        number of shifts and of dispersion points.
+    """
+    found: list[float] = [float(len(report.date_shifts)), float(len(report.dispersion))]
+
+    def walk(value: Any) -> None:
+        if isinstance(value, bool):
+            return
+        if isinstance(value, int | float):
+            found.append(float(value))
+        elif isinstance(value, dict):
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    walk(report.model_dump(exclude={"summary", "ai_comment"}))
+    return found
+
+
 def _allowed_numbers(score: SiteScore, requirements: MissionRequirements) -> list[float]:
     """Numbers an explanation of ``score`` may cite."""
     allowed = list(score.criterion_values.values()) + requirement_numbers(requirements)
@@ -592,6 +628,49 @@ class ChatAssistant:
         return AiAnswer(
             requirements=requirements, ranking=ranking, message=f"{reply} {self._summary(ranking)}"
         )
+
+    def comment_analysis(
+        self, report: RobustnessReport, site_name: str, language_hint: str = ""
+    ) -> RobustnessReport:
+        """Add a short AI comment to a mission-analysis report (spec AI-6).
+
+        The comment must quote only numbers of the report (``report_numbers``); when it does not,
+        or the LLM fails, there is no comment (``ai_comment`` stays None).
+
+        Args:
+            report: The report from the mission-analysis module.
+            site_name: Display name of the analyzed site or point.
+            language_hint: The user's latest message, so the text matches their language.
+
+        Returns:
+            The same report with ``ai_comment`` set, or None when no checked comment exists.
+        """
+        system = (
+            "You comment a robustness analysis of a lunar landing site for a mission planner: "
+            "how its sunlight, Earth visibility and darkness change if the launch slips by the "
+            "listed days, and across points around the landing site. Write at most two sentences, "
+            "at most 45 words, saying whether the site is robust and what to watch. Fractions may "
+            "be written as percentages. Write no number that is not in the data. Use the language "
+            "of 'language_of' (English if empty)."
+        )
+        payload = {
+            "language_of": language_hint,
+            "site": site_name,
+            "report": report.model_dump(mode="json", exclude={"ai_comment"}),
+        }
+        try:
+            answer = self.llm.complete_json(
+                system, json.dumps(payload, ensure_ascii=False), _COMMENT_SCHEMA
+            )
+            text = str(answer.get("comment", "")).strip()
+        except LlmError:
+            logger.exception("analysis comment: LLM failed, using the summary")
+            text = ""
+        if not text or len(text) > 500 or unsupported_numbers(text, report_numbers(report)):
+            if text:
+                logger.warning("analysis comment dropped, unsupported numbers: %r", text)
+            return report.model_copy(update={"ai_comment": None})
+        return report.model_copy(update={"ai_comment": text})
 
     def explain(self, ranking: SiteRanking, language_hint: str = "") -> SiteRanking:
         """Add a one-sentence rationale to every result.

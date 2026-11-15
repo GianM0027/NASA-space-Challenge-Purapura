@@ -19,6 +19,7 @@ from lunarnav.contracts import (
     ChatMessage,
     MissionRequirements,
     RequirementSource,
+    RobustnessReport,
     Site,
     SiteRanking,
     TimeWindow,
@@ -291,3 +292,29 @@ def test_stated_light_is_kept_when_the_duration_changes() -> None:
     llm = _Llm(_extraction(archetype_id="short-crewed-stay", duration_h=168, fields=stated))
     req = _assistant(llm)[0].ask(AiRequest(text="a week, 100 h light", default_window=GUI_WINDOW))
     assert req.requirements.min_continuous_light_h == 100
+
+
+def _report() -> RobustnessReport:
+    report = RobustnessReport.model_validate_json((EXAMPLES / "robustness_report.json").read_text())
+    return report.model_copy(update={"summary": "Deterministic summary."})
+
+
+def test_analysis_comment_keeps_a_checked_text() -> None:
+    report = _report()
+    sun = round(report.nominal.illumination_fraction * 100)
+    llm = _Llm({"comment": f"Sunlight stays near {sun}% in the nominal window."})
+    commented = _assistant(llm)[0].comment_analysis(report, "Test site")
+    assert commented.ai_comment == f"Sunlight stays near {sun}% in the nominal window."
+    assert commented.summary == "Deterministic summary."
+
+
+def test_analysis_comment_with_an_invented_number_is_dropped() -> None:
+    llm = _Llm({"comment": "Sunlight drops to 3.14159% after a slip."})
+    commented = _assistant(llm)[0].comment_analysis(_report(), "Test site")
+    assert commented.ai_comment is None
+
+
+def test_analysis_comment_when_the_llm_fails() -> None:
+    llm = _Llm(LlmError("CLI down"))
+    commented = _assistant(llm)[0].comment_analysis(_report(), "Test site")
+    assert commented.ai_comment is None
