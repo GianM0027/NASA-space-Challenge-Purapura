@@ -136,3 +136,36 @@ def test_workbook_content_for_readers(tmp_path: Path) -> None:
     rec = wb["6. Recommendation"]
     assert rec["C11"].value == "A leads on sunlit time (0.6)." and "Governale" in rec["C12"].value
     assert wb["7. Data & sources"]["N6"].value == three()[0].terrain.dem_source
+
+
+def test_no_text_is_cut(tmp_path: Path) -> None:
+    # Long catalog-style labels: every literal text either fits its column or wraps onto enough
+    # lines; formula headers showing names or labels get the same treatment.
+    from lunarnav.tradeoff.export import LINE_HEIGHT, _display_length
+
+    labels = [
+        "Artemis candidate region - Malapert Massif",
+        "IM-2 Athena - Mons Mouton",
+        "Artemis candidate region - Nobile Rim 1",
+    ]
+    settings = JUDGED.model_copy(update={"labels": labels})
+    result, path = export(tmp_path, settings)
+    name_w = max(len(f.name) for f in result.foms)
+    label_w = max(len(x) for x in labels)
+    wb = load_workbook(path)
+    for ws in wb.worksheets:
+        merged = {
+            c.coordinate for rng in ws.merged_cells.ranges for row in ws[rng.coord] for c in row
+        }
+        for row in ws.iter_rows(min_row=4):
+            for cell in row:
+                if cell.value is None or cell.coordinate in merged:
+                    continue
+                need = _display_length(cell.value, name_w, label_w)
+                width = ws.column_dimensions[cell.column_letter].width
+                if cell.alignment.wrap_text:
+                    lines = -(-need // max(int(width * 1.1) - 1, 1))
+                    height = ws.row_dimensions[cell.row].height or 15
+                    assert lines == 1 or height >= LINE_HEIGHT * lines, (ws.title, cell.coordinate)
+                else:
+                    assert width >= need, (ws.title, cell.coordinate, cell.value, width)

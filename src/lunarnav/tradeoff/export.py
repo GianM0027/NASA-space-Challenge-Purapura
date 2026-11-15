@@ -153,7 +153,68 @@ def build_workbook(result: TradeoffResult, evaluations: list[Evaluation]) -> Wor
     _sensitivity_sheet(wb.create_sheet("5. Sensitivity"), r)
     _recommendation_sheet(wb.create_sheet("6. Recommendation"), result, r)
     _sources_sheet(wb.create_sheet("7. Data & sources"), result, evaluations)
+    name_width = max(len(f.name) for f in result.foms)
+    label_width = max(len(label) for label in result.labels)
+    for ws in wb.worksheets:
+        _autofit(ws, name_width, label_width)
     return wb
+
+
+MIN_WIDTH, MAX_WIDTH = 9.0, 60.0
+LINE_HEIGHT = 13.0  # points per wrapped line at 10 pt Calibri
+
+
+def _display_length(value: object, name_width: int, label_width: int) -> int:
+    """Characters a cell needs: literal text, or a typical width for what a formula shows."""
+    if value is None:
+        return 0
+    if isinstance(value, str) and value.startswith("="):
+        if '&" vs "&' in value:
+            return 2 * label_width + 4  # "A vs B" pair headers
+        if "'1. FoM'!$D$" in value:
+            return name_width  # FoM names
+        if "'3. Scoring'!" in value and value.rstrip().endswith("6"):
+            return label_width  # scenario labels
+        if value.startswith("=INDEX("):
+            return max(name_width, label_width)
+        return 10  # numbers
+    if isinstance(value, float):
+        return 10
+    return len(str(value))
+
+
+def _autofit(ws: Worksheet, name_width: int, label_width: int) -> None:
+    """Widen columns to their content and grow wrapped rows so no text is cut.
+
+    Titles (rows 1-3) and merged cells are skipped: they overflow into empty cells. Wrapped
+    cells cap their column at ``MAX_WIDTH`` and get a row height for the lines they need.
+    """
+    merged = {c for rng in ws.merged_cells.ranges for row in ws[rng.coord] for c in row}
+    needed: dict[str, float] = {}
+    for row in ws.iter_rows(min_row=4):
+        for cell in row:
+            if cell in merged or cell.value is None:
+                continue
+            length = _display_length(cell.value, name_width, label_width)
+            if cell.alignment is not None and cell.alignment.wrap_text:
+                length = min(length, MAX_WIDTH)
+            letter = cell.column_letter
+            needed[letter] = max(needed.get(letter, 0.0), length + 2.0)
+    for letter, length in needed.items():
+        current = ws.column_dimensions[letter].width or 0.0
+        ws.column_dimensions[letter].width = max(current, min(length, MAX_WIDTH), MIN_WIDTH)
+    for row in ws.iter_rows(min_row=4):
+        lines = 1
+        for cell in row:
+            if cell in merged or cell.value is None:
+                continue
+            if cell.alignment is None or not cell.alignment.wrap_text:
+                continue
+            width = ws.column_dimensions[cell.column_letter].width or MIN_WIDTH
+            length = _display_length(cell.value, name_width, label_width)
+            lines = max(lines, -(-length // max(int(width * 1.1) - 1, 1)))
+        if lines > 1:
+            ws.row_dimensions[row[0].row].height = LINE_HEIGHT * lines + 4
 
 
 def export_xlsx(result: TradeoffResult, evaluations: list[Evaluation]) -> bytes:
@@ -190,7 +251,6 @@ def _instructions(ws: Worksheet) -> None:
     for k, text in enumerate(steps):
         cell = ws.cell(5 + k, 2, text)
         _style(cell, bg=TEAL_PALE, fg=NAVY, wrap=True)
-        ws.row_dimensions[5 + k].height = 32
 
 
 def _fom_sheet(ws: Worksheet, result: TradeoffResult) -> None:
@@ -476,7 +536,6 @@ def _recommendation_sheet(ws: Worksheet, result: TradeoffResult, r: _Refs) -> No
     for k, (label, value) in enumerate(rows):
         _style(ws.cell(5 + k, 2, label), bold=True, bg=GREY, fg=NAVY)
         _style(ws.cell(5 + k, 3, value), wrap=True)
-        ws.row_dimensions[5 + k].height = 30 if k < 6 else 60
 
 
 def _sources_sheet(ws: Worksheet, result: TradeoffResult, evaluations: list[Evaluation]) -> None:
@@ -517,12 +576,14 @@ def _sources_sheet(ws: Worksheet, result: TradeoffResult, evaluations: list[Eval
             e.terrain.dem_source,
         ]
         for c, value in enumerate(row, start=2):
-            ws.cell(6 + s, c, value)
+            _style(ws.cell(6 + s, c, value), wrap=isinstance(value, str))
     base = 8 + len(evaluations)
     notes = [
         "Ephemerides: JPL Horizons API, https://ssd-api.jpl.nasa.gov/doc/horizons.html (NASA JPL).",
         "Topography: NASA LRO LOLA gridded DEMs, data set LRO-L-LOLA-4-GDR-V1.0, PDS Geosciences.",
         "User-supplied FoMs (sheet 1, User-supplied = YES) are estimates entered by the user.",
     ]
+    last = col(1 + len(heads))
     for k, text in enumerate(notes):
+        ws.merge_cells(f"B{base + k}:{last}{base + k}")  # spans the table, keeps column B narrow
         ws.cell(base + k, 2, text)
