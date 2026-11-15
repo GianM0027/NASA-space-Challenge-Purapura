@@ -100,5 +100,7 @@ def test_known_values_from_sources() -> None:
     assert rover["requirements"]["area"]["traverse_slope_limit_deg"] == 15
     assert by_id["long-duration-outpost"]["requirements"]["max_continuous_dark_h"] == 192
     assert rover["requirements"]["max_continuous_dark_h"] == 50
+    # The small lander's continuous-light rule is for low/middle latitudes only (Michael's decision)
+    assert "NOT for the polar regions" in by_id["small-robotic-lander"]["summary"]
     # No source ranks the criteria: no archetype sets a priority (Michael's decision)
     assert not any("priority" in a for a in by_id.values())
