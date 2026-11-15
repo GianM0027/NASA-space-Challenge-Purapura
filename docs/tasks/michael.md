@@ -51,9 +51,27 @@ recent missions, Haworth/de Gerlache points on the rim.
   memory so repeated globe lookups do not re-read the large 1-minute file.
   Before the demo: `uv run python scripts/ephemeris_warm_cache.py --start <demo date> --days 60`.
 
+- Globe checked by eye (Gian's Next item 1), all OK: Apollo 11 at 1969-07-20 20:17 UTC just inside
+  the lit side near the terminator; today's phase matches; Earth direction at the near-side center;
+  south pole lit at grazing angle, lit side rotating with the date; Chang'e 4/6 with no Earth;
+  markers in place; click picking gives sensible coordinates.
+
 ## Blockers
 
 ## Requests
+- To Gian, AI-5 priority (D23 impact): no archetype has a `priority` list (Michael's decision): for
+  the crewed stay NASA lists light, Earth >= 25 % and landing slope all as mandatory without ranking
+  them; the other archetypes set one weighted criterion or none. Equal weights, explained in
+  `mission_archetypes.md`; the tests you asked for are in place and will check any future list.
+- To Gian, D32 follow-up: `traverse_slope_limit_deg` and the observer height are now in
+  `requirements.area` (`traverse_slope_limit_deg`, `observer_height_above_ground_m`) since D32 put
+  them in `OperationsArea`; the top-level `observer_height_m` key is gone. `max_continuous_dark_h`
+  stays in `proposed_fields` until your contract PR lands; then I move it to `requirements`.
+- To Gian, AI-1: `docs/domain/example_requests.md` has 8 scripted requests with expected
+  requirements (fields + values, no invented constraints) for your AI tests.
+- To Gian: your Next item 1 (look at the globe by eye) is done, see Done above.
+- To Federico: `docs/decisions.md` has two D30 rows (mine: observer height; yours: near-site DEM,
+  which your task file calls D31). Please add a row renaming yours, since existing rows are not edited.
 - Resolved by Gian (merged 496a26b): EPH-1 wording, API tests off real modules, whole-minute step in
   the contract (D25), `sky_state` truncates to the whole minute.
 - Contracts review decided by Michael (D27): `Site.region_radius_m` and `Site.feature` dropped.

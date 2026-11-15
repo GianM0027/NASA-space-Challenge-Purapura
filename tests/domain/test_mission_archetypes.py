@@ -15,7 +15,17 @@ PATTERN = re.compile(
     r"<!--\s*ARCHETYPES_JSON_BEGIN\s*-->\s*```json\s*(.*?)\s*```\s*<!--\s*ARCHETYPES_JSON_END\s*-->",
     re.DOTALL,
 )
-KNOWN_PROPOSED = {"max_continuous_dark_h", "traverse_slope_limit_deg"}  # requested to Gian
+KNOWN_PROPOSED = {"max_continuous_dark_h"}  # requested to Gian, not yet in the contract
+# Ranking criteria accepted in `priority` (Gian, AI-2 rank order centroid weights)
+RANKING_CRITERIA = {
+    "min_illumination_fraction",
+    "min_continuous_light_h",
+    "max_continuous_dark_h",
+    "min_earth_visibility_fraction",
+    "max_earth_outage_h",
+    "min_sun_and_earth_visible_fraction",
+    "max_slope_deg",
+}
 
 
 def _archetypes() -> list[dict]:
@@ -27,7 +37,7 @@ def _archetypes() -> list[dict]:
 
 
 def _numeric_keys(archetype: dict) -> list[str]:
-    keys = [k for k in ("mission_duration_h", "observer_height_m") if k in archetype]
+    keys = [k for k in ("mission_duration_h",) if k in archetype]
     for k, v in archetype["requirements"].items():
         if isinstance(v, dict):
             keys += [f"{k}.{sub}" for sub in v]
@@ -58,16 +68,37 @@ def test_every_number_has_a_source(archetype: dict) -> None:
     assert all(archetype["sources"][k].strip() for k in archetype["sources"])
 
 
+@pytest.mark.parametrize("archetype", _archetypes(), ids=lambda a: a["id"])
+def test_priority_is_valid_when_present(archetype: dict) -> None:
+    if "priority" not in archetype:
+        return  # equal weights (Gian's rule when no source gives an order)
+    names = [name for group in archetype["priority"] for name in group]
+    fixed = set(archetype["requirements"]) | set(archetype["proposed_fields"])
+    assert all(group for group in archetype["priority"]), "empty priority group"
+    assert set(names) <= RANKING_CRITERIA, f"unknown criteria: {set(names) - RANKING_CRITERIA}"
+    assert set(names) <= fixed, f"criteria not set by the archetype: {set(names) - fixed}"
+    assert len(names) == len(set(names)), "a criterion appears twice"
+    assert archetype["sources"].get("priority", "").strip(), "priority needs sources['priority']"
+
+
 def test_known_values_from_sources() -> None:
     by_id = {a["id"]: a for a in _archetypes()}
     crewed = by_id["short-crewed-stay"]
     # NASA HLS overview 2025, p. 21: within 6 deg of the pole, land within 100 m, EVA 2 km
     assert crewed["requirements"]["latitude_max_deg"] == -84
-    assert crewed["requirements"]["area"] == {"landing_precision_m": 100, "operating_range_m": 2000}
+    assert crewed["requirements"]["area"] == {
+        "landing_precision_m": 100,
+        "operating_range_m": 2000,
+        "traverse_slope_limit_deg": 20,
+        "observer_height_above_ground_m": 10,
+    }
     assert crewed["mission_duration_h"] == 156  # 6.5 days
-    # Landing slope is the only hard slope limit; the EVA limit only measures traversability
+    # Landing slope is the only hard slope limit; the EVA limit only measures reachability
     assert crewed["requirements"]["max_slope_deg"] == 10
-    assert crewed["proposed_fields"]["traverse_slope_limit_deg"] == 20
-    assert "max_slope_deg" not in by_id["polar-rover"]["requirements"]
+    rover = by_id["polar-rover"]
+    assert "max_slope_deg" not in rover["requirements"]
+    assert rover["requirements"]["area"]["traverse_slope_limit_deg"] == 15
     assert by_id["long-duration-outpost"]["proposed_fields"]["max_continuous_dark_h"] == 192
-    assert by_id["polar-rover"]["proposed_fields"]["max_continuous_dark_h"] == 50
+    assert rover["proposed_fields"]["max_continuous_dark_h"] == 50
+    # No source ranks the criteria: no archetype sets a priority (Michael's decision)
+    assert not any("priority" in a for a in by_id.values())
