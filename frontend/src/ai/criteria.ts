@@ -28,6 +28,8 @@ export const FIELDS: FieldSpec[] = [
   { field: 'max_slope_deg', label: 'landing slope', op: '≤', unit: 'deg' },
   { field: 'latitude_min_deg', label: 'latitude', op: '≥', unit: 'deg' },
   { field: 'latitude_max_deg', label: 'latitude', op: '≤', unit: 'deg' },
+  { field: 'longitude_min_deg', label: 'longitude from', op: '≥', unit: 'deg' },
+  { field: 'longitude_max_deg', label: 'longitude to', op: '≤', unit: 'deg' },
   { field: 'landing_precision_m', label: 'landing precision', op: '=', unit: 'm', area: true },
   { field: 'operating_range_m', label: 'operating range', op: '=', unit: 'm', area: true },
   { field: 'traverse_slope_limit_deg', label: 'traverse slope limit', op: '=', unit: 'deg', area: true },

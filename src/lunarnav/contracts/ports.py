@@ -31,6 +31,8 @@ from lunarnav.contracts.models import (
     Site,
     TerrainStats,
     TimeWindow,
+    TradeoffResult,
+    TradeoffSettings,
 )
 
 
@@ -203,5 +205,37 @@ class MissionAnalyzer(Protocol):
 
         Returns:
             The robustness report.
+        """
+        ...
+
+
+class TradeoffAnalyzer(Protocol):
+    """AHP trade-off over 2 to 4 evaluated scenarios (spec 4.8; owner: Federico, decision D37)."""
+
+    def analyze(self, evaluations: list[Evaluation], settings: TradeoffSettings) -> TradeoffResult:
+        """Score the scenarios on every figure of merit with the settings' weights.
+
+        Args:
+            evaluations: One evaluation per scenario, in the order of ``settings.labels``.
+            settings: Labels, weights or pairwise judgments, user FoMs, excluded FoMs.
+
+        Returns:
+            The trade-off table, weights, scores and ranking (``ai_comment`` left None).
+
+        Raises:
+            ValueError: If the evaluations do not match the labels, or a judgment names an
+                unknown FoM.
+        """
+        ...
+
+    def export_xlsx(self, result: TradeoffResult, evaluations: list[Evaluation]) -> bytes:
+        """Write the trade-off as a live Excel workbook (spec TO-4).
+
+        Args:
+            result: The trade-off to export, AI comment included.
+            evaluations: The evaluations behind it, for the data and sources sheet.
+
+        Returns:
+            The .xlsx file content.
         """
         ...

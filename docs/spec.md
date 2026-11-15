@@ -191,9 +191,10 @@ the AI comment is Gian's.
   visibility fraction, longest Earth outage, landing slope maximum and reachable fraction when
   the area has an operating range. Values come from `Evaluation` only.
 - **TO-2** (P1, Federico): FoM weights have defaults the user can change. Defaults come from an
-  AHP pairwise comparison (principal eigenvector, consistency ratio <= 10 %) whose judgments are
-  taken from Governale et al. 2021 where their criteria match ours, and are equal otherwise;
-  every default judgment cites its source. The user edits weights directly or through the
+  AHP pairwise comparison (weights by the row geometric mean, consistency ratio <= 10 % from
+  lambda max of A.w; decision D39) whose judgments are taken from Governale et al. 2021 where
+  their criteria match ours, and are equal otherwise (none match: all defaults are 1); every
+  default judgment cites its source. The user edits weights directly or through the
   pairwise comparisons; weights are normalized to sum to 1.
 - **TO-3** (P1, Federico): the user can add a FoM of their own: name, unit, direction, weight,
   and a value for every compared scenario; it enters the trade-off like the computed ones and
@@ -251,6 +252,8 @@ the AI comment is Gian's.
 | `POST /api/ai/ask` | `AiRequest` (message, history, current requirements, locked fields, GUI window) | `AiAnswer` (ranking null when the AI asks back) |
 | `POST /api/ai/explain` | `{"ranking": SiteRanking, "language_hint": str}` | `SiteRanking` with a checked one-sentence `rationale` per site |
 | `POST /api/mission-analysis` | evaluate request plus `"shifts_days": list[float]` | `RobustnessReport` |
+| `POST /api/tradeoff` | `{"scenarios": [evaluate request] (2 to 4), "settings": TradeoffSettings}` | `TradeoffResult` |
+| `POST /api/tradeoff/export` | same as `/api/tradeoff` | `.xlsx` workbook (501 until the trade-off module exists) |
 
   Errors: HTTP 422 for invalid input (Pydantic detail, or a `ValueError` raised by a module),
   404 for unknown site id, 502 when a module fails for any other reason (Horizons, LLM, data

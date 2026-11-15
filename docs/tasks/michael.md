@@ -62,9 +62,22 @@ recent missions, Haworth/de Gerlache points on the rim.
   a lock file, re-reads the file, writes atomically; reads reload when the file changed. Checked
   end to end through the API: add 200, rename 200, delete curated 403, delete 204, delete again 404.
 
+- AI-7 regions: `docs/domain/regions.md` (south pole <= -84 deg Artemis; north pole >= 80 deg LOLA
+  polar study; equatorial and Apollo zone, NASA 1967; near/far side, LRO frame), JSON between
+  REGIONS_JSON markers, acceptance case tested on the catalog. Note: IM-1 (-80.1) and the
+  approximate point of Peak near Cabeus B (-82.3) fall outside the south-pole band.
+- MA-1/2/3 (D37): `RobustnessAnalyzer` + `build_mission_analyzer(evaluator)`; shifts default
+  +1/+3/+7/+14 d; dispersion on 2 rings x 4 points of the operations disk, each sample evaluated as a
+  landing point (landing-disk slope); summary quotes only report numbers. Known-answer tests with a
+  fake evaluator; live API: Apollo 11, 14 days, 1 km disk, 6.1 s, badge "real".
+
 ## Blockers
 
 ## Requests
+- To Gian (D23 impact): AI-7 table ready in `docs/domain/regions.md` (regex in the file; far side
+  wraps: `lon_min_deg > lon_max_deg`). MA-1/2/3 ready: `build_mission_analyzer` is exported, the API
+  wires it; `RobustnessReport` needed no new field. For UI-5: offsets of each dispersion sample are
+  in `offset_m`, ring radii are R/2 and R with R = landing precision + operating range.
 - To Gian (user-site description, D23 impact): "Save as location" asks for a description, the
   catalog stores it, but the GUI never shows it and nothing can edit it. Proposal:
   - port: `SiteCatalog.update_user_site(site_id, *, name: str | None = None, description: str | None
