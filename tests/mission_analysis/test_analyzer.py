@@ -88,11 +88,11 @@ def test_destination_keeps_distance_near_the_pole() -> None:
 
 
 def test_sample_points_rings_and_count() -> None:
-    points = sample_points(SITE, 2000.0, rings=2, points_per_ring=8)
-    assert [r for r, _ in points] == [1000.0] * 8 + [2000.0] * 8
+    points = sample_points(SITE, 2000.0, rings=2, points_per_ring=4)
+    assert [r for r, _ in points] == [1000.0] * 4 + [2000.0] * 4
     for r, p in points:
         assert _distance_m(SITE, p) == pytest.approx(r, rel=1e-6)
-    assert sample_points(SITE, 0.0, 2, 8) == []
+    assert sample_points(SITE, 0.0, 2, 4) == []
 
 
 def test_shift_window_keeps_length_and_step() -> None:
@@ -135,7 +135,7 @@ def test_empty_shift_list_uses_spec_defaults_plus_one_lunar_cycle() -> None:
 def test_dispersion_samples_the_landing_precision_disk_only() -> None:
     area = OperationsArea(landing_precision_m=2000, operating_range_m=5000)
     report, fake = _analyze(area, [1])
-    assert len(report.dispersion) == 16  # 2 rings x 8 points (every 45 deg), center excluded
+    assert len(report.dispersion) == 8  # 2 rings x 4 points (every 90 deg), center excluded
     assert {s.offset_m for s in report.dispersion} == {1000.0, 2000.0}  # operating range ignored
     edge = [s for s in report.dispersion if s.offset_m == 2000.0]
     assert all(s.metrics.illumination_fraction == pytest.approx(0.30) for s in edge)

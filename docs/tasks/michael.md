@@ -1,4 +1,4 @@
-<!-- ABOUTME: Task file of Michael: ephemerides, site catalog, domain knowledge for the AI -->
+﻿<!-- ABOUTME: Task file of Michael: ephemerides, site catalog, domain knowledge for the AI -->
 <!-- ABOUTME: Only Michael (and Michael's Claude) writes here; requirement IDs refer to docs/spec.md -->
 
 # Michael: tasks
@@ -78,8 +78,8 @@ recent missions, Haworth/de Gerlache points on the rim.
   (29.53 d, NASA Moon Fact Sheet) to show when the target lighting returns, but only when
   `shifts_days` is empty: `MissionAnalysisRequest` defaults to [1, 3, 7, 14], so please default it
   to [] (or add 29.530589); shifts are snapped to whole window steps and echoed as applied.
-  (B) dispersion samples the landing-precision disk only (R = `landing_precision_m`), (C) 16
-  points (2 rings, every 45 deg), (D) the summary adds the Earth link when the Earth is not visible
+  (B) dispersion samples the landing-precision disk only (R = `landing_precision_m`), (C) 8
+  points (2 rings, every 90 deg; 16 tried, Michael chose speed), (D) the summary adds the Earth link when the Earth is not visible
   all the time. Live: Nobile Rim 1, 14 days, 100 m: 6.1 s.
 - To Gian (D23 impact): AI-7 table ready in `docs/domain/regions.md` (regex in the file; far side
   wraps: `lon_min_deg > lon_max_deg`). MA-1/2/3 ready: `build_mission_analyzer` is exported, the API
@@ -122,7 +122,7 @@ recent missions, Haworth/de Gerlache points on the rim.
 - To Federico (D23 impact): once the field exists, compute it in the evaluator
   (mean of `sun_visible AND earth_visible`).
 - To Federico, answer on observer height and catalog points (D23 impact):
-  1. Height above ground: default 2 m (D30, Gläser et al. 2014 use 2 m and 10 m as rover/lander
+  1. Height above ground: default 2 m (D30, GlÃ¤ser et al. 2014 use 2 m and 10 m as rover/lander
      solar panel heights). Per archetype: rover 2 m, small CLPS lander 2 m, crewed lander 10 m;
      the values will also go in `docs/domain/mission_archetypes.md` (AI-5).
   2. `artemis-haworth` and `artemis-de-gerlache-rim-2`: kept, flagged NOT REPRESENTATIVE (crater

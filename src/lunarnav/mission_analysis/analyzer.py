@@ -5,15 +5,16 @@
 
 * MA-1: the nominal window shifted by each offset: +1, +3, +7, +14 days (spec) plus one synodic
   month, which shows when the same lighting comes back (Michael's decision).
-* MA-2: points on two rings inside the landing-precision disk (R/2 and R, every 45 deg), each
+* MA-2: points on two rings inside the landing-precision disk (R/2 and R, every 90 deg), each
   evaluated as a landing point over the nominal window (Michael's decision: dispersion means
   landing dispersion; measured spreads below).
 * MA-3: a plain-language summary that only quotes numbers present in the report; it adds the
   Earth link when the Earth is not visible all the time.
 
-Measured with the real modules, 14-day window from 2026-11-20, landing precision 100 m (16 points):
-sunlight 61-74 % at Malapert Massif (nominal 60 %; 8 points would show 64-73 %), 72-78 % at IM-2,
-no change at Apollo 11; about 0.5 s warm and up to 17 s for a polar site not seen before.
+Measured with the real modules, 14-day window from 2026-11-20, landing precision 100 m: sunlight
+64-73 % at Malapert Massif with 8 points (61-74 % with 16; nominal 60 %), 72-78 % at IM-2, no change
+at Apollo 11. 8 points keep a first run on a new polar site at about half the 16-point time (up to
+17 s); repeated runs take about 0.5 s.
 """
 
 from __future__ import annotations
@@ -38,7 +39,7 @@ MOON_RADIUS_M = 1_737_400.0  # IAU mean radius, the LOLA reference sphere (contr
 SYNODIC_MONTH_D = 29.530589
 DEFAULT_SHIFTS_DAYS = (1.0, 3.0, 7.0, 14.0, SYNODIC_MONTH_D)  # spec MA-1 + one lunar cycle
 DEFAULT_RINGS = 2  # sample rings at R/2 and R (MA-2)
-DEFAULT_POINTS_PER_RING = 8  # every 45 deg: catches more of the spread at polar sites
+DEFAULT_POINTS_PER_RING = 4  # every 90 deg (8 points): Michael chose speed over the 16-point spread
 
 
 class RobustnessAnalyzer:
