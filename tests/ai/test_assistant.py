@@ -23,6 +23,7 @@ from lunarnav.contracts import (
     Site,
     SiteRanking,
     TimeWindow,
+    TradeoffResult,
 )
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "data" / "examples"
@@ -318,3 +319,34 @@ def test_analysis_comment_when_the_llm_fails() -> None:
     llm = _Llm(LlmError("CLI down"))
     commented = _assistant(llm)[0].comment_analysis(_report(), "Test site")
     assert commented.ai_comment is None
+
+
+def _tradeoff() -> TradeoffResult:
+    return TradeoffResult(
+        labels=["IM-2", "Malapert"],
+        foms=[],
+        weights={"illumination_fraction": 0.5, "longest_dark_h": 0.5},
+        weight_method="default",
+        judgments=[],
+        consistency_ratio=0.0,
+        table=[{}, {}],
+        scores=[0.4212, 0.5788],
+        ranking=[1, 0],
+        method="test",
+    )
+
+
+def test_tradeoff_comment_keeps_a_checked_text() -> None:
+    llm = _Llm({"comment": "Malapert wins with a score of 0.58 against 0.42 for IM-2."})
+    commented = _assistant(llm)[0].comment_tradeoff(_tradeoff())
+    assert commented.ai_comment == "Malapert wins with a score of 0.58 against 0.42 for IM-2."
+
+
+def test_tradeoff_comment_with_an_invented_number_is_dropped() -> None:
+    llm = _Llm({"comment": "Malapert wins by 37 points."})
+    assert _assistant(llm)[0].comment_tradeoff(_tradeoff()).ai_comment is None
+
+
+def test_tradeoff_comment_when_the_llm_fails() -> None:
+    llm = _Llm(LlmError("CLI down"))
+    assert _assistant(llm)[0].comment_tradeoff(_tradeoff()).ai_comment is None

@@ -10,9 +10,8 @@ ranking (AI-2), extraction and explanations through the Claude Code CLI (AI-1, A
 archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a placeholder.
 
 ## Next (in priority order)
-- TO-5: AI comment on the trade-off result (`/api/tradeoff` fills `ai_comment`, numbers checked).
-- UI-13 hookup (decision D42): pass outcome, analyses and the last trade-off to Federico's report
-  builder; `onRanking` from the AI box; `report/sections/AiRanking.tsx`.
+- UI-13 hookup (decision D42): one line in the dock once Federico's `ReportBuilder` lands, fed with
+  outcome, analyses, the last ranking (`onRanking`, done) and the last trade-off (`onResult`).
 Work split of day 2 (decision D37): Federico takes UI-3 and the trade-off (spec 4.8), Michael
 MA-1 to MA-3; Gian: AI-7 (named regions) and AI-1 acceptance, UI-11 (time wheel), contracts and
 API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, then UI-12.
@@ -24,6 +23,11 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- UI-13 (decision D42): `report/sections/AiRanking.tsx` (request, criteria with sources, ranked
+  sites with checked AI reasons, weights) with a smoke test; `onRanking` on the AI box.
+- TO-5: `/api/tradeoff` adds a two-sentence AI comment whose numbers must all appear in the result
+  (else none); the export reuses it from memory (same deterministic result, no second LLM call).
+  Real CLI, IM-2 vs Malapert vs Haworth: 24 s cold; same trade-off again 0.67 s.
 - Federico's Trade-off view wired in the dock (`CompareView`, PR #27); all 8 modules real; trade-off
   and Excel export answer on real data. Date-shift labels rounded to one decimal ("+29.5 d").
 - AI-7 with Michael's real `regions.md`, real CLI: "near the south pole" -> south-polar-region
