@@ -11,7 +11,7 @@ Each module owner exposes one factory function from the module's package ``__ini
 * ``evaluation.build_evaluator(ephemeris, terrain)`` -> ``Evaluator``
 * ``mission_analysis.build_mission_analyzer(evaluator)`` -> ``MissionAnalyzer``
 * ``ai.build_ranker(catalog, evaluator)`` -> ``Ranker``
-* ``ai.build_assistant(ranker)`` -> ``Assistant``
+* ``ai.build_assistant(ranker, catalog)`` -> ``Assistant``
 
 When the factory exists the API uses it; when it is missing, cannot be imported (dependency
 group not installed) or raises, the API falls back to the placeholder and reports why in
@@ -137,5 +137,5 @@ def build_services(use_real: bool = True) -> tuple[Services, ModuleStatus]:
         evaluator,
     )
     ranker = build("ranking", "ai", "build_ranker", ExampleRanker, catalog, evaluator)
-    assistant = build("assistant", "ai", "build_assistant", ExampleAssistant, ranker)
+    assistant = build("assistant", "ai", "build_assistant", ExampleAssistant, ranker, catalog)
     return Services(catalog, ephemeris, evaluator, analyzer, ranker, assistant), status

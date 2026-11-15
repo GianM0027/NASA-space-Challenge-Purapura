@@ -5,6 +5,8 @@
 
 from lunarnav.contracts.models import (
     AiAnswer,
+    AiRequest,
+    ChatMessage,
     DateShiftResult,
     DispersionSample,
     EphemerisSeries,
@@ -14,6 +16,7 @@ from lunarnav.contracts.models import (
     MissionRequirements,
     OperationsArea,
     Origin,
+    RequirementSource,
     RobustnessReport,
     Site,
     SiteRanking,
@@ -33,6 +36,8 @@ from lunarnav.contracts.ports import (
 
 __all__ = [
     "AiAnswer",
+    "AiRequest",
+    "ChatMessage",
     "DateShiftResult",
     "DispersionSample",
     "EphemerisProvider",
@@ -45,6 +50,7 @@ __all__ = [
     "MissionRequirements",
     "OperationsArea",
     "Origin",
+    "RequirementSource",
     "RobustnessReport",
     "Site",
     "SiteCatalog",

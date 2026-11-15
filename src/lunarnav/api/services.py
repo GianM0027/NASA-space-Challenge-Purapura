@@ -26,6 +26,7 @@ from pydantic import TypeAdapter
 from lunarnav.api.placeholder_metrics import compute_metrics, horizon_at
 from lunarnav.contracts import (
     AiAnswer,
+    AiRequest,
     EphemerisProvider,
     EphemerisSeries,
     Evaluation,
@@ -62,10 +63,14 @@ class Ranker(Protocol):
 
 
 class Assistant(Protocol):
-    """Natural-language request to requirements plus ranking (spec AI-1)."""
+    """Chat turn to requirements plus ranking (spec AI-1), and explanations (spec AI-3)."""
 
-    def ask(self, text: str) -> AiAnswer:
-        """Answer a natural-language mission request."""
+    def ask(self, request: AiRequest) -> AiAnswer:
+        """Answer one chat turn with updated requirements and, when possible, a ranking."""
+        ...
+
+    def explain(self, ranking: SiteRanking, language_hint: str = "") -> SiteRanking:
+        """Return ``ranking`` with a short rationale on every result."""
         ...
 
 
@@ -327,7 +332,17 @@ class ExampleAssistant:
         """Load the example answer."""
         self._example = AiAnswer.model_validate_json(_read("ai_answer.json"))
 
-    def ask(self, text: str) -> AiAnswer:
-        """Return the example answer, with ``source_request`` set to ``text``."""
-        requirements = self._example.requirements.model_copy(update={"source_request": text})
+    def ask(self, request: AiRequest) -> AiAnswer:
+        """Return the example answer, with ``source_request`` set to the request text."""
+        requirements = self._example.requirements.model_copy(
+            update={"source_request": request.text}
+        )
         return self._example.model_copy(update={"requirements": requirements})
+
+    def explain(self, ranking: SiteRanking, language_hint: str = "") -> SiteRanking:
+        """Return ``ranking`` with a fixed example rationale on every result."""
+        results = [
+            score.model_copy(update={"rationale": "Example explanation (no LLM)."})
+            for score in ranking.results
+        ]
+        return ranking.model_copy(update={"results": results})

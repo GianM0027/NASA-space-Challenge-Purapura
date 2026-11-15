@@ -4,20 +4,27 @@
 # Gian: tasks
 
 ## Status
-The app is viewable end to end on placeholder data: 3D Moon globe (NASA LRO WAC texture, sunlight
-from `/api/sky`, Earth direction, site markers, click to pick), date control, site list and site
-panel with power, communication and terrain metrics. Real modules plug in by themselves through
-their factories (IF-5, automatic wiring); badges in the header show which are live.
+End to end on real catalog, ephemeris, terrain and evaluation: 3D globe, site panel with timeline,
+and the AI box (UI-4): chat and ranking tabs over one bar of editable criteria, deterministic
+ranking (AI-2), extraction and explanations through the Claude Code CLI (AI-1, AI-3, AI-4),
+archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a placeholder.
 
 ## Next (in priority order)
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
    checked through the DOM and network only, not by eye.
-3. UI-4 (AI box) on example data, then C3 (LLM JSON check) and AI-1 (request to requirements), AI-2 (deterministic ranking).
+3. AI-1 acceptance: 5 scripted requests through the real CLI, recorded with their timings.
 4. UI-3 (side-by-side comparison).
 5. MA-1 (date-slip sweep), MA-2 (dispersion), MA-3 (summary), UI-5 (mission analysis view), AI-6 (AI presents it).
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Site panel holds the whole window (start date, duration, step), always visible; picking a ranked
+  site sets it to the mission window, so panel and ranking show the same numbers (checked in the browser).
+- UI-4, AI-1, AI-2, AI-3, AI-4, AI-5 (decision D33): `lunarnav.ai` (ranking with ROC weights, archetype
+  loader, CLI client with no context, number check, chat assistant) and the AI box; 29 tests in
+  `tests/ai/` (sabotage-checked), checked in the browser on real data (short crewed stay: 9 polar
+  sites, none passes 156 h of continuous light, IM-2 closest). Measured once each: request 7.7 s,
+  five explanations 12.7 s, cold-cache ranking of 36 sites 21 s.
 - UI-2 (site panel): Sun and Earth elevation timeline against the per-sample horizon, joint visibility, truncated periods; checked on Apollo 11 and Malapert Massif with real catalog, ephemeris and terrain.
 - UI-1 (3D globe, decision D22) with `GET /api/sky`; automatic module wiring (IF-5, decision D21); TypeScript types generated from the contracts with a staleness test.
 - API skeleton (IF-4, REST API) on example services, 11 smoke tests; frontend scaffold with `/api` proxy, verified end to end in the browser.
@@ -46,6 +53,11 @@ their factories (IF-5, automatic wiring); badges in the header show which are li
 ## Blockers
 
 ## Requests
+- Michael (AI-5, decision D33): add `priority` (ordered groups of criterion names, with a source in
+  `sources["priority"]`) to each archetype; after this merges, move `max_continuous_dark_h` from
+  `proposed_fields` to `requirements` (now a contract field). Details sent by message.
+- Michael (EPH-3, demo speed): a cold ranking of 36 sites takes about 21 s, almost all of it
+  Horizons. Warm the cache for the demo windows (start date x mission durations of the archetypes).
 - Federico (decision D32, slope contract; breaking port change, lands atomically): merge `origin/gian`
   into `federico`, then in the same PR:
   - `LolaTerrainProvider.horizon_mask(location, area)`: observer height from

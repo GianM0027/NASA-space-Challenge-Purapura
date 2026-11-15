@@ -16,9 +16,9 @@ from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
 from lunarnav.api.requests import (
-    AskRequest,
     CompareRequest,
     EvaluateRequest,
+    ExplainRequest,
     MissionAnalysisRequest,
 )
 from lunarnav.api.services import Services
@@ -26,6 +26,7 @@ from lunarnav.api.sky import sky_state
 from lunarnav.api.wiring import ModuleStatus, build_services
 from lunarnav.contracts import (
     AiAnswer,
+    AiRequest,
     Evaluation,
     GeoPoint,
     MissionRequirements,
@@ -126,9 +127,14 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         return svc.ranker.rank(requirements)
 
     @app.post("/api/ai/ask")
-    def ask(request: AskRequest) -> AiAnswer:
-        """Turn a natural-language request into requirements and a ranking."""
-        return svc.assistant.ask(request.text)
+    def ask(request: AiRequest) -> AiAnswer:
+        """Turn one chat turn into updated requirements and, when possible, a ranking."""
+        return svc.assistant.ask(request)
+
+    @app.post("/api/ai/explain")
+    def explain(request: ExplainRequest) -> SiteRanking:
+        """Add a short AI rationale to every ranked site (numbers checked against the ranking)."""
+        return svc.assistant.explain(request.ranking, request.language_hint)
 
     @app.post("/api/mission-analysis")
     def mission_analysis(request: MissionAnalysisRequest) -> RobustnessReport:

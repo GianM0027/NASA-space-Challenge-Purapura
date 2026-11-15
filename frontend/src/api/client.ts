@@ -3,9 +3,11 @@
 
 import type {
   AiAnswer,
+  AiRequest,
   EvaluateRequest,
   Evaluation,
-  MissionRequirements,
+  ExplainRequest,
+  MissionRequirementsInput,
   Site,
   SiteRanking,
   SkyState,
@@ -15,11 +17,17 @@ import type {
 export type ModuleStatus = Record<string, string>
 
 async function request<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(path, {
-    method: body === undefined ? 'GET' : 'POST',
-    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  let response: Response
+  try {
+    response = await fetch(path, {
+      method: body === undefined ? 'GET' : 'POST',
+      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch {
+    // fetch rejects only when no HTTP answer arrives at all: the dev servers are not running.
+    throw new Error('Backend unreachable: is it running on port 8000 (README, Run)?')
+  }
   if (!response.ok) {
     const detail = await response.text()
     throw new Error(`${path}: HTTP ${response.status} ${detail.slice(0, 300)}`)
@@ -32,6 +40,7 @@ export const api = {
   sites: () => request<Site[]>('/api/sites'),
   sky: (timeUtc: string) => request<SkyState>(`/api/sky?time_utc=${encodeURIComponent(timeUtc)}`),
   evaluate: (body: EvaluateRequest) => request<Evaluation>('/api/evaluate', body),
-  rank: (body: MissionRequirements) => request<SiteRanking>('/api/rank', body),
-  ask: (text: string) => request<AiAnswer>('/api/ai/ask', { text }),
+  rank: (body: MissionRequirementsInput) => request<SiteRanking>('/api/rank', body),
+  ask: (body: AiRequest) => request<AiAnswer>('/api/ai/ask', body),
+  explain: (body: ExplainRequest) => request<SiteRanking>('/api/ai/explain', body),
 }

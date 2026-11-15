@@ -3,11 +3,20 @@
 
 export type AiAnswer = {
   requirements: MissionRequirements
-  ranking: SiteRanking
+  ranking: SiteRanking | null
   message: string
 }
 
-export type AskRequest = {
+export type AiRequest = {
+  text: string
+  history: ChatMessage[]
+  requirements: MissionRequirements | null
+  locked_fields: string[]
+  default_window: TimeWindow
+}
+
+export type ChatMessage = {
+  role: "user" | "assistant"
   text: string
 }
 
@@ -63,6 +72,11 @@ export type Evaluation = {
   metrics: VisibilityMetrics
 }
 
+export type ExplainRequest = {
+  ranking: SiteRankingInput
+  language_hint?: string
+}
+
 export type GeoPointInput = {
   lat_deg: number
   lon_deg: number
@@ -92,19 +106,44 @@ export type MissionAnalysisRequest = {
   shifts_days?: number[]
 }
 
+export type MissionRequirementsInput = {
+  window?: TimeWindowInput | null
+  area?: OperationsAreaInput | null
+  min_illumination_fraction?: number | null
+  min_continuous_light_h?: number | null
+  max_continuous_dark_h?: number | null
+  min_sun_elevation_deg?: number | null
+  min_earth_visibility_fraction?: number | null
+  min_continuous_earth_visibility_h?: number | null
+  max_earth_outage_h?: number | null
+  min_sun_and_earth_visible_fraction?: number | null
+  max_slope_deg?: number | null
+  latitude_min_deg?: number | null
+  latitude_max_deg?: number | null
+  origins?: Origin[] | null
+  archetype_id?: string | null
+  field_sources?: Record<string, RequirementSource>
+  rationale?: Record<string, string>
+  source_request?: string | null
+}
+
 export type MissionRequirements = {
   window: TimeWindow | null
   area: OperationsArea | null
   min_illumination_fraction: number | null
   min_continuous_light_h: number | null
+  max_continuous_dark_h: number | null
   min_sun_elevation_deg: number | null
   min_earth_visibility_fraction: number | null
   min_continuous_earth_visibility_h: number | null
+  max_earth_outage_h: number | null
   min_sun_and_earth_visible_fraction: number | null
   max_slope_deg: number | null
   latitude_min_deg: number | null
   latitude_max_deg: number | null
   origins: Origin[] | null
+  archetype_id: string | null
+  field_sources: Record<string, RequirementSource>
   rationale: Record<string, string>
   source_request: string | null
 }
@@ -124,6 +163,8 @@ export type OperationsArea = {
 }
 
 export type Origin = "apollo" | "luna" | "surveyor" | "change" | "chandrayaan" | "slim" | "clps" | "artemis" | "other" | "user"
+
+export type RequirementSource = "user" | "archetype" | "default"
 
 export type RobustnessReport = {
   site_id: string | null
@@ -147,9 +188,30 @@ export type Site = {
   sources: string[]
 }
 
+export type SiteRankingInput = {
+  requirements: MissionRequirementsInput
+  results: SiteScoreInput[]
+  weights?: Record<string, number>
+  unavailable?: Record<string, string>
+}
+
 export type SiteRanking = {
   requirements: MissionRequirements
   results: SiteScore[]
+  weights: Record<string, number>
+  unavailable: Record<string, string>
+}
+
+export type SiteScoreInput = {
+  site_id: string
+  rank: number
+  score: number
+  constraints_met: Record<string, boolean>
+  criterion_values?: Record<string, number>
+  all_constraints_met: boolean
+  metrics: VisibilityMetrics
+  landing_slope_max_deg: number
+  rationale?: string | null
 }
 
 export type SiteScore = {
@@ -157,6 +219,7 @@ export type SiteScore = {
   rank: number
   score: number
   constraints_met: Record<string, boolean>
+  criterion_values: Record<string, number>
   all_constraints_met: boolean
   metrics: VisibilityMetrics
   landing_slope_max_deg: number

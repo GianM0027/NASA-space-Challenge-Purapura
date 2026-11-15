@@ -110,9 +110,19 @@ def test_rank(client: TestClient) -> None:
 
 
 def test_ai_ask(client: TestClient) -> None:
-    response = client.post("/api/ai/ask", json={"text": "polar rover, recharge often"})
+    body = {"text": "polar rover, recharge often", "default_window": WINDOW}
+    response = client.post("/api/ai/ask", json=body)
     assert response.status_code == 200
     AiAnswer.model_validate(response.json())
+
+
+def test_ai_explain(client: TestClient) -> None:
+    ranking = client.post("/api/rank", json={"min_illumination_fraction": 0.5}).json()
+    response = client.post("/api/ai/explain", json={"ranking": ranking})
+    assert response.status_code == 200
+    assert all(
+        r["rationale"] for r in SiteRanking.model_validate(response.json()).model_dump()["results"]
+    )
 
 
 def test_mission_analysis(client: TestClient) -> None:

@@ -1,10 +1,11 @@
-// ABOUTME: Root of the LunarNav frontend: globe, date control, site list and site panel, module status
+// ABOUTME: Root of the LunarNav frontend: globe, date control, AI box, site list and panel, modules
 // ABOUTME: Owner: Gian. Holds the selection and the time window; children are presentational
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AiAssistant } from './ai/AiAssistant'
 import { api, type ModuleStatus } from './api/client'
-import type { Evaluation, GeoPoint, Site, SkyState } from './api/contracts'
-import { formatUtc, fromInputValue, toInputValue } from './format'
+import type { Evaluation, GeoPoint, Site, SkyState, TimeWindow } from './api/contracts'
+import { formatUtc, hoursBetween } from './format'
 import { MoonGlobe, type GlobeFocus } from './globe/MoonGlobe'
 import { MOON_TEXTURE_ATTRIBUTION } from './globe/moonTexture'
 import { SitePanel, type WindowSettings } from './panels/SitePanel'
@@ -31,12 +32,16 @@ function App() {
   const [modules, setModules] = useState<ModuleStatus>({})
   const [sites, setSites] = useState<Site[]>([])
   const [bootError, setBootError] = useState<string | null>(null)
-  const [startUtc, setStartUtc] = useState(todayUtc)
   const [sky, setSky] = useState<SkyState | null>(null)
   const [uniformLight, setUniformLight] = useState(false)
   const [focus, setFocus] = useState<GlobeFocus | null>(null)
   const [target, setTarget] = useState<Target | null>(null)
-  const [settings, setSettings] = useState<WindowSettings>({ durationDays: 30, stepMinutes: 60 })
+  const [settings, setSettings] = useState<WindowSettings>(() => ({
+    startUtc: todayUtc(),
+    durationHours: 30 * 24,
+    stepMinutes: 60,
+  }))
+  const startUtc = settings.startUtc
   const [outcome, setOutcome] = useState<Outcome | null>(null)
 
   useEffect(() => {
@@ -60,12 +65,12 @@ function App() {
   }, [startUtc])
 
   // Identifies the current evaluation request; an outcome with another key is stale.
-  const requestKey = target ? JSON.stringify([target, startUtc, settings]) : null
+  const requestKey = target ? JSON.stringify([target, settings]) : null
 
   useEffect(() => {
     if (!target || !requestKey) return
     let current = true
-    const end = new Date(new Date(startUtc).getTime() + settings.durationDays * 86_400_000)
+    const end = new Date(new Date(startUtc).getTime() + settings.durationHours * 3_600_000)
     api
       .evaluate({
         ...('siteId' in target ? { site_id: target.siteId } : { location: target.location }),
@@ -82,7 +87,7 @@ function App() {
     return () => {
       current = false
     }
-  }, [target, startUtc, settings, requestKey])
+  }, [target, startUtc, settings.durationHours, settings.stepMinutes, requestKey])
 
   const loading = requestKey !== null && outcome?.key !== requestKey
 
@@ -103,9 +108,33 @@ function App() {
     },
     [sites],
   )
+  // A ranked site is shown over the mission window the ranking used, not the panel's own.
+  const pickRanked = useCallback(
+    (siteId: string, window: TimeWindow | null) => {
+      pickSite(siteId)
+      if (window) {
+        setSettings({
+          startUtc: new Date(window.start_utc).toISOString(),
+          durationHours: Math.round(hoursBetween(window.start_utc, window.end_utc)),
+          stepMinutes: window.step_minutes,
+        })
+      }
+    },
+    [pickSite],
+  )
   const pickLocation = useCallback((location: GeoPoint) => setTarget({ location }), [])
 
   const placeholders = Object.entries(modules).filter(([, status]) => status !== 'real')
+
+  // The window of the site panel is also the AI's default when a request gives no dates.
+  const panelWindow: TimeWindow = useMemo(
+    () => ({
+      start_utc: startUtc,
+      end_utc: new Date(new Date(startUtc).getTime() + settings.durationHours * 3_600_000).toISOString(),
+      step_minutes: settings.stepMinutes,
+    }),
+    [startUtc, settings.durationHours, settings.stepMinutes],
+  )
 
   return (
     <div className="app">
@@ -144,14 +173,6 @@ function App() {
             onPickLocation={pickLocation}
           />
           <div className="toolbar">
-            <label>
-              Date (UTC)
-              <input
-                type="datetime-local"
-                value={toInputValue(startUtc)}
-                onChange={(event) => event.target.value && setStartUtc(fromInputValue(event.target.value))}
-              />
-            </label>
             {VIEWS.map((view) => (
               <button
                 key={view.label}
@@ -190,6 +211,7 @@ function App() {
             </span>
             <span className="muted">{MOON_TEXTURE_ATTRIBUTION}</span>
           </div>
+          <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} />
         </div>
 
         <aside>

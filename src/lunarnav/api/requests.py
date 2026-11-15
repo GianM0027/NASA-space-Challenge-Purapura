@@ -9,7 +9,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from lunarnav.contracts import GeoPoint, OperationsArea, TimeWindow
+from lunarnav.contracts import GeoPoint, OperationsArea, SiteRanking, TimeWindow
 
 
 class EvaluateRequest(BaseModel):
@@ -59,13 +59,15 @@ class MissionAnalysisRequest(EvaluateRequest):
     shifts_days: list[float] = Field(default_factory=lambda: [1.0, 3.0, 7.0, 14.0])
 
 
-class AskRequest(BaseModel):
-    """A natural-language request to the AI assistant.
+class ExplainRequest(BaseModel):
+    """Ask the AI for a short rationale per ranked site.
 
     Attributes:
-        text: The user's request, any language.
+        ranking: A ranking returned by ``/api/rank`` or ``/api/ai/ask``.
+        language_hint: The user's latest message, so the text matches their language.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    text: str = Field(min_length=1, max_length=4000)
+    ranking: SiteRanking
+    language_hint: str = Field(default="", max_length=4000)

@@ -137,8 +137,11 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
   *Acceptance*: tests with fixed metrics give the expected order.
 - **AI-3** (P0, Gian): the LLM never outputs lunar numbers of its own; explanations cite only values
   from `SiteRanking`/`RobustnessReport`.
-- **AI-4** (P0, Gian): the LLM provider is a swappable component (Claude Code CLI in headless mode
-  for development, Anthropic API as alternative), selected by configuration (`.env`).
+- **AI-4** (P0, Gian): the LLM provider is a swappable component (`LlmClient`), selected by
+  `LUNARNAV_LLM_PROVIDER`: `cli` (default, implemented) runs the Claude Code CLI headless with
+  every context source off (empty folder, no settings, skills, MCP or tools), so the model sees
+  only the task prompt; `api` (Anthropic API) is the planned alternative if CLI latency is too
+  high for the demo.
 - **AI-5** (P1, Gian with content by Michael): mission archetypes (e.g. robotic ISRU, short human
   stay, long-duration outpost, communication relay) as domain knowledge with **sourced** typical
   values, used to suggest requirements.
@@ -184,6 +187,8 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 | `terrain` | `build_terrain_provider()` | `TerrainProvider` |
 | `evaluation` | `build_evaluator(ephemeris, terrain)` | `Evaluator` |
 | `mission_analysis` | `build_mission_analyzer(evaluator)` | `MissionAnalyzer` |
+| `ai` | `build_ranker(catalog, evaluator)` | `Ranker` |
+| `ai` | `build_assistant(ranker, catalog)` | `Assistant` |
 
   Placeholders: a toy ephemeris (far Sun and Earth, no libration, no tilt, arbitrary phase) and a
   flat horizon. They only draw plausible curves; never validate against them.
@@ -199,7 +204,8 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 | `POST /api/evaluate` | `{"site_id": str or null, "location": GeoPoint or null, "window": TimeWindow, "area": OperationsArea}` (one of site_id/location) | `Evaluation` |
 | `POST /api/compare` | `{"scenarios": [evaluate request, ...]}` (2 to 4) | `list[Evaluation]` |
 | `POST /api/rank` | `MissionRequirements` | `SiteRanking` |
-| `POST /api/ai/ask` | `{"text": str}` | `AiAnswer` |
+| `POST /api/ai/ask` | `AiRequest` (message, history, current requirements, locked fields, GUI window) | `AiAnswer` (ranking null when the AI asks back) |
+| `POST /api/ai/explain` | `{"ranking": SiteRanking, "language_hint": str}` | `SiteRanking` with a checked one-sentence `rationale` per site |
 | `POST /api/mission-analysis` | evaluate request plus `"shifts_days": list[float]` | `RobustnessReport` |
 
   Errors: HTTP 422 for invalid input (Pydantic detail, or a `ValueError` raised by a module),
