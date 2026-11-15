@@ -182,7 +182,7 @@ class SiteCatalog(Protocol):
 
 
 class MissionAnalyzer(Protocol):
-    """Robustness of a site to date slips and landing dispersion (owner: Gian)."""
+    """Robustness of a site to date slips and landing dispersion (owner: Michael, decision D37)."""
 
     def analyze(
         self,
