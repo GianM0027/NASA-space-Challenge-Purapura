@@ -484,7 +484,8 @@ def tradeoff_numbers(result: TradeoffResult) -> list[float]:
     """
     counts = [float(len(result.labels)), float(len(result.foms))]
     ranks = [float(rank) for rank in range(1, len(result.labels) + 1)]
-    return counts + ranks + _numbers_of(result.model_dump(exclude={"ai_comment", "method"}))
+    values = _numbers_of(result.model_dump(exclude={"ai_comment", "method"}))
+    return counts + ranks + values + name_numbers(*result.labels)
 
 
 def _numbers_of(value: Any) -> list[float]:
@@ -498,6 +499,18 @@ def _numbers_of(value: Any) -> list[float]:
     if isinstance(value, list):
         return [n for item in value for n in _numbers_of(item)]
     return []
+
+
+def name_numbers(*names: str) -> list[float]:
+    """Numbers inside site names ("Apollo 11", "IM-2"), which a comment may repeat.
+
+    Args:
+        *names: Display names or labels.
+
+    Returns:
+        Every number written in the names.
+    """
+    return [number for name in names for number, _ in numbers_in(name)]
 
 
 def _allowed_numbers(score: SiteScore, requirements: MissionRequirements) -> list[float]:
@@ -608,14 +621,15 @@ class ChatAssistant:
     def _summary(self, ranking: SiteRanking) -> str:
         """Deterministic sentence on the ranking outcome."""
         if not ranking.results:
-            return "No catalog site is in the search scope."
+            return "No landing site of the catalog is in the search scope."
         names = {site.id: site.name for site in self.catalog.list_sites()}
         best = ranking.results[0]
         name = names.get(best.site_id, best.site_id)
         passing = sum(score.all_constraints_met for score in ranking.results)
         if passing == 0:
-            return f"No site meets every constraint; the closest is {name}."
-        return f"{passing} of {len(ranking.results)} sites meet every constraint; best: {name}."
+            return f"No landing site meets every constraint; the closest is {name}."
+        total = len(ranking.results)
+        return f"{passing} of {total} landing sites meet every constraint; best: {name}."
 
     def ask(self, request: AiRequest) -> AiAnswer:
         """Answer one chat turn.
@@ -671,7 +685,8 @@ class ChatAssistant:
             "site": site_name,
             "report": report.model_dump(mode="json", exclude={"ai_comment"}),
         }
-        comment = self._checked_comment(task, payload, report_numbers(report))
+        allowed = report_numbers(report) + name_numbers(site_name)
+        comment = self._checked_comment(task, payload, allowed)
         return report.model_copy(update={"ai_comment": comment})
 
     def comment_tradeoff(self, result: TradeoffResult, language_hint: str = "") -> TradeoffResult:
@@ -714,32 +729,43 @@ class ChatAssistant:
     ) -> str | None:
         """Ask the LLM for a two-sentence comment and keep it only if its numbers are allowed.
 
+        A comment that quotes a number not in the data (often a value rounded the wrong way) is
+        asked again once, naming the offending numbers; a second failure gives no comment.
+
         Args:
             task: What the comment is about, first part of the system prompt.
             payload: The data the comment may quote, sent as JSON.
             allowed: Every number the comment may contain (see ``unsupported_numbers``).
 
         Returns:
-            The comment, or None when the LLM fails or the comment quotes another number.
+            The comment, or None when the LLM fails or every attempt quotes another number.
         """
         system = (
             f"{task} Write at most two sentences, at most 45 words. Fractions may be written as "
-            "percentages. Write no number that is not in the data. Use the language of "
-            "'language_of' (English if empty)."
+            "percentages, rounded to the nearest unit. Write no number that is not in the data. "
+            "Use the language of 'language_of' (English if empty)."
         )
-        try:
-            answer = self.llm.complete_json(
-                system, json.dumps(payload, ensure_ascii=False), _COMMENT_SCHEMA
-            )
+        prompt = json.dumps(payload, ensure_ascii=False)
+        for _ in range(MAX_ATTEMPTS):
+            try:
+                answer = self.llm.complete_json(system, prompt, _COMMENT_SCHEMA)
+            except LlmError:
+                logger.exception("AI comment: LLM failed, no comment")
+                return None
             text = str(answer.get("comment", "")).strip()
-        except LlmError:
-            logger.exception("AI comment: LLM failed, no comment")
-            return None
-        if not text or len(text) > 500 or unsupported_numbers(text, allowed):
-            if text:
-                logger.warning("AI comment dropped, unsupported numbers: %r", text)
-            return None
-        return text
+            if not text or len(text) > 500:
+                return None
+            wrong = unsupported_numbers(text, allowed)
+            if not wrong:
+                return text
+            logger.warning("AI comment rejected, numbers %s not in the data: %r", wrong, text)
+            listed = ", ".join(f"{number:g}" for number in wrong)
+            prompt = (
+                f"{json.dumps(payload, ensure_ascii=False)}\n\nYour previous comment quoted "
+                f"{listed}, which are not in the data. Write it again, copying numbers from the "
+                "data (or rounding them correctly)."
+            )
+        return None
 
     def explain(self, ranking: SiteRanking, language_hint: str = "") -> SiteRanking:
         """Add a one-sentence rationale to every result.
@@ -799,7 +825,11 @@ class ChatAssistant:
                 score.site_id not in by_id
                 or not text
                 or len(text) > 400
-                or unsupported_numbers(text, _allowed_numbers(score, requirements))
+                or unsupported_numbers(
+                    text,
+                    _allowed_numbers(score, requirements)
+                    + name_numbers(names.get(score.site_id, score.site_id)),
+                )
             ):
                 text = template_rationale(score, requirements)
             results.append(score.model_copy(update={"rationale": text}))

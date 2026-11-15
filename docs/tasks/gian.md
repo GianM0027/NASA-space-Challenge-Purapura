@@ -23,6 +23,11 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- AI comments fixed (trade-off, mission analysis, ranking reasons): numbers in site names ("Apollo
+  11", "IM-2") were counted as invented, so most comments were dropped; a rejected comment is now
+  asked again once with the offending numbers named; the API no longer remembers "no comment".
+  Real CLI: Apollo 12 vs 11 and Apollo 14 vs 15 vs IM-2 now get a comment.
+- Legend categories (landed, candidate, custom) toggle their markers on the globe.
 - AI box: height capped to the screen with a scrolling chat (the cap had stopped working inside the
   dock), vertical resize from a grip on the top edge (double-click: automatic), newest message kept
   in view.

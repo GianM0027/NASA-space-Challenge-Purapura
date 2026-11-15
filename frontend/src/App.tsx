@@ -33,6 +33,9 @@ function todayUtc(): string {
   return `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`
 }
 
+// Location categories in the legend, each a toggle for its markers on the globe (Site.status).
+const MARKER_CATEGORIES = ['landed', 'candidate', 'custom'] as const
+
 function App() {
   const [modules, setModules] = useState<ModuleStatus>({})
   const [sites, setSites] = useState<Site[]>([])
@@ -226,6 +229,13 @@ function App() {
 
   const placeholders = Object.entries(modules).filter(([, status]) => status !== 'real')
 
+  // Marker categories hidden on the globe from the legend; the side lists keep every location.
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([])
+  const globeSites = useMemo(
+    () => sites.filter((site) => !hiddenCategories.includes(site.status)),
+    [sites, hiddenCategories],
+  )
+
   // Latest AI ranking and trade-off of the session, printed by the PDF report (decision D42).
   const [lastRanking, setLastRanking] = useState<SiteRanking | null>(null)
   const [lastTradeoff, setLastTradeoff] = useState<TradeoffResult | null>(null)
@@ -303,7 +313,7 @@ function App() {
       <main>
         <div className="stage">
           <MoonGlobe
-            sites={sites}
+            sites={globeSites}
             selected={selectedLocation}
             sky={sky}
             uniformLight={uniformLight}
@@ -333,15 +343,24 @@ function App() {
             <span>
               <i className="dot earth" /> Earth direction
             </span>
-            <span>
-              <i className="dot landed" /> landed
-            </span>
-            <span>
-              <i className="dot candidate" /> candidate
-            </span>
-            <span>
-              <i className="dot custom" /> custom
-            </span>
+            {MARKER_CATEGORIES.map((category) => {
+              const shown = !hiddenCategories.includes(category)
+              return (
+                <button
+                  key={category}
+                  className={shown ? 'legend-toggle' : 'legend-toggle off'}
+                  aria-pressed={shown}
+                  title={shown ? `Hide ${category} landing sites on the globe` : `Show ${category} landing sites on the globe`}
+                  onClick={() =>
+                    setHiddenCategories((hidden) =>
+                      shown ? [...hidden, category] : hidden.filter((item) => item !== category),
+                    )
+                  }
+                >
+                  <i className={`dot ${category}`} /> {category}
+                </button>
+              )
+            })}
             <span className="muted">
               {sky ? `Sunlight at ${formatUtc(sky.time_utc)}` : 'Sun direction unavailable'}
             </span>
@@ -377,7 +396,7 @@ function App() {
 
         <aside>
           <section className="panel">
-            <h2>Preloaded locations</h2>
+            <h2>Preloaded landing sites</h2>
             <ul className="sites">
               {curatedSites.map((site) => (
                 <li key={site.id}>

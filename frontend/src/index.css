@@ -776,15 +776,6 @@ button.link {
   margin: 4px 0;
 }
 
-.analysis-tag {
-  display: inline-block;
-  margin-right: 6px;
-  padding: 0 5px;
-  border-radius: 6px;
-  background: #4cc9f022;
-  color: var(--accent);
-  font-size: 10px;
-}
 
 .analysis-table {
   width: 100%;
@@ -807,10 +798,6 @@ button.link {
   color: var(--warn);
 }
 
-.analysis-tag.computed {
-  background: #8b93a722;
-  color: var(--muted);
-}
 
 /* Touchdown diagram (spec UI-5): target point, sample rings, one dot per touchdown point */
 .touchdown-row {
@@ -959,4 +946,45 @@ button.primary {
 
 button.primary:hover {
   filter: brightness(1.1);
+}
+
+/* Legend categories as toggles: click to hide or show their markers on the globe. */
+.legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: inherit;
+  font-size: 12px;
+}
+
+.legend-toggle:hover {
+  border-color: var(--border);
+}
+
+.legend-toggle.off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* The "AI" badge before any AI-written text: a small accent circle with "AI" inside. */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: #4cc9f01f;
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  cursor: help;
 }

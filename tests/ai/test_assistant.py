@@ -310,7 +310,8 @@ def test_analysis_comment_keeps_a_checked_text() -> None:
 
 
 def test_analysis_comment_with_an_invented_number_is_dropped() -> None:
-    llm = _Llm({"comment": "Sunlight drops to 3.14159% after a slip."})
+    bad = {"comment": "Sunlight drops to 3.14159% after a slip."}
+    llm = _Llm(bad, bad)
     commented = _assistant(llm)[0].comment_analysis(_report(), "Test site")
     assert commented.ai_comment is None
 
@@ -343,10 +344,32 @@ def test_tradeoff_comment_keeps_a_checked_text() -> None:
 
 
 def test_tradeoff_comment_with_an_invented_number_is_dropped() -> None:
-    llm = _Llm({"comment": "Malapert wins by 37 points."})
+    bad = {"comment": "Malapert wins by 37 points."}
+    llm = _Llm(bad, bad)
     assert _assistant(llm)[0].comment_tradeoff(_tradeoff()).ai_comment is None
+
+
+def test_tradeoff_comment_is_retried_once_with_the_unsupported_numbers() -> None:
+    llm = _Llm(
+        {"comment": "Malapert wins by 37 points."},
+        {"comment": "Malapert wins with 0.58 against 0.42."},
+    )
+    commented = _assistant(llm)[0].comment_tradeoff(_tradeoff())
+    assert commented.ai_comment == "Malapert wins with 0.58 against 0.42."
+    assert "37" in llm.prompts[1] and "not in the data" in llm.prompts[1]
 
 
 def test_tradeoff_comment_when_the_llm_fails() -> None:
     llm = _Llm(LlmError("CLI down"))
     assert _assistant(llm)[0].comment_tradeoff(_tradeoff()).ai_comment is None
+
+
+def test_numbers_in_site_names_are_not_invented_numbers() -> None:
+    result = _tradeoff().model_copy(update={"labels": ["Apollo 11", "IM-2"]})
+    llm = _Llm({"comment": "Apollo 11 beats IM-2 with 0.58 against 0.42."})
+    assert _assistant(llm)[0].comment_tradeoff(result).ai_comment == (
+        "Apollo 11 beats IM-2 with 0.58 against 0.42."
+    )
+    llm = _Llm({"comment": "Apollo 11 is robust to every slip."})
+    commented = _assistant(llm)[0].comment_analysis(_report(), "Apollo 11")
+    assert commented.ai_comment == "Apollo 11 is robust to every slip."

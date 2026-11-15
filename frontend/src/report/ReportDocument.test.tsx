@@ -96,7 +96,7 @@ describe('report document', () => {
       },
     } as unknown as Evaluation
     const html = render(['site'], { evaluation })
-    expect(html).toContain('1. Site evaluation: custom point')
+    expect(html).toContain('1. Landing site evaluation: custom point')
     expect(html).toContain('66.7 %')
     expect(html).toContain('n/a (no rover range)')
   })

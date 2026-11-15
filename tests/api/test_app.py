@@ -137,6 +137,29 @@ def test_tradeoff_comment_is_written_once_and_reused_by_the_export() -> None:
     assert assistant.comments == 1
 
 
+class _FailingOnceAssistant(ExampleAssistant):
+    """Gives no trade-off comment the first time, then a checked one."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+
+    def comment_tradeoff(self, result: TradeoffResult, language_hint: str = "") -> TradeoffResult:
+        self.calls += 1
+        comment = None if self.calls == 1 else "Checked comment."
+        return result.model_copy(update={"ai_comment": comment})
+
+
+def test_a_missing_tradeoff_comment_is_asked_again_next_time() -> None:
+    services, status = build_services(use_real=False)
+    assistant = _FailingOnceAssistant()
+    api = TestClient(build_app(dataclasses.replace(services, assistant=assistant), status))
+    scenario = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    body = {"scenarios": [scenario, scenario], "settings": {"labels": ["A", "B"]}}
+    assert api.post("/api/tradeoff", json=body).json()["ai_comment"] is None
+    assert api.post("/api/tradeoff", json=body).json()["ai_comment"] == "Checked comment."
+
+
 def test_tradeoff_export_needs_the_real_module(client: TestClient) -> None:
     scenario = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
     body = {"scenarios": [scenario, scenario], "settings": {"labels": ["A", "B"]}}
