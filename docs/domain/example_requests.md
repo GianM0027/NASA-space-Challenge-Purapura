@@ -95,11 +95,10 @@ Notes on the hard cases:
         "requirements": {
           "area": {
             "observer_height_above_ground_m": 10
-          }
-        },
-        "proposed_fields": {
+          },
           "max_continuous_dark_h": 192
-        }
+        },
+        "proposed_fields": {}
       },
       "message_must_mention": [],
       "rationale_required": true
@@ -116,11 +115,10 @@ Notes on the hard cases:
             "operating_range_m": 20000,
             "traverse_slope_limit_deg": 15,
             "observer_height_above_ground_m": 2
-          }
-        },
-        "proposed_fields": {
+          },
           "max_continuous_dark_h": 50
-        }
+        },
+        "proposed_fields": {}
       },
       "message_must_mention": [],
       "rationale_required": true
@@ -185,11 +183,10 @@ Notes on the hard cases:
         "requirements": {
           "area": {
             "observer_height_above_ground_m": 10
-          }
-        },
-        "proposed_fields": {
+          },
           "max_continuous_dark_h": 192
-        }
+        },
+        "proposed_fields": {}
       },
       "message_must_mention": [],
       "rationale_required": true
