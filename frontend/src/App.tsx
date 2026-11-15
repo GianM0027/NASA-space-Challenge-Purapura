@@ -350,7 +350,7 @@ function App() {
                   key={category}
                   className={shown ? 'legend-toggle' : 'legend-toggle off'}
                   aria-pressed={shown}
-                  title={shown ? `Hide ${category} locations on the globe` : `Show ${category} locations on the globe`}
+                  title={shown ? `Hide ${category} landing sites on the globe` : `Show ${category} landing sites on the globe`}
                   onClick={() =>
                     setHiddenCategories((hidden) =>
                       shown ? [...hidden, category] : hidden.filter((item) => item !== category),
@@ -396,7 +396,7 @@ function App() {
 
         <aside>
           <section className="panel">
-            <h2>Preloaded locations</h2>
+            <h2>Preloaded landing sites</h2>
             <ul className="sites">
               {curatedSites.map((site) => (
                 <li key={site.id}>

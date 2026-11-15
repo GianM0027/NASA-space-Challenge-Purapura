@@ -1,4 +1,4 @@
-// ABOUTME: Coordinates box (analyze or save a typed or clicked point) and "Custom locations" (edit, delete)
+// ABOUTME: Coordinates box (analyze or save a typed or clicked point) and "Custom landing sites" (edit, delete)
 // ABOUTME: Owner: Gian. Presentational: the parent makes the API calls and returns an error message or null
 
 import { useState } from 'react'
@@ -106,7 +106,7 @@ export function CoordinatesBox(props: {
             placeholder="Description (optional)"
           />
           <button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save as custom location'}
+            {saving ? 'Saving...' : 'Save as custom landing site'}
           </button>
         </form>
       )}
@@ -232,10 +232,10 @@ export function MyLocations(props: {
 
   return (
     <section className="panel">
-      <h2>Custom locations</h2>
+      <h2>Custom landing sites</h2>
       {notice && <p className="error">{notice}</p>}
       {sites.length === 0 ? (
-        <p className="muted">None yet: type coordinates or click the globe, then "Save as custom location".</p>
+        <p className="muted">None yet: type coordinates or click the globe, then "Save as custom landing site".</p>
       ) : (
         <ul className="sites">
           {sites.map((site) => (

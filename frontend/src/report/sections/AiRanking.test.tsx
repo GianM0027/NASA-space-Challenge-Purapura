@@ -45,7 +45,7 @@ describe('AiRanking section', () => {
     expect(html).toContain('south-pole')
     expect(html).toContain('Pole Site')
     expect(html).toContain('0.83')
-    expect(html).toContain('1 sites could not be evaluated')
+    expect(html).toContain('1 landing sites could not be evaluated')
   })
 
   it('prints no interactive element', () => {
