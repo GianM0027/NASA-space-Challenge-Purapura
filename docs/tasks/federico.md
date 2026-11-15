@@ -4,10 +4,10 @@
 # Federico: tasks
 
 ## Status
-D32 done: ports take the area, landing-disk slopes and reachable share live. Next: waiting on slope-baseline decision.
+D36 done (100 m landing baseline, 99th percentile maxima). Next: trade-off (D37, spec 4.8): contract request to Gian.
 
 ## Next (in priority order)
-1. Landing-slope baseline (see Requests) once Michael and Gian decide; then any UI support Gian needs.
+1. Trade-off (D37): UI-3, TO-1..TO-4, then TO-6; send the contract models to Gian first.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -54,6 +54,11 @@ for tests write small fakes of both that return the example payloads.
 - Terrain warm-up: `scripts/terrain_warm_cache.py` precomputes the horizon masks of all catalog sites at the
   D30 heights (2 m and 10 m) into `data/cache/terrain/`; 72 masks in ~5 s cold, ~1.3 s when cached; failing
   sites are reported, the run continues. Before a demo: DEM download, then this script.
+- D36: landing slopes on a 100 m baseline (least-squares plane over the cells within 50 m; 80 m and 474 m
+  DEMs fall back to their pixel baseline, already >= 100 m); every maximum is the 99th percentile of its disk.
+  Known answers: exact plane, periodic roughness reduced by exactly 10/34, isolated spike ignored. Crew area,
+  landing P99: IM-2 4.1, Nobile rim 1 8.9, Malapert 11.2, Mons Mouton plateau 20.4 deg. The horizon cache is
+  unchanged: it stores masks only, which D36 does not affect, so no cache version bump.
 
 ## Blockers
 
@@ -65,12 +70,7 @@ for tests write small fakes of both that return the example payloads.
   `max_slope_deg`) and `terrain.reachable_fraction` as soon as the UI sends an `OperationsArea` with
   `operating_range_m` > 0 (today the default area has 0, so the share is None); e.g. archetype presets
   crew 100 m / 2 km / 20 deg, rover 100 m / 20 km / 15 deg; (3) `terrain.dem_source` now says when the full
-  disk was sampled on wider cells (large ranges, `MAX_GRID_RADIUS_CELLS` = 400); (4) landing-slope baseline:
-  please decide with Michael (item below).
-- Michael + Gian (landing-slope baseline): NASA's landing criterion is < 10 deg **over 100 m**; we measure over
-  one DEM pixel (20 m near the pole), which is stricter. Mons Mouton plateau, 100 m disk: max 31 deg and mean
-  11.7 deg at 20 m, max 10.2 deg at 80 m; Malapert 13.4 vs 8.9 deg. Proposal: compute `landing_slope_*` over a
-  100 m baseline (fit a plane to the heights within 50 m of each cell) to match the requirement.
+  disk was sampled on wider cells (large ranges, `MAX_GRID_RADIUS_CELLS` = 400);.
 - Gian + Michael (slope max, contract meaning): on the 20 m DEM `slope_max_deg` catches isolated spikes
   (Shackleton: max 64 deg on 0.02% of pixels, 99th percentile 39 deg, mean 26 deg on both DEMs). A ranking
   filter on max slope could reject a site for one bad pixel. Proposal: define the reported maximum as the
