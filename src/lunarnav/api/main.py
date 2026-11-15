@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
@@ -20,6 +20,7 @@ from lunarnav.api.requests import (
     EvaluateRequest,
     ExplainRequest,
     MissionAnalysisRequest,
+    RenameSiteRequest,
 )
 from lunarnav.api.services import Services
 from lunarnav.api.sky import sky_state
@@ -30,10 +31,12 @@ from lunarnav.contracts import (
     Evaluation,
     GeoPoint,
     MissionRequirements,
+    ReadOnlySiteError,
     RobustnessReport,
     Site,
     SiteRanking,
     SkyState,
+    UnknownSiteError,
 )
 
 logger = logging.getLogger(__name__)
@@ -110,6 +113,35 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
             return svc.catalog.add_user_site(site)
         except ValueError as error:
             raise HTTPException(409, str(error)) from error
+
+    def require_editable_catalog(method: str) -> None:
+        """Answer 501 while the wired catalog lacks a ``SiteCatalog`` method added later."""
+        if not callable(getattr(svc.catalog, method, None)):
+            name = type(svc.catalog).__name__
+            raise HTTPException(501, f"{name} does not implement {method} yet")
+
+    @app.delete("/api/sites/{site_id}", status_code=204)
+    def remove_site(site_id: str) -> Response:
+        """Delete a user site; 404 if unknown, 403 if curated."""
+        require_editable_catalog("remove_user_site")
+        try:
+            svc.catalog.remove_user_site(site_id)
+        except UnknownSiteError as error:
+            raise HTTPException(404, f"unknown site id {site_id!r}") from error
+        except ReadOnlySiteError as error:
+            raise HTTPException(403, str(error)) from error
+        return Response(status_code=204)
+
+    @app.patch("/api/sites/{site_id}")
+    def rename_site(site_id: str, request: RenameSiteRequest) -> Site:
+        """Rename a user site (id unchanged); 404 if unknown, 403 if curated, 422 if no name."""
+        require_editable_catalog("rename_user_site")
+        try:
+            return svc.catalog.rename_user_site(site_id, request.name)
+        except UnknownSiteError as error:
+            raise HTTPException(404, f"unknown site id {site_id!r}") from error
+        except ReadOnlySiteError as error:
+            raise HTTPException(403, str(error)) from error
 
     @app.post("/api/evaluate")
     def evaluate_one(request: EvaluateRequest) -> Evaluation:

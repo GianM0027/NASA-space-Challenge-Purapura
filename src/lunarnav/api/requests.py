@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from lunarnav.contracts import GeoPoint, OperationsArea, SiteRanking, TimeWindow
 
@@ -71,3 +71,15 @@ class ExplainRequest(BaseModel):
 
     ranking: SiteRanking
     language_hint: str = Field(default="", max_length=4000)
+
+
+class RenameSiteRequest(BaseModel):
+    """Rename a user site; the id never changes.
+
+    Attributes:
+        name: New display name, stripped of surrounding whitespace, at least one character.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]

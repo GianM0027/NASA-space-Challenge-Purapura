@@ -103,6 +103,76 @@ def test_add_user_site(client: TestClient) -> None:
     assert "my-site" in [s["id"] for s in client.get("/api/sites").json()]
 
 
+USER_SITE = {
+    "id": "user-crater-rim",
+    "name": "Crater rim",
+    "location": {"lat_deg": -89.0, "lon_deg": 120.0},
+    "origin": "user",
+    "status": "custom",
+}
+
+
+def _curated_id(client: TestClient) -> str:
+    return next(s["id"] for s in client.get("/api/sites").json() if s["origin"] != "user")
+
+
+def test_remove_user_site(client: TestClient) -> None:
+    client.post("/api/sites", json=USER_SITE)
+    response = client.delete("/api/sites/user-crater-rim")
+    assert response.status_code == 204
+    assert "user-crater-rim" not in [s["id"] for s in client.get("/api/sites").json()]
+
+
+def test_remove_unknown_site_is_404(client: TestClient) -> None:
+    assert client.delete("/api/sites/no-such-site").status_code == 404
+
+
+def test_remove_curated_site_is_403(client: TestClient) -> None:
+    site_id = _curated_id(client)
+    assert client.delete(f"/api/sites/{site_id}").status_code == 403
+    assert site_id in [s["id"] for s in client.get("/api/sites").json()]
+
+
+def test_rename_user_site_keeps_the_id(client: TestClient) -> None:
+    client.post("/api/sites", json=USER_SITE)
+    response = client.patch("/api/sites/user-crater-rim", json={"name": "  Rim north  "})
+    assert response.status_code == 200
+    site = Site.model_validate(response.json())
+    assert (site.id, site.name) == ("user-crater-rim", "Rim north")
+    listed = {s["id"]: s["name"] for s in client.get("/api/sites").json()}
+    assert listed["user-crater-rim"] == "Rim north"
+
+
+def test_rename_errors(client: TestClient) -> None:
+    client.post("/api/sites", json=USER_SITE)
+    assert client.patch("/api/sites/user-crater-rim", json={"name": "   "}).status_code == 422
+    assert client.patch("/api/sites/no-such-site", json={"name": "X"}).status_code == 404
+    assert client.patch(f"/api/sites/{_curated_id(client)}", json={"name": "X"}).status_code == 403
+
+
+class _AddOnlyCatalog:
+    """A catalog written before remove and rename joined the port."""
+
+    def list_sites(self) -> list[Site]:
+        return []
+
+    def get_site(self, site_id: str) -> Site:
+        raise KeyError(site_id)
+
+    def add_user_site(self, site: Site) -> Site:
+        return site
+
+
+def test_catalog_without_remove_or_rename_is_501() -> None:
+    services, status = build_services(use_real=False)
+    old = dataclasses.replace(services, catalog=_AddOnlyCatalog())
+    client = TestClient(build_app(old, status))
+    assert client.delete("/api/sites/x").status_code == 501
+    response = client.patch("/api/sites/x", json={"name": "X"})
+    assert response.status_code == 501
+    assert "rename_user_site" in response.json()["detail"]
+
+
 def test_rank(client: TestClient) -> None:
     response = client.post("/api/rank", json={"min_illumination_fraction": 0.5})
     assert response.status_code == 200

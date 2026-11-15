@@ -3,6 +3,7 @@
 
 """LunarNav contracts: the only shared types between modules."""
 
+from lunarnav.contracts.errors import DuplicateSiteError, ReadOnlySiteError, UnknownSiteError
 from lunarnav.contracts.models import (
     AiAnswer,
     AiRequest,
@@ -40,6 +41,7 @@ __all__ = [
     "ChatMessage",
     "DateShiftResult",
     "DispersionSample",
+    "DuplicateSiteError",
     "EphemerisProvider",
     "EphemerisSeries",
     "Evaluation",
@@ -50,6 +52,7 @@ __all__ = [
     "MissionRequirements",
     "OperationsArea",
     "Origin",
+    "ReadOnlySiteError",
     "RequirementSource",
     "RobustnessReport",
     "Site",
@@ -60,5 +63,6 @@ __all__ = [
     "TerrainProvider",
     "TerrainStats",
     "TimeWindow",
+    "UnknownSiteError",
     "VisibilityMetrics",
 ]

@@ -115,7 +115,7 @@ class SiteCatalog(Protocol):
         """Return the site with id ``site_id``.
 
         Raises:
-            KeyError: If no site has that id.
+            KeyError: If no site has that id (``UnknownSiteError`` preferred).
         """
         ...
 
@@ -123,7 +123,38 @@ class SiteCatalog(Protocol):
         """Persist a user-defined site and return it.
 
         Raises:
-            ValueError: If the id already exists.
+            ValueError: If the id already exists (``DuplicateSiteError`` preferred).
+        """
+        ...
+
+    def remove_user_site(self, site_id: str) -> None:
+        """Delete a user-defined site, persistently.
+
+        Args:
+            site_id: Id of the site to delete.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is not a user site (``origin != "user"``).
+        """
+        ...
+
+    def rename_user_site(self, site_id: str, name: str) -> Site:
+        """Change the display name of a user-defined site, persistently.
+
+        Only ``name`` changes; ``id`` is the stable key and stays the same.
+
+        Args:
+            site_id: Id of the site to rename.
+            name: New display name; leading and trailing whitespace is stripped.
+
+        Returns:
+            The updated site.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is not a user site (``origin != "user"``).
+            ValueError: If ``name`` is empty after stripping.
         """
         ...
 

@@ -164,6 +164,10 @@ export type OperationsArea = {
 
 export type Origin = "apollo" | "luna" | "surveyor" | "change" | "chandrayaan" | "slim" | "clps" | "artemis" | "other" | "user"
 
+export type RenameSiteRequest = {
+  name: string
+}
+
 export type RequirementSource = "user" | "archetype" | "default"
 
 export type RobustnessReport = {
