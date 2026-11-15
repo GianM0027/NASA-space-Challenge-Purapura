@@ -15,7 +15,7 @@ PATTERN = re.compile(
     r"<!--\s*ARCHETYPES_JSON_BEGIN\s*-->\s*```json\s*(.*?)\s*```\s*<!--\s*ARCHETYPES_JSON_END\s*-->",
     re.DOTALL,
 )
-KNOWN_PROPOSED = {"max_continuous_dark_h"}  # requested to Gian, not yet in the contract
+KNOWN_PROPOSED: set[str] = set()  # nothing pending: max_continuous_dark_h is a contract field (D33)
 # Ranking criteria accepted in `priority` (Gian, AI-2 rank order centroid weights)
 RANKING_CRITERIA = {
     "min_illumination_fraction",
@@ -98,7 +98,7 @@ def test_known_values_from_sources() -> None:
     rover = by_id["polar-rover"]
     assert "max_slope_deg" not in rover["requirements"]
     assert rover["requirements"]["area"]["traverse_slope_limit_deg"] == 15
-    assert by_id["long-duration-outpost"]["proposed_fields"]["max_continuous_dark_h"] == 192
-    assert rover["proposed_fields"]["max_continuous_dark_h"] == 50
+    assert by_id["long-duration-outpost"]["requirements"]["max_continuous_dark_h"] == 192
+    assert rover["requirements"]["max_continuous_dark_h"] == 50
     # No source ranks the criteria: no archetype sets a priority (Michael's decision)
     assert not any("priority" in a for a in by_id.values())

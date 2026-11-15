@@ -34,7 +34,7 @@ Rules (Michael's decisions, 2026-11-14):
 - `min_illumination_fraction`: total share of time in sunlight (energy over the mission).
 - `min_continuous_light_h`: longest uninterrupted sunlit period (a short mission that must be lit
   from start to end sets it to its whole duration).
-- `max_continuous_dark_h` (proposed field): longest darkness the vehicle survives (battery or
+- `max_continuous_dark_h` (contract field since D33): longest darkness the vehicle survives (battery or
   storage). For long missions that cannot avoid night, this is the survival constraint: a site can
   have 70 % light overall and still kill a rover with one 4-day shadow.
 
@@ -70,7 +70,7 @@ Structure of each archetype:
 | `id`, `name`, `summary` | identifier, display name, one-paragraph description for the LLM |
 | `mission_duration_h` | typical surface duration; set `window.end_utc = window.start_utc + duration` |
 | `requirements` | a subset of `MissionRequirements` fields, valid as-is (`window` excluded); `area` includes `traverse_slope_limit_deg` and `observer_height_above_ground_m` (D30, D32) |
-| `proposed_fields` | values for fields **not yet in the contract** (requested to Gian); ignore if unknown |
+| `proposed_fields` | values for fields **not yet in the contract** (requested to Gian); ignore if unknown; empty today |
 | `priority` | optional ranking order of criteria (none set, see above) |
 | `sources` | key (field name, `area.<field>`, or `proposed_fields.<field>`) -> citation |
 | `notes` | sourced qualitative constraints with no number |
@@ -145,15 +145,14 @@ decision, revisit if sources are found).
       "requirements": {
         "area": {
           "observer_height_above_ground_m": 10
-        }
-      },
-      "proposed_fields": {
+        },
         "max_continuous_dark_h": 192
       },
+      "proposed_fields": {},
       "sources": {
         "mission_duration_h": "NASA Artemis blog 2020-10-28, 'Lunar Living: NASA's Artemis Base Camp Concept': habitat for a month-long stay, https://www.nasa.gov/blogs/artemis/2020/10/28/lunar-living-nasas-artemis-base-camp-concept/",
-        "proposed_fields.max_continuous_dark_h": "NASA Artemis blog 2020-10-28: capability to store power for up to eight days (8 x 24 h)",
-        "area.observer_height_above_ground_m": "Decision D30 (Glaser et al. 2014, Icarus 243, 78: 10 m case)"
+        "area.observer_height_above_ground_m": "Decision D30 (Glaser et al. 2014, Icarus 243, 78: 10 m case)",
+        "max_continuous_dark_h": "NASA Artemis blog 2020-10-28: capability to store power for up to eight days (8 x 24 h)"
       },
       "notes": [
         "Long-term goal: stays of up to two months (NASA Artemis blog 2020-10-28).",
@@ -170,17 +169,16 @@ decision, revisit if sources are found).
           "operating_range_m": 20000,
           "traverse_slope_limit_deg": 15,
           "observer_height_above_ground_m": 2
-        }
-      },
-      "proposed_fields": {
+        },
         "max_continuous_dark_h": 50
       },
+      "proposed_fields": {},
       "sources": {
         "mission_duration_h": "NASA, T. Fong, 'Volatiles Investigating Polar Exploration Rover' (2026-04-29), p. 22: lunar summer season ~100 Earth days max, https://ntrs.nasa.gov/api/citations/20260002876/downloads/viper-2026-04-29_v2.pdf",
         "area.operating_range_m": "NASA VIPER 2026-04-29, p. 22: 20 km max drive distance (design limit)",
-        "proposed_fields.max_continuous_dark_h": "NASA, VIPER mission planning, SpaceOps 2022, p. 3: dark survivability 50 hrs in minimal power mode, https://ntrs.nasa.gov/api/citations/20220008301/downloads/2022-06-02-spaceops-viper-planning.pdf",
         "area.traverse_slope_limit_deg": "NASA VIPER 2026-04-29, p. 22: 15 deg slopes (design limit)",
-        "area.observer_height_above_ground_m": "Decision D30 (Glaser et al. 2014, Icarus 243, 78: 2 m case)"
+        "area.observer_height_above_ground_m": "Decision D30 (Glaser et al. 2014, Icarus 243, 78: 2 m case)",
+        "max_continuous_dark_h": "NASA, VIPER mission planning, SpaceOps 2022, p. 3: dark survivability 50 hrs in minimal power mode, https://ntrs.nasa.gov/api/citations/20220008301/downloads/2022-06-02-spaceops-viper-planning.pdf"
       },
       "notes": [
         "Line-of-sight data communications to Earth are required (NASA VIPER 2026-04-29, p. 22); no minimum fraction is given.",
