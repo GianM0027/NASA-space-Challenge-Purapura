@@ -10,7 +10,7 @@ popup opened from a dock pill. Waiting on Gian to mount it in the App dock.
 ## Next (in priority order)
 1. Once mounted by Gian: polish the comparison view from team feedback; TO-6 sensitivity view is already in the table.
 2. PDF report: register Michael's `MissionAnalysis` and Gian's `AiRanking` in `COMPONENTS` of
-   `report/ReportBuilder.tsx` once their files land; check a real print to PDF.
+   `report/ReportBuilder.tsx` once their files land.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -91,7 +91,7 @@ for tests write small fakes of both that return the example payloads.
   (`@page` A4, 15 mm). Sections: cover with contents, site evaluation (Sun/Earth visibility strip, metrics,
   terrain), trade-off (ranking + details per criterion), sources and methods. Smoke tests via server rendering.
   Dev page `/src/report/preview.html` (real evaluation + trade-off view). Checked in the browser: ticking
-  Trade-off adds the section at once. Not yet checked: the real print dialog output.
+  Trade-off adds the section at once. Print to PDF checked by Federico (Chrome, A4, report only).
 - Trade-off fix: sites loaded after mounting (App loads them async) left the scenarios empty; opening the popup
   before a first run now fills them.
 
