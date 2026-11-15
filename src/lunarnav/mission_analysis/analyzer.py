@@ -3,10 +3,18 @@
 
 """Mission analysis: how robust a site is to launch slips and to where exactly the lander lands.
 
-* MA-1: the nominal window shifted by each offset (default +1, +3, +7, +14 days).
-* MA-2: points on rings inside the operations-area disk (radius = landing precision + operating
-  range), each evaluated over the nominal window; worst case and spread go in the summary.
-* MA-3: a plain-language summary that only quotes numbers present in the report.
+* MA-1: the nominal window shifted by each offset: +1, +3, +7, +14 days (spec) plus one synodic
+  month, which shows when the same lighting comes back (Michael's decision).
+* MA-2: points on two rings inside the landing-precision disk (R/2 and R, every 90 deg), each
+  evaluated as a landing point over the nominal window (Michael's decision: dispersion means
+  landing dispersion; measured spreads below).
+* MA-3: a plain-language summary that only quotes numbers present in the report; it adds the
+  Earth link when the Earth is not visible all the time.
+
+Measured with the real modules, 14-day window from 2026-11-20, landing precision 100 m: sunlight
+64-73 % at Malapert Massif with 8 points (61-74 % with 16; nominal 60 %), 72-78 % at IM-2, no change
+at Apollo 11. 8 points keep a first run on a new polar site at about half the 16-point time (up to
+17 s); repeated runs take about 0.5 s.
 """
 
 from __future__ import annotations
@@ -26,9 +34,12 @@ from lunarnav.contracts import (
 )
 
 MOON_RADIUS_M = 1_737_400.0  # IAU mean radius, the LOLA reference sphere (contract convention)
-DEFAULT_SHIFTS_DAYS = (1.0, 3.0, 7.0, 14.0)  # spec MA-1
+# Synodic month (new Moon to new Moon) = one lunar day-night cycle at a site:
+# 29.530589 days, NASA Moon Fact Sheet, https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html
+SYNODIC_MONTH_D = 29.530589
+DEFAULT_SHIFTS_DAYS = (1.0, 3.0, 7.0, 14.0, SYNODIC_MONTH_D)  # spec MA-1 + one lunar cycle
 DEFAULT_RINGS = 2  # sample rings at R/2 and R (MA-2)
-DEFAULT_POINTS_PER_RING = 4  # north, east, south, west: each sample costs one evaluation
+DEFAULT_POINTS_PER_RING = 4  # every 90 deg (8 points): Michael chose speed over the 16-point spread
 
 
 class RobustnessAnalyzer:
@@ -36,7 +47,7 @@ class RobustnessAnalyzer:
 
     Args:
         evaluator: Evaluator used for every case (nominal, shifted windows, sample points).
-        rings: Number of sample rings, evenly spaced out to the disk edge.
+        rings: Number of sample rings, evenly spaced out to the landing-precision radius.
         points_per_ring: Samples per ring, evenly spaced in azimuth starting from north.
     """
 
@@ -61,35 +72,30 @@ class RobustnessAnalyzer:
         shifts_days: list[float],
         site_id: str | None = None,
     ) -> RobustnessReport:
-        """Evaluate the nominal case, each date shift and samples of the operations area.
+        """Evaluate the nominal case, each date shift and samples of the landing dispersion.
 
         Args:
             location: Nominal landing point.
             window: Nominal time window.
-            area: Operations area; its disk (landing precision + operating range) is sampled.
-            shifts_days: Window shifts, days (positive = later); empty means the defaults.
+            area: Operations area; its landing-precision disk is sampled.
+            shifts_days: Window shifts, days (positive = later); empty means the defaults. Each
+                shift is rounded to a whole number of window steps so samples stay on the grid.
             site_id: Catalog id to echo in the report.
 
         Returns:
             The robustness report, with a summary quoting only its own numbers.
         """
         nominal = self.evaluator.evaluate(location, window, area, site_id).metrics
-        shifts = list(shifts_days) or list(DEFAULT_SHIFTS_DAYS)
-        date_shifts = [
-            DateShiftResult(
-                shift_days=s,
-                metrics=self.evaluator.evaluate(location, shift_window(window, s), area).metrics,
-            )
-            for s in shifts
-        ]
+        date_shifts = []
+        for requested in list(shifts_days) or list(DEFAULT_SHIFTS_DAYS):
+            days = snap_shift_days(requested, window.step_minutes)
+            metrics = self.evaluator.evaluate(location, shift_window(window, days), area).metrics
+            date_shifts.append(DateShiftResult(shift_days=days, metrics=metrics))
         # Each sample asks "what if we land here": its slope is the landing-disk slope there.
         sample_area = area.model_copy(update={"operating_range_m": 0.0})
         dispersion = []
         for offset_m, point in sample_points(
-            location,
-            area.landing_precision_m + area.operating_range_m,
-            self.rings,
-            self.points_per_ring,
+            location, area.landing_precision_m, self.rings, self.points_per_ring
         ):
             evaluation = self.evaluator.evaluate(point, window, sample_area)
             dispersion.append(
@@ -116,6 +122,12 @@ def build_mission_analyzer(evaluator: Evaluator) -> MissionAnalyzer:
         A ``RobustnessAnalyzer`` with the default sampling pattern.
     """
     return RobustnessAnalyzer(evaluator)
+
+
+def snap_shift_days(days: float, step_minutes: int) -> float:
+    """Round a shift to a whole number of window steps (keeps samples on the cache grid)."""
+    steps = round(days * 1440 / step_minutes)
+    return steps * step_minutes / 1440
 
 
 def shift_window(window: TimeWindow, days: float) -> TimeWindow:
@@ -179,26 +191,44 @@ def summarize(report: RobustnessReport) -> str:
         f"Nominal window: Sun visible {_pct(n.illumination_fraction)} of the time, Earth visible "
         f"{_pct(n.earth_visibility_fraction)}, longest darkness {_h(n.longest_dark_h)}."
     ]
-    if report.date_shifts:
-        worst = min(report.date_shifts, key=lambda s: s.metrics.illumination_fraction)
-        best = max(report.date_shifts, key=lambda s: s.metrics.illumination_fraction)
-        max_dark = max(s.metrics.longest_dark_h for s in report.date_shifts)
+    shifts = report.date_shifts
+    if shifts:
+        worst = min(shifts, key=lambda s: s.metrics.illumination_fraction)
+        best = max(shifts, key=lambda s: s.metrics.illumination_fraction)
+        max_dark = max(s.metrics.longest_dark_h for s in shifts)
         parts.append(
-            f"Shifting the dates by {_days(report.date_shifts)} changes sunlight from "
-            f"{_pct(worst.metrics.illumination_fraction)} (shift {worst.shift_days:+g} d) to "
-            f"{_pct(best.metrics.illumination_fraction)} (shift {best.shift_days:+g} d); the "
-            f"longest darkness reaches {_h(max_dark)}."
+            f"Shifting the dates by {', '.join(_d(s.shift_days) for s in shifts)} days changes "
+            f"sunlight from {_pct(worst.metrics.illumination_fraction)} (shift "
+            f"{_d(worst.shift_days)} d) to {_pct(best.metrics.illumination_fraction)} (shift "
+            f"{_d(best.shift_days)} d); the longest darkness reaches {_h(max_dark)}."
         )
-    if report.dispersion:
-        ill = [s.metrics.illumination_fraction for s in report.dispersion]
-        worst_point = min(report.dispersion, key=lambda s: s.metrics.illumination_fraction)
-        steepest = max(report.dispersion, key=lambda s: s.slope_max_deg)
+        cycle = [s for s in shifts if abs(s.shift_days - SYNODIC_MONTH_D) < 0.5]
+        if cycle:
+            c = cycle[0]
+            parts.append(
+                f"One lunar cycle later ({_d(c.shift_days)} d) sunlight is back at "
+                f"{_pct(c.metrics.illumination_fraction)}."
+            )
+    samples = report.dispersion
+    if samples:
+        ill = [s.metrics.illumination_fraction for s in samples]
+        worst_point = min(samples, key=lambda s: s.metrics.illumination_fraction)
+        steepest = max(samples, key=lambda s: s.slope_max_deg)
         parts.append(
-            f"Across {len(report.dispersion)} points up to "
-            f"{max(s.offset_m for s in report.dispersion):.0f} m from the site, sunlight ranges "
-            f"from {_pct(min(ill))} (worst point at {worst_point.offset_m:.0f} m) to "
-            f"{_pct(max(ill))}; the steepest landing slope is {steepest.slope_max_deg:.1f} deg "
-            f"at {steepest.offset_m:.0f} m."
+            f"Landing anywhere within {max(s.offset_m for s in samples):.0f} m "
+            f"({len(samples)} points), sunlight ranges from {_pct(min(ill))} (worst point at "
+            f"{worst_point.offset_m:.0f} m) to {_pct(max(ill))}; the steepest landing slope is "
+            f"{steepest.slope_max_deg:.1f} deg at {steepest.offset_m:.0f} m."
+        )
+    # Earth link (Michael's decision): reported when the Earth is not visible all the time.
+    cases = [n, *(s.metrics for s in shifts), *(s.metrics for s in samples)]
+    if any(m.earth_visibility_fraction < 1.0 for m in cases):
+        low = min(cases, key=lambda m: m.earth_visibility_fraction)
+        outage = max(m.longest_earth_hidden_h for m in cases)
+        parts.append(
+            f"Direct-to-Earth link: Earth visible {_pct(n.earth_visibility_fraction)} of the "
+            f"nominal window, down to {_pct(low.earth_visibility_fraction)} in the worst case; "
+            f"the longest outage is {_h(outage)}."
         )
     return " ".join(parts)
 
@@ -211,5 +241,6 @@ def _h(hours: float) -> str:
     return f"{hours:.0f} h"
 
 
-def _days(shifts: list[DateShiftResult]) -> str:
-    return ", ".join(f"{s.shift_days:+g}" for s in shifts) + " days"
+def _d(days: float) -> str:
+    """Signed day count: integers as '+7', others with one decimal as '+29.5'."""
+    return f"{days:+.0f}" if abs(days - round(days)) < 1e-9 else f"{days:+.1f}"
