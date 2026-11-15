@@ -298,10 +298,6 @@ function App() {
 
   return (
     <div className="app">
-      <header>
-        <h1>LunarNav</h1>
-      </header>
-
       {bootError && <p className="error banner">Backend unreachable: {bootError}</p>}
       {placeholders.length > 0 && (
         <p className="banner">

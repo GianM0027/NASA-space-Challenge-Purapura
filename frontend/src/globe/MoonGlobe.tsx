@@ -7,6 +7,9 @@ import {
   BufferGeometry,
   Color,
   DirectionalLight,
+  ConeGeometry,
+  CylinderGeometry,
+  DoubleSide,
   Group,
   Line,
   LineBasicMaterial,
@@ -14,6 +17,7 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   PerspectiveCamera,
+  RingGeometry,
   Raycaster,
   Scene,
   SphereGeometry,
@@ -62,11 +66,38 @@ type Engine = {
   ambient: AmbientLight
   earth: Group
   markers: Group
-  selection: Mesh
+  selection: Group
 }
 
 const vector = (lat: number, lon: number, radius = 1) =>
   new Vector3(...latLonToVector(lat, lon, radius))
+
+/**
+ * Marker of the selected point, in globe units: a thin ring lying on the ground around the point
+ * and an arrow standing above it, its tip pointing at the ring's center. Built along +Z (the local
+ * surface normal) and turned onto the surface where it is placed.
+ */
+function selectionMarker(): Group {
+  const material = new MeshBasicMaterial({ color: '#ffffff', side: DoubleSide })
+  const marker = new Group()
+  // Ring about the size of a site marker, so the point it surrounds stays visible.
+  const ring = new Mesh(new RingGeometry(MARKER_RADIUS * 0.9, MARKER_RADIUS * 1.15, 32), material)
+  ring.position.z = 0.002
+  marker.add(ring)
+  // Cones and cylinders are built along +Y: rotating by -90 degrees about X points them at -Z.
+  const head = new Mesh(new ConeGeometry(MARKER_RADIUS * 0.45, MARKER_RADIUS * 1.2, 16), material)
+  head.rotation.x = -Math.PI / 2
+  head.position.z = MARKER_RADIUS * 1.6
+  marker.add(head)
+  const shaft = new Mesh(
+    new CylinderGeometry(MARKER_RADIUS * 0.12, MARKER_RADIUS * 0.12, MARKER_RADIUS * 2, 8),
+    material,
+  )
+  shaft.rotation.x = -Math.PI / 2
+  shaft.position.z = MARKER_RADIUS * 3.2
+  marker.add(shaft)
+  return marker
+}
 
 /** Interactive Moon globe; fills its parent element. */
 export function MoonGlobe(props: Props) {
@@ -128,10 +159,7 @@ export function MoonGlobe(props: Props) {
 
     const markers = new Group()
     scene.add(markers)
-    const selection = new Mesh(
-      new SphereGeometry(MARKER_RADIUS * 1.8, 16, 12),
-      new MeshBasicMaterial({ color: '#ffffff' }),
-    )
+    const selection = selectionMarker()
     selection.visible = false
     scene.add(selection)
 
@@ -244,7 +272,11 @@ export function MoonGlobe(props: Props) {
     const engine = engineRef.current
     if (!engine) return
     engine.selection.visible = selected !== null
-    if (selected) engine.selection.position.copy(vector(selected.lat_deg, selected.lon_deg, 1.006))
+    if (selected) {
+      const normal = vector(selected.lat_deg, selected.lon_deg).normalize()
+      engine.selection.position.copy(normal)
+      engine.selection.quaternion.setFromUnitVectors(new Vector3(0, 0, 1), normal)
+    }
   }, [selected])
 
   // Sunlight and Earth direction.
