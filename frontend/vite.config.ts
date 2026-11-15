@@ -9,8 +9,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     // Same-origin /api calls in development: no CORS configuration needed on the backend.
+    // LUNARNAV_API_URL points a second dev server at a second backend (parallel sessions).
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
+      '/api': process.env.LUNARNAV_API_URL ?? 'http://127.0.0.1:8000',
     },
   },
 })

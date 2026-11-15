@@ -18,6 +18,12 @@ archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- User locations (Federico's request, decision D34): coordinates box (lat [-90, 90], east-positive
+  lon [-180, 180), checked client-side) that analyzes a point like a globe click and is prefilled by
+  a click; "Save as location" (id `user-<slug>`); "My locations" section with inline rename and
+  delete with confirmation. API `DELETE`/`PATCH /api/sites/{id}` (404, 403, 422; 501 until the real
+  catalog implements them), 7 API tests, 13 frontend tests. Checked in the browser on the real
+  catalog (save, 409, 501 message) and on placeholders (rename, delete, 404 after an outside delete).
 - Site panel holds the whole window (start date, duration, step), always visible; picking a ranked
   site sets it to the mission window, so panel and ranking show the same numbers (checked in the browser).
 - UI-4, AI-1, AI-2, AI-3, AI-4, AI-5 (decision D33): `lunarnav.ai` (ranking with ROC weights, archetype
@@ -53,6 +59,18 @@ archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a
 ## Blockers
 
 ## Requests
+- Michael (decision D34, user locations): `JsonSiteCatalog` gets the two new `SiteCatalog` methods,
+  with the same atomic write path as `add_user_site`:
+  - `remove_user_site(site_id) -> None` and `rename_user_site(site_id, name) -> Site` (name stripped,
+    id unchanged);
+  - raise the contract errors from `lunarnav.contracts`: `UnknownSiteError` for an unknown id,
+    `ReadOnlySiteError` for a curated site (`origin != "user"`), `ValueError` for a blank name;
+    `add_user_site` should raise `DuplicateSiteError` (a `ValueError`, so nothing else changes);
+  - tests: remove, rename, curated site rejected, unknown id rejected, file round trip (a new
+    catalog on the same file sees the change).
+  Until then the app answers 501 to rename and delete on the real catalog. Also worth a look: two
+  backends on the same `data/user/sites.json` overwrite each other's additions, because each keeps
+  its own in-memory list and rewrites the whole file (seen with two dev servers running).
 - Michael (AI-5, decision D33): add `priority` (ordered groups of criterion names, with a source in
   `sources["priority"]`) to each archetype; after this merges, move `max_continuous_dark_h` from
   `proposed_fields` to `requirements` (now a contract field). Details sent by message.

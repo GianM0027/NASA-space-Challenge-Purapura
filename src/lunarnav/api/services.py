@@ -27,6 +27,7 @@ from lunarnav.api.placeholder_metrics import compute_metrics, horizon_at
 from lunarnav.contracts import (
     AiAnswer,
     AiRequest,
+    DuplicateSiteError,
     EphemerisProvider,
     EphemerisSeries,
     Evaluation,
@@ -36,6 +37,8 @@ from lunarnav.contracts import (
     MissionAnalyzer,
     MissionRequirements,
     OperationsArea,
+    Origin,
+    ReadOnlySiteError,
     RobustnessReport,
     Site,
     SiteCatalog,
@@ -43,6 +46,7 @@ from lunarnav.contracts import (
     TerrainProvider,
     TerrainStats,
     TimeWindow,
+    UnknownSiteError,
 )
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[3] / "data" / "examples"
@@ -280,17 +284,53 @@ class ExampleCatalog:
         for site in self._sites:
             if site.id == site_id:
                 return site
-        raise KeyError(site_id)
+        raise UnknownSiteError(site_id)
 
     def add_user_site(self, site: Site) -> Site:
         """Add a site in memory.
 
         Raises:
-            ValueError: If the id already exists.
+            DuplicateSiteError: If the id already exists.
         """
         if any(existing.id == site.id for existing in self._sites):
-            raise ValueError(f"site id {site.id!r} already exists")
+            raise DuplicateSiteError(f"site id {site.id!r} already exists")
         self._sites.append(site)
+        return site
+
+    def remove_user_site(self, site_id: str) -> None:
+        """Delete a user site from memory.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is not a user site.
+        """
+        self._sites.remove(self._user_site(site_id))
+
+    def rename_user_site(self, site_id: str, name: str) -> Site:
+        """Rename a user site in memory; the id stays the same.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is not a user site.
+            ValueError: If ``name`` is empty after stripping.
+        """
+        site = self._user_site(site_id)
+        if not name.strip():
+            raise ValueError("site name must not be empty")
+        renamed = site.model_copy(update={"name": name.strip()})
+        self._sites[self._sites.index(site)] = renamed
+        return renamed
+
+    def _user_site(self, site_id: str) -> Site:
+        """Return the site with id ``site_id`` if it may be changed.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is not a user site.
+        """
+        site = self.get_site(site_id)
+        if site.origin is not Origin.USER:
+            raise ReadOnlySiteError(f"site {site_id!r} is curated and cannot be changed")
         return site
 
 
