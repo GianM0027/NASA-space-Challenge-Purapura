@@ -4,11 +4,11 @@
 # Federico: tasks
 
 ## Status
-Trade-off core done (AHP geometric mean, CR, normalization, scores, ranking, sensitivity). Next: live Excel export.
+Trade-off live in the app (D39): analyzer, factory, live Excel export. Next: compare/ UI (UI-3).
 
 ## Next (in priority order)
-1. Trade-off export: live Excel workbook (template structure, formulas, editable inputs), then compare/ UI.
-2. Wire the contract models (requested from Gian) once they land: `build_tradeoff()` factory.
+1. UI-3 comparison view and trade-off UI in `frontend/src/compare/` (weights, pairwise judgments, user FoMs,
+   export button); tell Gian which hooks are needed outside `compare/`.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -65,10 +65,14 @@ for tests write small fakes of both that return the example payloads.
   default judgments all 1 (Governale et al. 2021 trades off micro-launchers, no matching criterion);
   per-FoM normalization summing to 1 (complement for lower-is-better); D_k sensitivity on normalized values.
   22 known-answer tests incl. the spec acceptance case (3 scenarios, fixed weights).
+- Trade-off wired (D39): `LunarTradeoff` + `build_tradeoff()`; `/api/tradeoff` and `/api/tradeoff/export`
+  work. Live Excel export following the team's reference template (sheets 0-7: FoM, AHP with weight mode,
+  Scoring with direction, Decision, Sensitivity, Recommendation incl. AI comment, Data & sources); no array
+  formulas. Tests re-evaluate the workbook formulas (`formulas` package) and match the app's weights, CR,
+  scores, ranks and D_k; editing an input (FoM off) recomputes like the app. `openpyxl`, `formulas` added
+  to the tradeoff group. Sensitivity follows the contract: 1 / D_k with D_k in percent.
 
 ## Blockers
-- Trade-off contract models and TO-2 wording (geometric mean) requested from Gian; the module works on
-  internal types until then.
 
 ## Requests
 - Gian (README, demo checklist): after `scripts/terrain_download_dem.py`, run

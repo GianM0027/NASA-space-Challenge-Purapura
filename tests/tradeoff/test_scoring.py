@@ -59,7 +59,7 @@ def test_sensitivity_of_two_close_scenarios() -> None:
     light, dark = out.sensitivity
     assert light.min_change_percent == pytest.approx(20.0)
     assert dark.min_change_percent == pytest.approx(25.0)
-    assert light.sensitivity == pytest.approx(5.0)
+    assert light.sensitivity == pytest.approx(1 / 20)  # 1 / D_k with D_k in percent (D39)
 
 
 def test_robust_ranking_has_no_feasible_weight_change() -> None:

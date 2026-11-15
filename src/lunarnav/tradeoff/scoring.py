@@ -45,7 +45,7 @@ class Sensitivity:
         fom_id: The FoM.
         min_change_percent: D_k, smallest feasible delta' in percent of the weight; None when no
             change up to 100 % swaps any pair.
-        sensitivity: 1 / (D_k / 100); None with D_k.
+        sensitivity: 1 / D_k (D_k in percent, as in the contract); None with D_k.
     """
 
     fom_id: str
@@ -120,5 +120,5 @@ def sensitivity(
                 delta = float(100.0 * abs(score[j] - score[i]) / spread / weights[k])
                 if 0.0 < delta <= 100.0 and (best is None or delta < best):
                     best = delta
-        out.append(Sensitivity(fom, best, None if best is None else 100.0 / best))
+        out.append(Sensitivity(fom, best, None if best is None else 1.0 / best))
     return out

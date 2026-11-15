@@ -29,7 +29,11 @@ api = [
     "httpx>=0.28.1",
     "uvicorn>=0.32",
 ]
-tradeoff = ["numpy>=2.0"]
+tradeoff = [
+    "formulas>=1.3.4",
+    "numpy>=2.0",
+    "openpyxl>=3.1.5",
+]
 
 [build-system]
 requires = ["uv_build>=0.9,<0.14"]
