@@ -130,7 +130,11 @@ def main() -> None:
                     "min_illumination_fraction": True,
                     "min_earth_visibility_fraction": True,
                     "max_slope_deg": True,
-                    "latitude_max_deg": True,
+                },
+                criterion_values={
+                    "min_illumination_fraction": metrics.illumination_fraction,
+                    "min_earth_visibility_fraction": metrics.earth_visibility_fraction,
+                    "max_slope_deg": terrain.landing_slope_max_deg,
                 },
                 all_constraints_met=True,
                 metrics=metrics,

@@ -339,3 +339,227 @@ p {
 .timeline-readout {
   min-height: 2.6em;
 }
+
+/* AI box (spec UI-4): floating over the globe, above the legend */
+.ai-box,
+.ai-pill {
+  position: absolute;
+  left: 12px;
+  bottom: 44px;
+  z-index: 2;
+}
+
+.ai-pill {
+  border-color: var(--accent);
+}
+
+.ai-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(400px, calc(100% - 24px));
+  max-height: calc(100% - 150px);
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #141925f2;
+}
+
+.ai-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tabs {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+
+.tabs button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.unseen {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.criteria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+.archetype {
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #4cc9f022;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.chip.user {
+  border-color: var(--accent);
+}
+
+.chip.archetype {
+  border-color: #8b93a7;
+}
+
+.chip button,
+.chip-value.static {
+  padding: 1px 4px 1px 7px;
+  border: 0;
+  background: none;
+  font-size: 11px;
+}
+
+.chip-input {
+  width: 60px;
+  margin: 1px 4px;
+  font-size: 11px;
+}
+
+.chip-source {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.chip-remove {
+  padding: 1px 6px 1px 3px !important;
+  color: var(--muted);
+}
+
+.chat,
+.ranking {
+  min-height: 80px;
+  overflow-y: auto;
+}
+
+.bubble {
+  margin: 4px 0;
+  padding: 6px 9px;
+  border-radius: 8px;
+  line-height: 1.35;
+}
+
+.bubble.user {
+  margin-left: 40px;
+  background: #4cc9f01f;
+}
+
+.bubble.assistant {
+  margin-right: 40px;
+  background: #252c3b;
+}
+
+.rank-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  margin: 2px 0;
+  text-align: left;
+}
+
+.rank-number {
+  width: 18px;
+  color: var(--muted);
+}
+
+.rank-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-bar {
+  width: 70px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+}
+
+.score-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--good);
+}
+
+.misses {
+  color: var(--warn);
+  font-size: 11px;
+}
+
+.rank-detail {
+  padding: 4px 6px 8px 26px;
+}
+
+.rationale {
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
+.checks {
+  font-size: 11px;
+  border-collapse: collapse;
+}
+
+.checks td {
+  padding: 1px 6px 1px 0;
+}
+
+.checks .ok td:first-child {
+  color: var(--good);
+}
+
+.checks .bad td:first-child {
+  color: var(--bad);
+}
+
+button.link {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  padding: 4px 0;
+}
+
+.ask {
+  display: flex;
+  gap: 6px;
+}
+
+.ask input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}

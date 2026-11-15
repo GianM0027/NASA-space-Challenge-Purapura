@@ -1,9 +1,10 @@
-// ABOUTME: Root of the LunarNav frontend: globe, date control, site list and site panel, module status
+// ABOUTME: Root of the LunarNav frontend: globe, date control, AI box, site list and panel, modules
 // ABOUTME: Owner: Gian. Holds the selection and the time window; children are presentational
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AiAssistant } from './ai/AiAssistant'
 import { api, type ModuleStatus } from './api/client'
-import type { Evaluation, GeoPoint, Site, SkyState } from './api/contracts'
+import type { Evaluation, GeoPoint, Site, SkyState, TimeWindow } from './api/contracts'
 import { formatUtc, fromInputValue, toInputValue } from './format'
 import { MoonGlobe, type GlobeFocus } from './globe/MoonGlobe'
 import { MOON_TEXTURE_ATTRIBUTION } from './globe/moonTexture'
@@ -107,6 +108,16 @@ function App() {
 
   const placeholders = Object.entries(modules).filter(([, status]) => status !== 'real')
 
+  // The window of the site panel is also the AI's default when a request gives no dates.
+  const panelWindow: TimeWindow = useMemo(
+    () => ({
+      start_utc: startUtc,
+      end_utc: new Date(new Date(startUtc).getTime() + settings.durationDays * 86_400_000).toISOString(),
+      step_minutes: settings.stepMinutes,
+    }),
+    [startUtc, settings],
+  )
+
   return (
     <div className="app">
       <header>
@@ -190,6 +201,7 @@ function App() {
             </span>
             <span className="muted">{MOON_TEXTURE_ATTRIBUTION}</span>
           </div>
+          <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickSite} />
         </div>
 
         <aside>

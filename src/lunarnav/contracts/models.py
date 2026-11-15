@@ -396,26 +396,42 @@ class Evaluation(_Contract):
 # --- AI and ranking --------------------------------------------------------------------------
 
 
+class RequirementSource(StrEnum):
+    """Where the value of a requirement field comes from, shown next to it in the GUI."""
+
+    USER = "user"
+    ARCHETYPE = "archetype"
+    DEFAULT = "default"
+
+
 class MissionRequirements(_Contract):
     """Mission constraints shown as editable parameters in the GUI; produced by the AI or the user.
 
-    Every constraint is optional: None means "not constrained".
+    Every constraint is optional: None means "not constrained" and the field plays no part in
+    the ranking.
 
     Attributes:
         window: Time window of interest (e.g. landing date plus surface mission duration).
         area: Landing precision and operating range.
         min_illumination_fraction: Minimum fraction of time in sunlight, [0, 1].
         min_continuous_light_h: Minimum longest continuous sunlit period, hours.
+        max_continuous_dark_h: Maximum longest continuous dark period, hours (what batteries or
+            storage survive); compared with ``VisibilityMetrics.longest_dark_h``.
         min_sun_elevation_deg: Minimum mean Sun elevation while visible, degrees.
         min_earth_visibility_fraction: Minimum fraction of time with Earth visible, [0, 1].
         min_continuous_earth_visibility_h: Minimum longest continuous Earth-visible period, hours.
+        max_earth_outage_h: Maximum longest continuous period with Earth hidden, hours (direct
+            link outage); compared with ``VisibilityMetrics.longest_earth_hidden_h``.
         min_sun_and_earth_visible_fraction: Minimum fraction of time with Sun and Earth both
             visible, [0, 1].
         max_slope_deg: Maximum slope allowed over the landing-precision disk, degrees; compared
             with ``TerrainStats.landing_slope_max_deg``.
-        latitude_min_deg: Southern latitude bound, degrees.
-        latitude_max_deg: Northern latitude bound, degrees.
+        latitude_min_deg: Southern latitude bound, degrees (search scope, not a scored criterion).
+        latitude_max_deg: Northern latitude bound, degrees (search scope, not a scored criterion).
         origins: Restrict the search to these catalog programs.
+        archetype_id: Mission archetype the values were taken from
+            (``docs/domain/mission_archetypes.md``), if any; its priority order sets the weights.
+        field_sources: Field name -> where its value comes from (user, archetype or default).
         rationale: Short justification per field name, written by the AI (field name -> sentence).
         source_request: The natural-language request this was derived from, if any.
     """
@@ -424,14 +440,18 @@ class MissionRequirements(_Contract):
     area: OperationsArea | None = None
     min_illumination_fraction: float | None = Field(default=None, ge=0.0, le=1.0)
     min_continuous_light_h: float | None = Field(default=None, ge=0.0)
+    max_continuous_dark_h: float | None = Field(default=None, ge=0.0)
     min_sun_elevation_deg: float | None = None
     min_earth_visibility_fraction: float | None = Field(default=None, ge=0.0, le=1.0)
     min_continuous_earth_visibility_h: float | None = Field(default=None, ge=0.0)
+    max_earth_outage_h: float | None = Field(default=None, ge=0.0)
     min_sun_and_earth_visible_fraction: float | None = Field(default=None, ge=0.0, le=1.0)
     max_slope_deg: float | None = Field(default=None, ge=0.0, le=90.0)
     latitude_min_deg: float | None = Field(default=None, ge=-90.0, le=90.0)
     latitude_max_deg: float | None = Field(default=None, ge=-90.0, le=90.0)
     origins: list[Origin] | None = None
+    archetype_id: str | None = None
+    field_sources: dict[str, RequirementSource] = Field(default_factory=dict)
     rationale: dict[str, str] = Field(default_factory=dict)
     source_request: str | None = None
 
@@ -442,8 +462,11 @@ class SiteScore(_Contract):
     Attributes:
         site_id: Catalog id.
         rank: 1-based position in the ranking.
-        score: Aggregate score in [0, 1], higher is better (method documented by the AI module).
-        constraints_met: Requirement field name -> whether this site satisfies it.
+        score: Aggregate score in [0, 1], higher is better; 0 for a site that violates a
+            constraint (method: ``lunarnav.ai.ranking``).
+        constraints_met: Criterion field name -> whether this site satisfies it (set criteria only).
+        criterion_values: Criterion field name -> the site's value compared with the threshold
+            (e.g. ``min_continuous_light_h`` -> ``longest_light_h``), in the criterion's units.
         all_constraints_met: True when every set constraint is satisfied.
         metrics: The computed metrics the score is based on.
         landing_slope_max_deg: Maximum slope over the landing-precision disk, degrees: the value
@@ -455,6 +478,7 @@ class SiteScore(_Contract):
     rank: int = Field(ge=1)
     score: float = Field(ge=0.0, le=1.0)
     constraints_met: dict[str, bool]
+    criterion_values: dict[str, float] = Field(default_factory=dict)
     all_constraints_met: bool
     metrics: VisibilityMetrics
     landing_slope_max_deg: float = Field(ge=0.0, le=90.0)
@@ -464,26 +488,65 @@ class SiteScore(_Contract):
 class SiteRanking(_Contract):
     """Sites ranked against mission requirements.
 
+    Sites that satisfy every constraint come first, by score; the others follow, closest first
+    (fewest violated constraints, then smallest weighted shortfall).
+
     Attributes:
         requirements: The requirements used.
         results: Ranked results, best first.
+        weights: Criterion field name -> weight used in the score, summing to 1.
+        unavailable: Site id -> reason, for catalog sites in scope that could not be evaluated.
     """
 
     requirements: MissionRequirements
     results: list[SiteScore]
+    weights: dict[str, float] = Field(default_factory=dict)
+    unavailable: dict[str, str] = Field(default_factory=dict)
+
+
+class ChatMessage(_Contract):
+    """One turn of the conversation with the AI assistant.
+
+    Attributes:
+        role: Who wrote it.
+        text: The message text.
+    """
+
+    role: Literal["user", "assistant"]
+    text: str = Field(min_length=1, max_length=4000)
+
+
+class AiRequest(_Contract):
+    """A natural-language request to the AI assistant, with the conversation so far.
+
+    Attributes:
+        text: The user's new message, any language.
+        history: Earlier turns of the conversation, oldest first (empty after a reset).
+        requirements: The current parameters in the GUI, if any (the AI updates them).
+        locked_fields: Fields the user edited by hand: the AI keeps their current value.
+        default_window: The window set in the GUI, used when the request gives no dates.
+    """
+
+    text: str = Field(min_length=1, max_length=4000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=40)
+    requirements: MissionRequirements | None = None
+    locked_fields: list[str] = Field(default_factory=list)
+    default_window: TimeWindow
 
 
 class AiAnswer(_Contract):
     """Response of the AI assistant to a natural-language request.
 
     Attributes:
-        requirements: Parameters extracted from the request (shown, editable, in the GUI).
-        ranking: Catalog sites ranked by the deterministic engine against those parameters.
-        message: Short answer for the user; every number in it comes from ``ranking``.
+        requirements: Parameters extracted from the conversation (shown, editable, in the GUI).
+        ranking: Catalog sites ranked by the deterministic engine against those parameters;
+            None when the assistant asks a question instead or the request is not about sites.
+        message: Short answer for the user; every number in it comes from the request, the
+            requirements or ``ranking``.
     """
 
     requirements: MissionRequirements
-    ranking: SiteRanking
+    ranking: SiteRanking | None
     message: str
 
 
