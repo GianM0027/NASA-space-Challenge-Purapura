@@ -22,8 +22,11 @@
     "max_slope_deg": 15.0,
     "latitude_min_deg": null,
     "latitude_max_deg": -80.0,
+    "longitude_min_deg": null,
+    "longitude_max_deg": null,
     "origins": null,
     "archetype_id": null,
+    "region_id": null,
     "field_sources": {},
     "rationale": {
       "min_illumination_fraction": "Synthetic example rationale.",

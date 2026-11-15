@@ -19,7 +19,7 @@ import {
 
 type Tab = 'chat' | 'ranking'
 
-const SOURCE_LABEL: Record<string, string> = { user: 'you', archetype: 'archetype', default: 'GUI' }
+const SOURCE_LABEL: Record<string, string> = { user: 'you', archetype: 'archetype', region: 'region', default: 'GUI' }
 
 /** One editable criterion chip: click to edit, × to remove. */
 function Chip(props: {
@@ -138,7 +138,8 @@ export function AiAssistant(props: {
   onPickSite: (siteId: string, window: TimeWindow | null) => void
 }) {
   const { sites, defaultWindow, onPickSite } = props
-  const [minimized, setMinimized] = useState(false)
+  // Starts as a pill: the box opens only when the user asks for it.
+  const [minimized, setMinimized] = useState(true)
   const [tab, setTab] = useState<Tab>('chat')
   const [history, setHistory] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
@@ -278,6 +279,7 @@ export function AiAssistant(props: {
       {requirements && (
         <div className="criteria">
           {requirements.archetype_id && <span className="archetype">{requirements.archetype_id}</span>}
+          {requirements.region_id && <span className="archetype region">{requirements.region_id}</span>}
           {window && (
             <span className={`chip ${requirements.field_sources.window ?? 'default'}`}>
               <span className="chip-value static">

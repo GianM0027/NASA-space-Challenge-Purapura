@@ -19,7 +19,8 @@ Method:
   1515-1523, Eq. for w_k); criteria in one group share the mean weight of their positions.
   Criteria the priority does not mention form a last group; without an archetype all set
   criteria weigh the same.
-* Latitude bounds and origins are search scope: sites outside them are not ranked at all.
+* Latitude and longitude bounds and origins are search scope: sites outside them are not
+  ranked at all.
 """
 
 from __future__ import annotations
@@ -296,6 +297,25 @@ def score_sites(
     return [row.model_copy(update={"rank": i}) for i, (_, row) in enumerate(rows, start=1)]
 
 
+def longitude_in_range(lon: float, west: float | None, east: float | None) -> bool:
+    """Tell whether a longitude lies in a search range that may cross 180 degrees.
+
+    Args:
+        lon: East-positive longitude, degrees in [-180, 180).
+        west: Western bound, degrees; None means unbounded on that side.
+        east: Eastern bound, degrees; None means unbounded on that side. A western bound
+            greater than the eastern one means the range crosses 180 (90 to -90: far side).
+
+    Returns:
+        True when ``lon`` is inside the range (bounds included).
+    """
+    if west is None or east is None:
+        return (west is None or lon >= west) and (east is None or lon <= east)
+    if west <= east:
+        return west <= lon <= east
+    return lon >= west or lon <= east
+
+
 class CatalogRanker:
     """Ranks every catalog site in scope by evaluating it over the requested window.
 
@@ -349,6 +369,12 @@ class CatalogRanker:
             if requirements.latitude_min_deg is not None and lat < requirements.latitude_min_deg:
                 continue
             if requirements.latitude_max_deg is not None and lat > requirements.latitude_max_deg:
+                continue
+            if not longitude_in_range(
+                site.location.lon_deg,
+                requirements.longitude_min_deg,
+                requirements.longitude_max_deg,
+            ):
                 continue
             if requirements.origins is not None and site.origin not in requirements.origins:
                 continue

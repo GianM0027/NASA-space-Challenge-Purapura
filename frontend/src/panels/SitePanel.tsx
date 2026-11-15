@@ -3,6 +3,8 @@
 
 import type { Evaluation, GeoPoint } from '../api/contracts'
 import { ElevationTimeline } from '../timeline/ElevationTimeline'
+import { TimeWheel } from '../timeline/TimeWheel'
+import { sampleIndex } from '../timeline/wheel'
 import {
   formatAtLeast,
   formatCoordinates,
@@ -24,6 +26,9 @@ type Props = {
   location: GeoPoint | null
   settings: WindowSettings
   onSettings: (settings: WindowSettings) => void
+  /** Instant shown on the globe, hours after the window start (time wheel, spec UI-11). */
+  viewOffsetHours: number
+  onViewOffset: (offsetHours: number) => void
   evaluation: Evaluation | null
   loading: boolean
   error: string | null
@@ -61,7 +66,8 @@ function Metric(props: { label: string; value: string }) {
 
 /** Window controls plus the metrics of the selected point. */
 export function SitePanel(props: Props) {
-  const { title, description, location, settings, onSettings, evaluation, loading, error } = props
+  const { title, description, location, settings, onSettings, viewOffsetHours, onViewOffset, evaluation, loading, error } =
+    props
   // A mission window from the AI box may have a length outside the fixed choices.
   const durations = DURATIONS_H.includes(settings.durationHours)
     ? DURATIONS_H
@@ -109,11 +115,21 @@ export function SitePanel(props: Props) {
         </label>
     </div>
   )
+  const wheel = (
+    <TimeWheel
+      startUtc={settings.startUtc}
+      windowHours={settings.durationHours}
+      stepMinutes={settings.stepMinutes}
+      offsetHours={viewOffsetHours}
+      onChange={onViewOffset}
+    />
+  )
   if (!location) {
     return (
       <section className="panel">
         <h2>Site</h2>
         {controls}
+        {wheel}
         <p className="muted">Pick a site marker or click anywhere on the globe.</p>
       </section>
     )
@@ -126,13 +142,17 @@ export function SitePanel(props: Props) {
       <p className="muted">{formatCoordinates(location)}</p>
       {description && <p className="site-description">{description}</p>}
       {controls}
+      {wheel}
 
       {error && <p className="error">{error}</p>}
       {loading && !evaluation && <p className="muted">Evaluating...</p>}
 
       {evaluation && metrics && start && (
         <div className={loading ? 'stale' : undefined}>
-          <ElevationTimeline evaluation={evaluation} />
+          <ElevationTimeline
+            evaluation={evaluation}
+            marker={sampleIndex(viewOffsetHours, evaluation.window.step_minutes)}
+          />
 
           <h3>Power (Sun)</h3>
           <NextEvent

@@ -406,6 +406,7 @@ class RequirementSource(StrEnum):
 
     USER = "user"
     ARCHETYPE = "archetype"
+    REGION = "region"
     DEFAULT = "default"
 
 
@@ -433,10 +434,17 @@ class MissionRequirements(_Contract):
             with ``TerrainStats.landing_slope_max_deg``.
         latitude_min_deg: Southern latitude bound, degrees (search scope, not a scored criterion).
         latitude_max_deg: Northern latitude bound, degrees (search scope, not a scored criterion).
+        longitude_min_deg: Western longitude bound, east-positive degrees in [-180, 180) (search
+            scope). When it is greater than ``longitude_max_deg`` the range crosses 180 degrees
+            (e.g. 90 to -90 is the far side).
+        longitude_max_deg: Eastern longitude bound, east-positive degrees in [-180, 180).
         origins: Restrict the search to these catalog programs.
         archetype_id: Mission archetype the values were taken from
             (``docs/domain/mission_archetypes.md``), if any; its priority order sets the weights.
-        field_sources: Field name -> where its value comes from (user, archetype or default).
+        region_id: Named region that set the search scope (``docs/domain/regions.md``, spec
+            AI-7), if any.
+        field_sources: Field name -> where its value comes from (user, archetype, region or
+            default).
         rationale: Short justification per field name, written by the AI (field name -> sentence).
         source_request: The natural-language request this was derived from, if any.
     """
@@ -454,8 +462,11 @@ class MissionRequirements(_Contract):
     max_slope_deg: float | None = Field(default=None, ge=0.0, le=90.0)
     latitude_min_deg: float | None = Field(default=None, ge=-90.0, le=90.0)
     latitude_max_deg: float | None = Field(default=None, ge=-90.0, le=90.0)
+    longitude_min_deg: float | None = Field(default=None, ge=-180.0, lt=180.0)
+    longitude_max_deg: float | None = Field(default=None, ge=-180.0, lt=180.0)
     origins: list[Origin] | None = None
     archetype_id: str | None = None
+    region_id: str | None = None
     field_sources: dict[str, RequirementSource] = Field(default_factory=dict)
     rationale: dict[str, str] = Field(default_factory=dict)
     source_request: str | None = None
