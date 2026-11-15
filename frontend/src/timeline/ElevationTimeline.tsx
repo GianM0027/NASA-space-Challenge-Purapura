@@ -33,11 +33,17 @@ function terrain(values: number[], x: (i: number) => number, y: (v: number) => n
   return `${path(values, x, y)}L${x(last).toFixed(1)},${bottom}L${x(0).toFixed(1)},${bottom}Z`
 }
 
-/** Sun and Earth elevation charts sharing one time axis and one hover cursor. */
-export function ElevationTimeline({ evaluation }: { evaluation: Evaluation }) {
-  const [cursor, setCursor] = useState<number | null>(null)
+/**
+ * Sun and Earth elevation charts sharing one time axis, one hover cursor and the time-wheel
+ * marker (`marker`: sample index of the instant shown on the globe, spec UI-11).
+ */
+export function ElevationTimeline({ evaluation, marker = null }: { evaluation: Evaluation; marker?: number | null }) {
+  const [hover, setCursor] = useState<number | null>(null)
   const n = evaluation.times_utc.length
   if (n < 2) return null
+  const shownMarker = marker !== null && marker >= 0 && marker < n ? marker : null
+  // The readout follows the mouse, else the time wheel.
+  const cursor = hover ?? shownMarker
 
   const bodies: Body[] = [
     {
@@ -136,8 +142,17 @@ export function ElevationTimeline({ evaluation }: { evaluation: Evaluation }) {
             {tick.label}
           </text>
         ))}
-        {cursor !== null && (
-          <line x1={x(cursor)} x2={x(cursor)} y1={TOP} y2={height - AXIS} className="timeline-cursor" />
+        {shownMarker !== null && (
+          <line
+            x1={x(shownMarker)}
+            x2={x(shownMarker)}
+            y1={TOP}
+            y2={height - AXIS}
+            className="timeline-marker"
+          />
+        )}
+        {hover !== null && (
+          <line x1={x(hover)} x2={x(hover)} y1={TOP} y2={height - AXIS} className="timeline-cursor" />
         )}
       </svg>
       <p className="muted small timeline-readout">

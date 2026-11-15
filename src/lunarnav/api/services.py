@@ -46,6 +46,9 @@ from lunarnav.contracts import (
     TerrainProvider,
     TerrainStats,
     TimeWindow,
+    TradeoffAnalyzer,
+    TradeoffResult,
+    TradeoffSettings,
     UnknownSiteError,
 )
 
@@ -89,6 +92,7 @@ class Services:
         analyzer: Mission analysis.
         ranker: Deterministic ranking.
         assistant: AI assistant.
+        tradeoff: AHP trade-off over compared scenarios (spec section 4.8).
     """
 
     catalog: SiteCatalog
@@ -97,6 +101,7 @@ class Services:
     analyzer: MissionAnalyzer
     ranker: Ranker
     assistant: Assistant
+    tradeoff: TradeoffAnalyzer
 
 
 def _read(name: str) -> str:
@@ -376,6 +381,29 @@ class ExampleAnalyzer:
     ) -> RobustnessReport:
         """Return the example report with ``site_id`` replaced."""
         return self._example.model_copy(update={"site_id": site_id})
+
+
+class ExampleTradeoff:
+    """Stands in for the trade-off module: echoes the labels and computes nothing.
+
+    It has no ``export_xlsx``: the API answers 501 for the export until the real module exists.
+    """
+
+    def analyze(self, evaluations: list[Evaluation], settings: TradeoffSettings) -> TradeoffResult:
+        """Return an empty result in the scenario order, marked as a placeholder."""
+        count = len(settings.labels)
+        return TradeoffResult(
+            labels=settings.labels,
+            foms=[],
+            weights={},
+            weight_method="default",
+            judgments=[],
+            consistency_ratio=None,
+            table=[{} for _ in range(count)],
+            scores=[0.0] * count,
+            ranking=list(range(count)),
+            method="Placeholder: the trade-off module is not wired yet; nothing is scored.",
+        )
 
 
 class ExampleRanker:

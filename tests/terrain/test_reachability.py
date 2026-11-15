@@ -15,7 +15,7 @@ SQRT2 = np.sqrt(2.0)
 def grid(slope: np.ndarray) -> SlopeGrid:
     axis = np.arange(-K, K + 1) * STEP
     east, north = np.meshgrid(axis, axis)
-    return SlopeGrid(east, north, np.zeros_like(east), slope, STEP, K)
+    return SlopeGrid(east, north, np.zeros_like(east), slope, STEP, K, 2 * STEP)
 
 
 def flat() -> np.ndarray:

@@ -1,7 +1,7 @@
 // ABOUTME: Root of the LunarNav frontend: globe, AI box, site lists, coordinates box, site panel, modules
 // ABOUTME: Owner: Gian. Holds the selection and the time window; children are presentational
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiAssistant } from './ai/AiAssistant'
 import { api, ApiError, type ModuleStatus } from './api/client'
 import type { Evaluation, GeoPoint, Site, SkyState, TimeWindow } from './api/contracts'
@@ -57,16 +57,40 @@ function App() {
       .catch((reason: unknown) => setBootError(String(reason)))
   }, [])
 
+  // Time wheel (spec UI-11): the instant shown on the globe, hours after the window start.
+  // Keyed by the window, so a new start or duration brings the shown instant back to the start.
+  const windowKey = `${startUtc}|${settings.durationHours}`
+  const [view, setView] = useState({ key: windowKey, offsetHours: 0 })
+  const viewOffsetHours = view.key === windowKey ? view.offsetHours : 0
+  const setViewOffsetHours = useCallback(
+    (offsetHours: number) => setView({ key: windowKey, offsetHours }),
+    [windowKey],
+  )
+  const viewUtc = useMemo(
+    () => new Date(new Date(startUtc).getTime() + viewOffsetHours * 3_600_000).toISOString(),
+    [startUtc, viewOffsetHours],
+  )
+
+  // At most one sky request in flight: while one runs, only the latest wanted instant waits.
+  const skyBusy = useRef(false)
+  const skyWanted = useRef<string | null>(null)
   useEffect(() => {
-    let current = true
-    api
-      .sky(startUtc)
-      .then((state) => current && setSky(state))
-      .catch(() => current && setSky(null))
-    return () => {
-      current = false
+    skyWanted.current = viewUtc
+    if (skyBusy.current) return
+    skyBusy.current = true
+    const run = (time: string) => {
+      api
+        .sky(time)
+        .then((state) => setSky(state))
+        .catch(() => setSky(null))
+        .finally(() => {
+          const next = skyWanted.current
+          if (next !== null && next !== time) run(next)
+          else skyBusy.current = false
+        })
     }
-  }, [startUtc])
+    run(viewUtc)
+  }, [viewUtc])
 
   // Identifies the current evaluation request; an outcome with another key is stale.
   const requestKey = target ? JSON.stringify([target, settings]) : null
@@ -324,6 +348,8 @@ function App() {
             location={selectedLocation}
             settings={settings}
             onSettings={setSettings}
+            viewOffsetHours={viewOffsetHours}
+            onViewOffset={setViewOffsetHours}
             evaluation={outcome?.evaluation ?? null}
             loading={loading}
             error={loading ? null : (outcome?.error ?? null)}

@@ -15,6 +15,7 @@ from lunarnav.ai.archetypes import load_archetypes
 from lunarnav.ai.assistant import ChatAssistant
 from lunarnav.ai.llm import build_llm_client
 from lunarnav.ai.ranking import CatalogRanker, Ranker
+from lunarnav.ai.regions import load_regions
 from lunarnav.contracts import Evaluator, SiteCatalog
 
 
@@ -29,7 +30,7 @@ def build_assistant(ranker: Ranker, catalog: SiteCatalog) -> ChatAssistant:
     Raises:
         RuntimeError: If the configured LLM is not available (e.g. Claude CLI not installed).
     """
-    return ChatAssistant(ranker, catalog, build_llm_client(), load_archetypes())
+    return ChatAssistant(ranker, catalog, build_llm_client(), load_archetypes(), load_regions())
 
 
 __all__ = ["build_assistant", "build_ranker"]

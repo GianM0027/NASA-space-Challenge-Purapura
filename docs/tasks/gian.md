@@ -13,9 +13,7 @@ archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a
 Work split of day 2 (decision D37): Federico takes UI-3 and the trade-off (spec 4.8), Michael
 MA-1 to MA-3; Gian: AI-7 (named regions) and AI-1 acceptance, UI-11 (time wheel), contracts and
 API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, then UI-12.
-0. AI-7 (spec): a region named in words ("near the south pole") sets no latitude bound, so the ranking runs
-   over all 36 sites (found 2026-11-16: top three Chang'e 6, Chang'e 4, Luna 13). Needs named
-   regions mapped to bounds in code, each bound with a cited source.
+0. AI-7: wire Michael's `docs/domain/regions.md` when it lands (no code change expected).
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
    checked through the DOM and network only, not by eye.
 3. AI-1 acceptance: 5 scripted requests through the real CLI, recorded with their timings.
@@ -24,6 +22,17 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- AI-7 (named regions): `lunarnav.ai.regions` reads `docs/domain/regions.md` (Michael; none until
+  it lands), the LLM picks only a region id, code applies latitude and longitude bounds (source
+  "region"; a user number wins); longitude scope crosses 180 deg. Real CLI with a test table:
+  "near the south pole" requests now rank the 9 polar sites only.
+- Archetype "whole stay" durations follow the stated mission length (R8 of Michael's examples:
+  a one-week crewed stay now asks for 168 h of continuous light, not 156 h).
+- UI-11 (time wheel): jog-dial ruler under the window controls (wheel, drag, play at 1/6/24 h/s,
+  reset); globe lighting and a timeline marker follow, one sky request in flight at a time.
+  Checked in the browser on Apollo 11 (+30 h: Sun -1.0 deg to 14.2 deg).
+- AI box starts minimized; it opens on click.
+- Michael's 8 example requests run once on the real CLI: archetype and duration right 8/8.
 - User-site description (Michael's request, decision D35): `SiteCatalog.update_user_site` in the
   port, `PATCH /api/sites/{id}` takes `{name?, description?}`, "My locations" rows show the
   description and edit name and description together, the site panel shows it. Checked in the
@@ -50,6 +59,11 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 - Minor: Starlette warns that `httpx` with its TestClient is deprecated in favour of `httpx2`; switch after verifying the `httpx2` package.
 
 ## Answers to requests from others
+- Federico, trade-off contract (revised request): done as D39. Models, `TradeoffAnalyzer` port,
+  `build_tradeoff()` factory slot, `POST /api/tradeoff` and `/api/tradeoff/export` (placeholder
+  until your module lands: empty result, export 501), TO-2 says geometric mean. Two changes to
+  your draft: list defaults use `default_factory`; `UserFom.values` are checked >= 0 one by one.
+  TO-5 (AI comment) comes from Gian after the mission-analysis window.
 - Federico, landing-slope baseline and slope max: decided in D36 (100 m baseline as in the NASA
   criterion; reported maxima are the 99th percentile). Implementation is yours. Spec section 7 now
   lists LDEM_85S_20M; the README demo steps include `terrain_warm_cache.py`.

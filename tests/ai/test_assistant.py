@@ -26,6 +26,7 @@ from lunarnav.contracts import (
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "data" / "examples"
 START = datetime(2026, 11, 14, tzinfo=UTC)
+REGIONS = (Path(__file__).parent / "data" / "regions.md").read_text(encoding="utf-8")
 GUI_WINDOW = TimeWindow(start_utc=START, end_utc=START + timedelta(days=30), step_minutes=60)
 
 
@@ -227,3 +228,66 @@ def test_prompt_lists_only_fields_with_a_source() -> None:
     _assistant(llm)[0].ask(AiRequest(text="hello", requirements=current, default_window=GUI_WINDOW))
     parameters = json.loads(llm.prompts[0])["current_parameters"]
     assert parameters == {"landing_precision_m": {"value": 100.0, "source": "user"}}
+
+
+def _regional_assistant(llm: _Llm) -> tuple[ChatAssistant, _Ranker]:
+    from lunarnav.ai.regions import parse_regions
+
+    ranker = _Ranker()
+    assistant = ChatAssistant(
+        ranker, _Catalog(), llm, load_archetypes(), regions=parse_regions(REGIONS)
+    )
+    return assistant, ranker
+
+
+def test_region_sets_the_search_scope_with_its_source() -> None:
+    llm = _Llm(_extraction(archetype_id="small-robotic-lander", region_id="south-pole"))
+    assistant, ranker = _regional_assistant(llm)
+    answer = assistant.ask(AiRequest(text="lander near the south pole", default_window=GUI_WINDOW))
+    req = answer.requirements
+    assert req.region_id == "south-pole"
+    assert req.latitude_max_deg == -84
+    assert req.field_sources["latitude_max_deg"] == RequirementSource.REGION
+    assert "test source A" in req.rationale["latitude_max_deg"]
+    assert ranker.calls == [req]
+
+
+def test_user_number_wins_over_the_region() -> None:
+    stated = [{"name": "latitude_max_deg", "value": -88, "rationale": "user: below -88"}]
+    llm = _Llm(
+        _extraction(archetype_id="small-robotic-lander", region_id="south-pole", fields=stated)
+    )
+    req = (
+        _regional_assistant(llm)[0]
+        .ask(AiRequest(text="south pole, below -88", default_window=GUI_WINDOW))
+        .requirements
+    )
+    assert req.latitude_max_deg == -88
+    assert req.field_sources["latitude_max_deg"] == RequirementSource.USER
+
+
+def test_prompt_offers_region_names_without_numbers() -> None:
+    from lunarnav.ai.assistant import extraction_system_prompt
+    from lunarnav.ai.regions import parse_regions
+
+    prompt = extraction_system_prompt(load_archetypes(), parse_regions(REGIONS))
+    assert "- south-pole: South pole. Near the lunar south pole." in prompt
+    assert "-84" not in prompt
+
+
+def test_whole_stay_light_follows_the_stated_duration() -> None:
+    llm = _Llm(_extraction(archetype_id="short-crewed-stay", duration_h=168))
+    req = _assistant(llm)[0].ask(AiRequest(text="one-week crewed stay", default_window=GUI_WINDOW))
+    req = req.requirements
+    assert req.window is not None
+    assert req.window.end_utc - req.window.start_utc == timedelta(hours=168)
+    assert req.min_continuous_light_h == 168
+    assert req.field_sources["min_continuous_light_h"] == RequirementSource.ARCHETYPE
+    assert "whole stay" in req.rationale["min_continuous_light_h"]
+
+
+def test_stated_light_is_kept_when_the_duration_changes() -> None:
+    stated = [{"name": "min_continuous_light_h", "value": 100, "rationale": "user: 100 h"}]
+    llm = _Llm(_extraction(archetype_id="short-crewed-stay", duration_h=168, fields=stated))
+    req = _assistant(llm)[0].ask(AiRequest(text="a week, 100 h light", default_window=GUI_WINDOW))
+    assert req.requirements.min_continuous_light_h == 100
