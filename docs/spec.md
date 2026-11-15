@@ -30,12 +30,12 @@ frontend (React + Vite + TypeScript + three.js)            owner: Gian
    |  REST/JSON (section 5)
 api (FastAPI, composition root)                             owner: Gian
    |-- ai ----------------> catalog, evaluation             owner: Gian
-   |-- mission_analysis --> evaluation                      owner: Gian
+   |-- mission_analysis --> evaluation                      owner: Michael (D37)
    |-- evaluation --------> ephemeris, terrain              owner: Federico
    |-- terrain (LOLA DEM)                                   owner: Federico
    |-- ephemeris (JPL Horizons or offline kernels)          owner: Michael
    |-- catalog (data/catalog/sites.json + data/user/)       owner: Michael
-   '-- tradeoff (AHP, standalone)                           owner: unassigned
+   '-- tradeoff --------> evaluation (AHP weights)          owner: Federico (D37)
 ```
 
 Modules exchange only the types in `src/lunarnav/contracts/` (models and Protocols). The API
@@ -120,11 +120,11 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 
 ### 4.5 Mission analysis (MA)
 
-- **MA-1** (P1, Gian): date-slip sweep: evaluate the window shifted by a list of offsets (default
+- **MA-1** (P1, Michael, D37): date-slip sweep: evaluate the window shifted by a list of offsets (default
   +1, +3, +7, +14 days) and report the change of every metric.
-- **MA-2** (P1, Gian): dispersion: evaluate sample points inside the operations-area disk and report
+- **MA-2** (P1, Michael, D37): dispersion: evaluate sample points inside the operations-area disk and report
   worst case and spread.
-- **MA-3** (P1, Gian): `RobustnessReport.summary` in plain language; the AI can present it.
+- **MA-3** (P1, Michael, D37): `RobustnessReport.summary` in plain language; the AI can present it.
 
 ### 4.6 AI assistant (AI)
 
@@ -146,6 +146,12 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
   stay, long-duration outpost, communication relay) as domain knowledge with **sourced** typical
   values, used to suggest requirements.
 - **AI-6** (P1, Gian): the AI presents mission-analysis results on request.
+- **AI-7** (P0, Gian with content by Michael): a region named in words ("near the south pole",
+  "equatorial", "far side") sets the matching search scope (latitude and longitude bounds).
+  The bounds come from a table in `docs/domain/` (Michael), each with a cited source; the LLM only
+  picks the region name, code applies the bounds.
+  *Acceptance*: "two-week robotic lander near the south pole" ranks only sites inside the
+  south-polar bounds.
 
 ### 4.7 User interface (UI)
 
@@ -155,17 +161,53 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
   views of the near side and both poles.
 - **UI-2** (P0, Gian): site panel: date/time and window picker, metrics, Sun and Earth elevation
   timeline against the horizon, time to next sunset and Earthset prominently shown.
-- **UI-3** (P0, Gian): side-by-side comparison of 2 to 4 site-date scenarios.
+- **UI-3** (P0, Federico, D37): side-by-side comparison of 2 to 4 site-date scenarios, picked
+  from the catalog, "My locations" or the AI ranking without re-entering them one at a time; it
+  opens the trade-off of section 4.8.
 - **UI-4** (P0, Gian): AI box: request text, extracted parameters as editable fields with rationale,
   ranked site list; editing a parameter re-runs the deterministic ranking without the LLM.
 - **UI-5** (P1, Gian): mission analysis view (date-slip chart, dispersion summary).
 - **UI-6** (P1, Gian): data sources and attribution panel (section 7).
 - **UI-7** (P2, unassigned): "sky from the site" panel: horizon profile with Sun and Earth tracks over
   the window (plug-in; data already in `Evaluation.horizon` and the series).
-- **UI-8** (P2, unassigned): AHP trade-off popup (method of Governale et al. 2021,
-  doi:10.1007/s42401-021-00095-w), independent of the AI.
+- **UI-8**: merged into UI-3 and section 4.8 (decision D37).
 - **UI-10** (P2, unassigned): 2D high-resolution polar inset next to the globe.
 - **UI-9** (P2, unassigned): PGDA polar layers (average illumination, Earth visibility, permanent shadow).
+- **UI-11** (P1, Gian): time wheel: a small scrollable timeline on the globe that moves the
+  displayed instant forward or back step by step, with a play mode that advances it
+  automatically; globe lighting and the site panel follow. Requests are throttled so scrolling
+  never queues more than one `GET /api/sky` at a time.
+- **UI-12** (P1, Gian): final visual pass over the whole app: remove redundant elements,
+  consistent layout and typography, readable at a projector resolution.
+
+### 4.8 Trade-off (TO)
+
+Method: AHP as in Governale et al. 2021 (decision D6, trade-off method). Owner: Federico (D37);
+the AI comment is Gian's.
+
+- **TO-1** (P1, Federico): every significant quantitative parameter of a compared scenario is an
+  independent figure of merit (FoM) with a direction (higher or lower is better) and a unit:
+  at least illumination fraction, longest continuous light, longest continuous dark, Earth
+  visibility fraction, longest Earth outage, landing slope maximum and reachable fraction when
+  the area has an operating range. Values come from `Evaluation` only.
+- **TO-2** (P1, Federico): FoM weights have defaults the user can change. Defaults come from an
+  AHP pairwise comparison (principal eigenvector, consistency ratio <= 10 %) whose judgments are
+  taken from Governale et al. 2021 where their criteria match ours, and are equal otherwise;
+  every default judgment cites its source. The user edits weights directly or through the
+  pairwise comparisons; weights are normalized to sum to 1.
+- **TO-3** (P1, Federico): the user can add a FoM of their own: name, unit, direction, weight,
+  and a value for every compared scenario; it enters the trade-off like the computed ones and
+  is marked as user-supplied everywhere it appears.
+- **TO-4** (P1, Federico): the trade-off score of each scenario is computed by a stated method
+  (normalization across the compared scenarios plus weighted sum, with its source in the code),
+  shown in the comparison view, and exported to a file (Excel or PDF, chosen by the owner) with
+  scenarios, FoM values and units, weights, normalized values, total scores, ranking, data
+  sources, and the AI comment.
+- **TO-5** (P1, Gian): a short AI comment on the trade-off result, citing only numbers present
+  in the trade-off table (number check as in AI-3, deterministic sentence as fallback).
+- **TO-6** (P2, Federico): sensitivity of the ranking to the weights (Triantaphyllou, as in D6).
+  *Acceptance (TO-1 to TO-4)*: a known-answer test with 3 scenarios and fixed weights gives the
+  expected scores and order; an exported file reopens with the same numbers.
 
 ## 5. Interface requirements
 
@@ -228,7 +270,7 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 | Data | Provider | Use | Owner |
 |------|----------|-----|-------|
 | JPL Horizons API, https://ssd-api.jpl.nasa.gov/doc/horizons.html | NASA JPL | Sun and Earth topocentric directions | Michael |
-| LOLA gridded DEMs LDEM_64 (global, 64 px/deg, about 474 m) and LDEM_80S_80M (south pole, 80 m), data set LRO-L-LOLA-4-GDR-V1.0, https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/ | NASA LRO LOLA / PDS Geosciences Node | horizon masks, slopes | Federico |
+| LOLA gridded DEMs LDEM_64 (global, 64 px/deg, about 474 m), LDEM_80S_80M (south pole to 80 S, 80 m) and LDEM_85S_20M (south pole to 85 S, 20 m, decision D31), data set LRO-L-LOLA-4-GDR-V1.0, https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/ | NASA LRO LOLA / PDS Geosciences Node | horizon masks, slopes | Federico |
 | Lunar Polar Illumination, https://pgda.gsfc.nasa.gov/products/69 (Mazarico et al. 2011, Icarus 211) | NASA GSFC PGDA | optional polar layers, sanity check | Federico |
 | LRO WAC global mosaic via Moon Trek WMTS, https://trek.nasa.gov/moon/ | NASA JPL / LROC (ASU) | globe texture | Gian |
 | Landing site coordinates | per-site sources in `sites.json` | catalog | Michael |

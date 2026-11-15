@@ -247,10 +247,15 @@ class TerrainStats(_Contract):
         radius_m: Full disk radius, meters (0 means the single center pixel).
         elevation_m: Center height above the 1737.4 km reference sphere, meters.
         slope_mean_deg: Mean slope over the full disk, degrees.
-        slope_max_deg: Maximum slope over the full disk, degrees (informational).
+        slope_max_deg: Robust maximum slope over the full disk: 99th percentile of the cell
+            slopes, degrees (informational; decision D36, slope maxima).
         landing_radius_m: Landing-precision disk radius, meters (= landing_precision_m).
-        landing_slope_mean_deg: Mean slope over the landing-precision disk, degrees.
-        landing_slope_max_deg: Maximum slope over the landing-precision disk, degrees.
+        landing_slope_mean_deg: Mean slope over the landing-precision disk, degrees, each cell's
+            slope measured on a 100 m baseline (plane fitted to the heights within 50 m), as in
+            the NASA landing criterion "surface slope for landing (100 m) < 10 deg" (NASA HLS
+            Overview 2025, p. 21; decision D36).
+        landing_slope_max_deg: Robust maximum slope over the landing-precision disk: 99th
+            percentile of the 100 m baseline cell slopes, degrees (decision D36).
         traverse_slope_limit_deg: The traverse slope limit used, degrees (echoed from the area).
         reachable_fraction: Share of the disk of radius ``operating_range_m`` reachable from the
             center through cells with slope <= ``traverse_slope_limit_deg`` by a path no longer
@@ -469,8 +474,9 @@ class SiteScore(_Contract):
             (e.g. ``min_continuous_light_h`` -> ``longest_light_h``), in the criterion's units.
         all_constraints_met: True when every set constraint is satisfied.
         metrics: The computed metrics the score is based on.
-        landing_slope_max_deg: Maximum slope over the landing-precision disk, degrees: the value
-            compared with ``MissionRequirements.max_slope_deg``.
+        landing_slope_max_deg: Robust maximum slope over the landing-precision disk (99th
+            percentile, 100 m baseline, decision D36), degrees: the value compared with
+            ``MissionRequirements.max_slope_deg``.
         rationale: Short explanation for the user, citing the computed numbers only.
     """
 

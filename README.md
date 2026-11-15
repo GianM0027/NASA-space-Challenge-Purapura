@@ -44,6 +44,15 @@ Without it the app still runs, with placeholder terrain:
 uv run python scripts/terrain_download_dem.py
 ```
 
+Before a demo, warm the caches so no site selection waits (needs `uv sync --all-groups` first):
+horizon masks of every catalog site, then Sun and Earth ephemerides for the demo window (needs
+network; align the GUI start date to the warm-up start).
+
+```bash
+uv run python scripts/terrain_warm_cache.py
+uv run python scripts/ephemeris_warm_cache.py --start 2026-12-01 --days 60
+```
+
 Backend, from the repo root:
 
 ```bash

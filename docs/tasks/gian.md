@@ -10,7 +10,10 @@ ranking (AI-2), extraction and explanations through the Claude Code CLI (AI-1, A
 archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a placeholder.
 
 ## Next (in priority order)
-0. AI: a region named in words ("near the south pole") sets no latitude bound, so the ranking runs
+Work split of day 2 (decision D37): Federico takes UI-3 and the trade-off (spec 4.8), Michael
+MA-1 to MA-3; Gian: AI-7 (named regions) and AI-1 acceptance, UI-11 (time wheel), contracts and
+API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, then UI-12.
+0. AI-7 (spec): a region named in words ("near the south pole") sets no latitude bound, so the ranking runs
    over all 36 sites (found 2026-11-16: top three Chang'e 6, Chang'e 4, Luna 13). Needs named
    regions mapped to bounds in code, each bound with a cited source.
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
@@ -47,6 +50,9 @@ archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a
 - Minor: Starlette warns that `httpx` with its TestClient is deprecated in favour of `httpx2`; switch after verifying the `httpx2` package.
 
 ## Answers to requests from others
+- Federico, landing-slope baseline and slope max: decided in D36 (100 m baseline as in the NASA
+  criterion; reported maxima are the 99th percentile). Implementation is yours. Spec section 7 now
+  lists LDEM_85S_20M; the README demo steps include `terrain_warm_cache.py`.
 - Michael, user-site description: done (D35); your `JsonSiteCatalog.update_user_site` is merged into
   `gian` and now implements the port method. Your CLI shim finding: fixed, `LUNARNAV_CLAUDE_BIN` no
   longer needed for an npm install.
