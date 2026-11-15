@@ -14,6 +14,7 @@ from lunarnav.ai.ranking import (
     CatalogRanker,
     SiteResult,
     criterion_weights,
+    longitude_in_range,
     margin_and_shortfall,
     roc_weights,
     score_sites,
@@ -156,6 +157,30 @@ def test_catalog_ranker_filters_scope_and_reports_unavailable_sites() -> None:
     assert set(ranking.unavailable) == {"broken"}
     assert ranking.weights == {"min_illumination_fraction": 1.0}
     assert evaluator.areas == [area, area]
+
+
+def test_longitude_scope_crosses_the_antimeridian() -> None:
+    assert longitude_in_range(170.0, 90.0, -90.0)
+    assert longitude_in_range(-170.0, 90.0, -90.0)
+    assert not longitude_in_range(0.0, 90.0, -90.0)
+    assert longitude_in_range(0.0, -90.0, 90.0)
+    assert not longitude_in_range(170.0, -90.0, 90.0)
+    assert longitude_in_range(-120.0, None, -90.0)
+    assert not longitude_in_range(-80.0, None, -90.0)
+
+
+def test_catalog_ranker_filters_longitude_scope() -> None:
+    sites = [_site("near", -89.0), _site("far", -89.0)]
+    sites[1] = sites[1].model_copy(update={"location": GeoPoint(lat_deg=-89.0, lon_deg=-175.0)})
+    evaluator = _Evaluator({"near": 0.9, "far": 0.9})
+    requirements = MissionRequirements(
+        window=WINDOW,
+        min_illumination_fraction=0.5,
+        longitude_min_deg=90.0,
+        longitude_max_deg=-90.0,
+    )
+    ranking = CatalogRanker(_Catalog(sites), evaluator, {}).rank(requirements)
+    assert [s.site_id for s in ranking.results] == ["far"]
 
 
 def test_catalog_ranker_takes_weights_from_the_archetype_priority() -> None:

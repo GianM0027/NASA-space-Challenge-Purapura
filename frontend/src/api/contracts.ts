@@ -120,8 +120,11 @@ export type MissionRequirementsInput = {
   max_slope_deg?: number | null
   latitude_min_deg?: number | null
   latitude_max_deg?: number | null
+  longitude_min_deg?: number | null
+  longitude_max_deg?: number | null
   origins?: Origin[] | null
   archetype_id?: string | null
+  region_id?: string | null
   field_sources?: Record<string, RequirementSource>
   rationale?: Record<string, string>
   source_request?: string | null
@@ -141,8 +144,11 @@ export type MissionRequirements = {
   max_slope_deg: number | null
   latitude_min_deg: number | null
   latitude_max_deg: number | null
+  longitude_min_deg: number | null
+  longitude_max_deg: number | null
   origins: Origin[] | null
   archetype_id: string | null
+  region_id: string | null
   field_sources: Record<string, RequirementSource>
   rationale: Record<string, string>
   source_request: string | null
@@ -164,7 +170,7 @@ export type OperationsArea = {
 
 export type Origin = "apollo" | "luna" | "surveyor" | "change" | "chandrayaan" | "slim" | "clps" | "artemis" | "other" | "user"
 
-export type RequirementSource = "user" | "archetype" | "default"
+export type RequirementSource = "user" | "archetype" | "region" | "default"
 
 export type RobustnessReport = {
   site_id: string | null

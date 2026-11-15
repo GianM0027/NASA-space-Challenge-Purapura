@@ -5,9 +5,11 @@
 
 Pipeline of one ``ask``:
 
-1. Extraction (LLM): from the conversation, the archetype that fits, the values the user stated
-   and the fields the user dropped. The LLM never supplies a value the user did not give.
-2. Merge (code): archetype values, then user values, then fields the user locked in the GUI;
+1. Extraction (LLM): from the conversation, the archetype that fits, the named region if any
+   (spec AI-7), the values the user stated and the fields the user dropped. The LLM never
+   supplies a value the user did not give.
+2. Merge (code): archetype values, then region bounds, then user values, then fields the user
+   locked in the GUI;
    the window comes from the stated dates, else the archetype duration, else the GUI window.
 3. Ranking (code), or a question back when the conversation gives no archetype and no value.
 
@@ -37,6 +39,7 @@ from lunarnav.ai.ranking import (
     set_criteria,
     window_hours,
 )
+from lunarnav.ai.regions import Region
 from lunarnav.contracts import (
     AiAnswer,
     AiRequest,
@@ -57,8 +60,16 @@ AREA_FIELDS = (
     "traverse_slope_limit_deg",
     "observer_height_above_ground_m",
 )
-SCALAR_FIELDS = (*(c.field for c in CRITERIA), "latitude_min_deg", "latitude_max_deg")
+SCALAR_FIELDS = (
+    *(c.field for c in CRITERIA),
+    "latitude_min_deg",
+    "latitude_max_deg",
+    "longitude_min_deg",
+    "longitude_max_deg",
+)
 USER_FIELDS = SCALAR_FIELDS + AREA_FIELDS
+# Duration criteria that an archetype may set "for the whole stay" (see _follow_whole_stay).
+WHOLE_STAY_FIELDS = ("min_continuous_light_h", "min_continuous_earth_visibility_h")
 EXPLAINED_SITES = 5
 MAX_ATTEMPTS = 2
 
@@ -75,6 +86,8 @@ _FIELD_HELP = {
     "max_slope_deg": "maximum slope over the landing disk, degrees",
     "latitude_min_deg": "southern latitude bound, degrees (south negative)",
     "latitude_max_deg": "northern latitude bound, degrees (south negative)",
+    "longitude_min_deg": "western longitude bound, east-positive degrees -180 to 180",
+    "longitude_max_deg": "eastern longitude bound, east-positive degrees -180 to 180",
     "landing_precision_m": "landing precision radius, meters",
     "operating_range_m": "operating range around the landing point, meters",
     "traverse_slope_limit_deg": "steepest slope rovers or crews may cross, degrees",
@@ -100,14 +113,22 @@ class _Extraction(BaseModel):
     action: Literal["rank", "ask", "other"]
     reply: str = Field(max_length=1000)
     archetype_id: str | None
+    region_id: str | None = None
     start_utc: str | None
     duration_h: float | None = Field(gt=0.0)
     fields: list[_StatedValue]
     cleared: list[Literal[USER_FIELDS]]
 
 
-def _extraction_schema(archetype_ids: Sequence[str]) -> dict[str, Any]:
-    """JSON Schema of the extraction answer, given to the CLI for validation."""
+def _extraction_schema(
+    archetype_ids: Sequence[str], region_ids: Sequence[str] = ()
+) -> dict[str, Any]:
+    """JSON Schema of the extraction answer, given to the CLI for validation.
+
+    Args:
+        archetype_ids: Archetype ids the model may pick.
+        region_ids: Region ids the model may pick.
+    """
     names = list(USER_FIELDS)
     return {
         "type": "object",
@@ -116,6 +137,7 @@ def _extraction_schema(archetype_ids: Sequence[str]) -> dict[str, Any]:
             "action",
             "reply",
             "archetype_id",
+            "region_id",
             "start_utc",
             "duration_h",
             "fields",
@@ -125,6 +147,7 @@ def _extraction_schema(archetype_ids: Sequence[str]) -> dict[str, Any]:
             "action": {"type": "string", "enum": ["rank", "ask", "other"]},
             "reply": {"type": "string"},
             "archetype_id": {"type": ["string", "null"], "enum": [*archetype_ids, None]},
+            "region_id": {"type": ["string", "null"], "enum": [*region_ids, None]},
             "start_utc": {"type": ["string", "null"]},
             "duration_h": {"type": ["number", "null"]},
             "fields": {
@@ -163,14 +186,18 @@ _EXPLAIN_SCHEMA: dict[str, Any] = {
 }
 
 
-def extraction_system_prompt(archetypes: Mapping[str, Archetype]) -> str:
+def extraction_system_prompt(
+    archetypes: Mapping[str, Archetype], regions: Mapping[str, Region] | None = None
+) -> str:
     """Return the task instructions of the extraction call.
 
     Args:
         archetypes: Archetypes by id; their summaries tell the model what each one is.
+        regions: Named regions by id; only names and summaries are shown, never their bounds.
     """
     fields = "\n".join(f"- {name}: {_FIELD_HELP[name]}" for name in USER_FIELDS)
     kinds = "\n".join(f"- {a.id}: {a.name}. {a.summary}" for a in archetypes.values())
+    places = "\n".join(f"- {r.id}: {r.label}. {r.summary}" for r in (regions or {}).values())
     return f"""You turn a conversation about a lunar landing mission into search parameters for a
 tool that ranks candidate landing sites from a fixed catalog. The tool computes every lunar
 quantity itself; you only read what the user wants.
@@ -181,12 +208,18 @@ Parameters you may set (field: meaning, unit):
 Mission archetypes (the tool fills their typical values itself, with sources):
 {kinds}
 
+Named regions of the Moon (the tool applies their bounds itself, with sources):
+{places or "- none available"}
+
 Rules:
 1. Never invent a number. Put a field in "fields" only when the user stated its value, or an
    unambiguous equivalent (e.g. "two weeks" -> 336 hours, "half the time" -> 0.5). Fractions are
    0-1, never percentages. Report every value stated anywhere in the conversation, earlier turns
    included, unless the user withdrew it. Give each one a short "rationale" quoting the user.
 2. "archetype_id": the archetype that matches the mission described, or null if none fits.
+   "region_id": the named region the user places the mission in ("near the south pole", "on the
+   far side"), or null when the user names none or none in the list fits. Keep the current region
+   unless the user changes or drops it. Never turn a region into latitude or longitude numbers.
 3. "start_utc": ISO 8601 date-time in UTC only if the user gave a date; "duration_h": mission
    duration in hours only if the user gave one. Otherwise null (the tool uses the archetype or
    the window shown in the GUI).
@@ -219,14 +252,18 @@ def _parse_start(text: str) -> datetime:
 
 
 def merge_requirements(
-    extraction: _Extraction, request: AiRequest, archetypes: Mapping[str, Archetype]
+    extraction: _Extraction,
+    request: AiRequest,
+    archetypes: Mapping[str, Archetype],
+    regions: Mapping[str, Region] | None = None,
 ) -> MissionRequirements:
-    """Build the requirements of one turn: archetype, then user values, then locked fields.
+    """Build the requirements of one turn: archetype, region, user values, then locked fields.
 
     Args:
         extraction: Validated answer of the extraction call.
         request: The request (current parameters, locked fields, GUI window).
         archetypes: Archetypes by id.
+        regions: Named regions by id (spec AI-7).
 
     Returns:
         Validated requirements with sources and rationale per field.
@@ -245,6 +282,12 @@ def merge_requirements(
                 values[field] = value
                 sources[field] = RequirementSource.ARCHETYPE
                 rationale[field] = f"{archetype.name}: {archetype.source_of(field) or 'typical'}"
+    region = (regions or {}).get(extraction.region_id or "")
+    if region is not None:
+        for field, value in region.bounds().items():
+            values[field] = value
+            sources[field] = RequirementSource.REGION
+            rationale[field] = f"{region.label}: {region.source}"
     for stated in extraction.fields:
         values[stated.name] = stated.value
         sources[stated.name] = RequirementSource.USER
@@ -262,6 +305,8 @@ def merge_requirements(
             rationale[field] = current.rationale.get(field, "Set by hand in the GUI.")
 
     window = _window(extraction, request, archetype, sources)
+    if archetype is not None:
+        _follow_whole_stay(archetype, window, values, sources, rationale)
     area_values = {f: values[f] for f in AREA_FIELDS if values.get(f) is not None}
     for field in AREA_FIELDS:
         if field not in area_values:
@@ -277,10 +322,43 @@ def merge_requirements(
         area=OperationsArea(**area_values) if area_values else None,
         **scalars,
         archetype_id=archetype.id if archetype is not None else None,
+        region_id=region.id if region is not None else None,
         field_sources=sources,
         rationale=rationale,
         source_request=request.text,
     )
+
+
+def _follow_whole_stay(
+    archetype: Archetype,
+    window: TimeWindow,
+    values: dict[str, float | None],
+    sources: dict[str, RequirementSource],
+    rationale: dict[str, str],
+) -> None:
+    """Stretch "for the whole stay" archetype values to the actual mission window.
+
+    An archetype duration value equal to its mission duration means "for the whole stay" (e.g.
+    the short crewed stay needs continuous light for its 156 h); when the user asks for another
+    duration, that value follows the window. Values the user stated are left alone.
+
+    Args:
+        archetype: The archetype of the turn.
+        window: The mission window of the turn.
+        values: Field values being merged; updated in place.
+        sources: Field sources; only fields still sourced from the archetype change.
+        rationale: Field rationale; updated in place for the fields that change.
+    """
+    stay_h = window_hours(window)
+    duration_h = archetype.mission_duration_h
+    if duration_h is None or stay_h == duration_h:
+        return
+    for field in WHOLE_STAY_FIELDS:
+        if sources.get(field) == RequirementSource.ARCHETYPE and values.get(field) == duration_h:
+            values[field] = stay_h
+            rationale[field] = (
+                f"{archetype.name}: for the whole stay ({archetype.source_of(field) or 'typical'})"
+            )
 
 
 def _window(
@@ -387,6 +465,7 @@ class ChatAssistant:
         catalog: Site catalog, for site names in explanations.
         llm: Language model client.
         archetypes: Mission archetypes by id.
+        regions: Named regions by id (spec AI-7); empty when the table does not exist yet.
     """
 
     def __init__(
@@ -395,6 +474,7 @@ class ChatAssistant:
         catalog: SiteCatalog,
         llm: LlmClient,
         archetypes: Mapping[str, Archetype],
+        regions: Mapping[str, Region] | None = None,
     ) -> None:
         """Store the collaborators.
 
@@ -403,11 +483,13 @@ class ChatAssistant:
             catalog: Site catalog.
             llm: Language model client.
             archetypes: Mission archetypes by id.
+            regions: Named regions by id; None means no regions.
         """
         self.ranker = ranker
         self.catalog = catalog
         self.llm = llm
         self.archetypes = archetypes
+        self.regions: Mapping[str, Region] = regions or {}
 
     def _extraction_prompt(self, request: AiRequest) -> str:
         """Return the data of the extraction call as JSON text."""
@@ -428,6 +510,7 @@ class ChatAssistant:
             "current_archetype": request.requirements.archetype_id
             if request.requirements
             else None,
+            "current_region": request.requirements.region_id if request.requirements else None,
             "locked_fields": request.locked_fields,
             "gui_window_start_utc": request.default_window.start_utc.isoformat(),
         }
@@ -439,8 +522,8 @@ class ChatAssistant:
         Raises:
             LlmError: If no valid answer is obtained in ``MAX_ATTEMPTS`` calls.
         """
-        system = extraction_system_prompt(self.archetypes)
-        schema = _extraction_schema(list(self.archetypes))
+        system = extraction_system_prompt(self.archetypes, self.regions)
+        schema = _extraction_schema(list(self.archetypes), list(self.regions))
         prompt = self._extraction_prompt(request)
         error: Exception | None = None
         for _ in range(MAX_ATTEMPTS):
@@ -452,7 +535,9 @@ class ChatAssistant:
             raw = self.llm.complete_json(system, attempt, schema)
             try:
                 extraction = _Extraction.model_validate(raw)
-                return extraction, merge_requirements(extraction, request, self.archetypes)
+                return extraction, merge_requirements(
+                    extraction, request, self.archetypes, self.regions
+                )
             except (ValidationError, ValueError) as invalid:
                 error = invalid
         raise LlmError(f"the AI could not read the request into valid parameters: {error}")
