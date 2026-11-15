@@ -75,6 +75,10 @@ recent missions, Haworth/de Gerlache points on the rim.
   precision, AI comment and summary, date-slip table, touchdown verdict + static diagram + points table,
   Earth outage when the Earth is not always visible); 5 vitest tests; build and lint clean.
 
+## Ideas (not planned)
+- Launch-window search in mission analysis: try start dates over a range (e.g. every 12 h for a
+  month) and report the first one where every constraint holds (IM-1, 7-day mission: 2028-03-06).
+
 ## Blockers
 
 ## Requests
