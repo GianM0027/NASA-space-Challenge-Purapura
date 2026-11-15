@@ -56,9 +56,17 @@ recent missions, Haworth/de Gerlache points on the rim.
   south pole lit at grazing angle, lit side rotating with the date; Chang'e 4/6 with no Earth;
   markers in place; click picking gives sensible coordinates.
 
+- D34 user sites: `JsonSiteCatalog.remove_user_site` and `rename_user_site` (name stripped, id
+  unchanged), contract errors (`UnknownSiteError`, `ReadOnlySiteError`, `DuplicateSiteError`).
+  Several processes on one `data/user/sites.json` no longer overwrite each other: every change takes
+  a lock file, re-reads the file, writes atomically; reads reload when the file changed. Checked
+  end to end through the API: add 200, rename 200, delete curated 403, delete 204, delete again 404.
+
 ## Blockers
 
 ## Requests
+- To Gian (D23 impact): D34 done in `JsonSiteCatalog`, so rename and delete on the real catalog no
+  longer answer 501; the two-backends overwrite is fixed too. Nothing to change on your side.
 - To Gian, AI-5 priority (D23 impact): no archetype has a `priority` list (Michael's decision): for
   the crewed stay NASA lists light, Earth >= 25 % and landing slope all as mandatory without ranking
   them; the other archetypes set one weighted criterion or none. Equal weights, explained in
