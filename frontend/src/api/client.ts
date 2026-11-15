@@ -8,6 +8,7 @@ import type {
   Evaluation,
   ExplainRequest,
   MissionRequirementsInput,
+  RenameSiteRequest,
   Site,
   SiteRanking,
   SkyState,
@@ -16,11 +17,37 @@ import type {
 /** Per-service origin reported by the backend: "real", "example" or "error: ...". */
 export type ModuleStatus = Record<string, string>
 
-async function request<T>(path: string, body?: unknown): Promise<T> {
+/** An HTTP error answer: the status code and the backend's `detail` text. */
+export class ApiError extends Error {
+  readonly status: number
+  readonly detail: string
+
+  constructor(path: string, status: number, detail: string) {
+    super(`${path}: HTTP ${status} ${detail.slice(0, 300)}`)
+    this.name = 'ApiError'
+    this.status = status
+    this.detail = detail
+  }
+}
+
+/** Return FastAPI's `detail` string from an error body, or the raw body when it has none. */
+function errorDetail(body: string): string {
+  try {
+    const parsed: unknown = JSON.parse(body)
+    if (parsed && typeof parsed === 'object' && 'detail' in parsed && typeof parsed.detail === 'string') {
+      return parsed.detail
+    }
+  } catch {
+    // Not JSON (e.g. a proxy error page): show it as it is.
+  }
+  return body
+}
+
+async function request<T>(path: string, body?: unknown, method?: string): Promise<T> {
   let response: Response
   try {
     response = await fetch(path, {
-      method: body === undefined ? 'GET' : 'POST',
+      method: method ?? (body === undefined ? 'GET' : 'POST'),
       headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
@@ -29,15 +56,19 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
     throw new Error('Backend unreachable: is it running on port 8000 (README, Run)?')
   }
   if (!response.ok) {
-    const detail = await response.text()
-    throw new Error(`${path}: HTTP ${response.status} ${detail.slice(0, 300)}`)
+    throw new ApiError(path, response.status, errorDetail(await response.text()))
   }
+  if (response.status === 204) return undefined as T
   return (await response.json()) as T
 }
 
 export const api = {
   modules: () => request<ModuleStatus>('/api/modules'),
   sites: () => request<Site[]>('/api/sites'),
+  addSite: (site: Site) => request<Site>('/api/sites', site),
+  renameSite: (siteId: string, body: RenameSiteRequest) =>
+    request<Site>(`/api/sites/${encodeURIComponent(siteId)}`, body, 'PATCH'),
+  removeSite: (siteId: string) => request<void>(`/api/sites/${encodeURIComponent(siteId)}`, undefined, 'DELETE'),
   sky: (timeUtc: string) => request<SkyState>(`/api/sky?time_utc=${encodeURIComponent(timeUtc)}`),
   evaluate: (body: EvaluateRequest) => request<Evaluation>('/api/evaluate', body),
   rank: (body: MissionRequirementsInput) => request<SiteRanking>('/api/rank', body),

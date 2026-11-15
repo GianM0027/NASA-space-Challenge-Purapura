@@ -162,7 +162,7 @@ label {
 
 button,
 select,
-input[type='datetime-local'] {
+input:not([type='checkbox']) {
   padding: 4px 8px;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -208,6 +208,34 @@ aside {
 
 .sites button.active {
   border-color: var(--accent);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.row .grow,
+.row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sites .row button:not(.grow) {
+  width: auto;
+  font-size: 11px;
+  border-color: var(--border);
+}
+
+.row.confirm {
+  flex-wrap: wrap;
+  margin: 2px 0 6px;
+  font-size: 12px;
+}
+
+input.num {
+  width: 6em;
 }
 
 .dot {

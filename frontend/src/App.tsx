@@ -1,14 +1,16 @@
-// ABOUTME: Root of the LunarNav frontend: globe, date control, AI box, site list and panel, modules
+// ABOUTME: Root of the LunarNav frontend: globe, AI box, site lists, coordinates box, site panel, modules
 // ABOUTME: Owner: Gian. Holds the selection and the time window; children are presentational
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AiAssistant } from './ai/AiAssistant'
-import { api, type ModuleStatus } from './api/client'
+import { api, ApiError, type ModuleStatus } from './api/client'
 import type { Evaluation, GeoPoint, Site, SkyState, TimeWindow } from './api/contracts'
 import { formatUtc, hoursBetween } from './format'
 import { MoonGlobe, type GlobeFocus } from './globe/MoonGlobe'
 import { MOON_TEXTURE_ATTRIBUTION } from './globe/moonTexture'
+import { CoordinatesBox, MyLocations } from './panels/LocationsPanel'
 import { SitePanel, type WindowSettings } from './panels/SitePanel'
+import { buildUserSite, describeSiteError } from './sites/userSites'
 
 /** What is being evaluated: a catalog site or a point picked on the globe. */
 type Target = { siteId: string } | { location: GeoPoint }
@@ -36,6 +38,8 @@ function App() {
   const [uniformLight, setUniformLight] = useState(false)
   const [focus, setFocus] = useState<GlobeFocus | null>(null)
   const [target, setTarget] = useState<Target | null>(null)
+  // Last point clicked on the globe; its nonce remounts the coordinates box with that point.
+  const [clicked, setClicked] = useState<{ point: GeoPoint; nonce: number } | null>(null)
   const [settings, setSettings] = useState<WindowSettings>(() => ({
     startUtc: todayUtc(),
     durationHours: 30 * 24,
@@ -122,7 +126,76 @@ function App() {
     },
     [pickSite],
   )
-  const pickLocation = useCallback((location: GeoPoint) => setTarget({ location }), [])
+  const pickLocation = useCallback((location: GeoPoint) => {
+    setTarget({ location })
+    setClicked({ point: location, nonce: Date.now() })
+  }, [])
+  // Typed coordinates are evaluated exactly like a globe click (site_id null).
+  const analyzePoint = useCallback((location: GeoPoint) => {
+    setTarget({ location })
+    setFocus({ lat_deg: location.lat_deg, lon_deg: location.lon_deg, nonce: Date.now() })
+  }, [])
+
+  const refreshSites = useCallback(async () => {
+    try {
+      setSites(await api.sites())
+    } catch (reason: unknown) {
+      setBootError(String(reason))
+    }
+  }, [])
+
+  const saveLocation = useCallback(
+    async (name: string, description: string, location: GeoPoint): Promise<string | null> => {
+      const built = buildUserSite(name, location, description)
+      if ('error' in built) return built.error
+      try {
+        const saved = await api.addSite(built.site)
+        await refreshSites()
+        setTarget({ siteId: saved.id })
+        return null
+      } catch (reason: unknown) {
+        return describeSiteError(reason, built.site.id)
+      }
+    },
+    [refreshSites],
+  )
+
+  const renameLocation = useCallback(
+    async (siteId: string, name: string): Promise<string | null> => {
+      try {
+        await api.renameSite(siteId, { name })
+        await refreshSites()
+        return null
+      } catch (reason: unknown) {
+        if (reason instanceof ApiError && reason.status === 404) await refreshSites()
+        return describeSiteError(reason, siteId)
+      }
+    },
+    [refreshSites],
+  )
+
+  const deleteLocation = useCallback(
+    async (siteId: string): Promise<string | null> => {
+      const clearIfShown = () =>
+        setTarget((current) => (current && 'siteId' in current && current.siteId === siteId ? null : current))
+      try {
+        await api.removeSite(siteId)
+        clearIfShown()
+        await refreshSites()
+        return null
+      } catch (reason: unknown) {
+        if (reason instanceof ApiError && reason.status === 404) {
+          clearIfShown()
+          await refreshSites()
+        }
+        return describeSiteError(reason, siteId)
+      }
+    },
+    [refreshSites],
+  )
+
+  const curatedSites = useMemo(() => sites.filter((site) => site.origin !== 'user'), [sites])
+  const userSites = useMemo(() => sites.filter((site) => site.origin === 'user'), [sites])
 
   const placeholders = Object.entries(modules).filter(([, status]) => status !== 'real')
 
@@ -218,7 +291,7 @@ function App() {
           <section className="panel">
             <h2>Sites</h2>
             <ul className="sites">
-              {sites.map((site) => (
+              {curatedSites.map((site) => (
                 <li key={site.id}>
                   <button
                     className={selectedSite?.id === site.id ? 'active' : undefined}
@@ -232,6 +305,19 @@ function App() {
               ))}
             </ul>
           </section>
+          <MyLocations
+            sites={userSites}
+            selectedId={selectedSite?.id ?? null}
+            onPick={pickSite}
+            onRename={renameLocation}
+            onDelete={deleteLocation}
+          />
+          <CoordinatesBox
+            key={clicked?.nonce ?? 0}
+            initial={clicked?.point ?? null}
+            onAnalyze={analyzePoint}
+            onSave={saveLocation}
+          />
           <SitePanel
             title={selectedSite?.name ?? null}
             location={selectedLocation}
