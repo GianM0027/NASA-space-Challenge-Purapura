@@ -1,4 +1,4 @@
-// ABOUTME: Site panel (spec UI-2): time window controls, power and communication metrics of a point
+// ABOUTME: Site panel (spec UI-2): time window (date, duration, step), power and comms metrics
 // ABOUTME: Owner: Gian. Shows numbers from Evaluation only; the elevation timeline is a separate component
 
 import type { Evaluation, GeoPoint } from '../api/contracts'
@@ -9,10 +9,13 @@ import {
   formatDuration,
   formatPercent,
   formatUtc,
+  fromInputValue,
   hoursBetween,
+  toInputValue,
 } from '../format'
 
-export type WindowSettings = { durationDays: number; stepMinutes: number }
+/** The evaluated time window: start instant (ISO, UTC), length in hours, sampling step. */
+export type WindowSettings = { startUtc: string; durationHours: number; stepMinutes: number }
 
 type Props = {
   title: string | null
@@ -24,7 +27,7 @@ type Props = {
   error: string | null
 }
 
-const DURATIONS = [1, 7, 14, 30, 60]
+const DURATIONS_H = [1, 7, 14, 30, 60].map((days) => days * 24)
 const STEPS = [10, 30, 60, 240]
 
 /** One "time to next event" line, relative to the window start. */
@@ -57,37 +60,36 @@ function Metric(props: { label: string; value: string }) {
 /** Window controls plus the metrics of the selected point. */
 export function SitePanel(props: Props) {
   const { title, location, settings, onSettings, evaluation, loading, error } = props
-  if (!location) {
-    return (
-      <section className="panel">
-        <h2>Site</h2>
-        <p className="muted">Pick a site marker or click anywhere on the globe.</p>
-      </section>
-    )
-  }
-  const metrics = evaluation?.metrics
-  const start = evaluation?.window.start_utc
-  return (
-    <section className="panel">
-      <h2>{title ?? 'Custom location'}</h2>
-      <p className="muted">{formatCoordinates(location)}</p>
-
-      <div className="controls">
-        <label>
-          Window
-          <select
-            value={settings.durationDays}
-            onChange={(event) =>
-              onSettings({ ...settings, durationDays: Number(event.target.value) })
-            }
-          >
-            {DURATIONS.map((days) => (
-              <option key={days} value={days}>
-                {days} d
-              </option>
-            ))}
-          </select>
-        </label>
+  // A mission window from the AI box may have a length outside the fixed choices.
+  const durations = DURATIONS_H.includes(settings.durationHours)
+    ? DURATIONS_H
+    : [...DURATIONS_H, settings.durationHours].sort((a, b) => a - b)
+  const controls = (
+    <div className="controls">
+      <label>
+        Start (UTC)
+        <input
+          type="datetime-local"
+          value={toInputValue(settings.startUtc)}
+          onChange={(event) =>
+            event.target.value && onSettings({ ...settings, startUtc: fromInputValue(event.target.value) })
+          }
+        />
+      </label>
+      <label>
+        Window
+        <select
+          value={settings.durationHours}
+          onChange={(event) => onSettings({ ...settings, durationHours: Number(event.target.value) })}
+        >
+          {durations.map((hours) => (
+            <option key={hours} value={hours}>
+              {formatDuration(hours)}
+              {DURATIONS_H.includes(hours) ? '' : ' (mission)'}
+            </option>
+          ))}
+        </select>
+      </label>
         <label>
           Step
           <select
@@ -103,7 +105,24 @@ export function SitePanel(props: Props) {
             ))}
           </select>
         </label>
-      </div>
+    </div>
+  )
+  if (!location) {
+    return (
+      <section className="panel">
+        <h2>Site</h2>
+        {controls}
+        <p className="muted">Pick a site marker or click anywhere on the globe.</p>
+      </section>
+    )
+  }
+  const metrics = evaluation?.metrics
+  const start = evaluation?.window.start_utc
+  return (
+    <section className="panel">
+      <h2>{title ?? 'Custom location'}</h2>
+      <p className="muted">{formatCoordinates(location)}</p>
+      {controls}
 
       {error && <p className="error">{error}</p>}
       {loading && !evaluation && <p className="muted">Evaluating...</p>}

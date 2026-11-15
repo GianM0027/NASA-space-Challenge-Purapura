@@ -134,7 +134,8 @@ function RankRow(props: {
 export function AiAssistant(props: {
   sites: Site[]
   defaultWindow: TimeWindow
-  onPickSite: (siteId: string) => void
+  /** Select a ranked site; the window is the mission window the ranking used. */
+  onPickSite: (siteId: string, window: TimeWindow | null) => void
 }) {
   const { sites, defaultWindow, onPickSite } = props
   const [minimized, setMinimized] = useState(false)
@@ -243,7 +244,7 @@ export function AiAssistant(props: {
       open={open === score.site_id}
       onClick={() => {
         setOpen(open === score.site_id ? null : score.site_id)
-        onPickSite(score.site_id)
+        onPickSite(score.site_id, ranking!.requirements.window)
       }}
     />
   )

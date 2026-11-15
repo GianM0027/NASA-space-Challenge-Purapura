@@ -12,14 +12,14 @@ archetypes from Michael's file (AI-5, decision D33). Mission analysis is still a
 ## Next (in priority order)
 1. Look at the globe with the Browser pane visible: terminator, markers and click picking were
    checked through the DOM and network only, not by eye.
-2. AI box: decide whether picking a ranked site sets the site panel to the mission window
-   (today the panel keeps its own window, so its numbers differ from the ranking's).
 3. AI-1 acceptance: 5 scripted requests through the real CLI, recorded with their timings.
 4. UI-3 (side-by-side comparison).
 5. MA-1 (date-slip sweep), MA-2 (dispersion), MA-3 (summary), UI-5 (mission analysis view), AI-6 (AI presents it).
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Site panel holds the whole window (start date, duration, step), always visible; picking a ranked
+  site sets it to the mission window, so panel and ranking show the same numbers (checked in the browser).
 - UI-4, AI-1, AI-2, AI-3, AI-4, AI-5 (decision D33): `lunarnav.ai` (ranking with ROC weights, archetype
   loader, CLI client with no context, number check, chat assistant) and the AI box; 29 tests in
   `tests/ai/` (sabotage-checked), checked in the browser on real data (short crewed stay: 9 polar
