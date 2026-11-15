@@ -4,10 +4,11 @@
 # Federico: tasks
 
 ## Status
-D36 done (100 m landing baseline, 99th percentile maxima). Next: trade-off (D37, spec 4.8): contract request to Gian.
+Trade-off core done (AHP geometric mean, CR, normalization, scores, ranking, sensitivity). Next: live Excel export.
 
 ## Next (in priority order)
-1. Trade-off (D37): UI-3, TO-1..TO-4, then TO-6; send the contract models to Gian first.
+1. Trade-off export: live Excel workbook (template structure, formulas, editable inputs), then compare/ UI.
+2. Wire the contract models (requested from Gian) once they land: `build_tradeoff()` factory.
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -59,8 +60,15 @@ for tests write small fakes of both that return the example payloads.
   Known answers: exact plane, periodic roughness reduced by exactly 10/34, isolated spike ignored. Crew area,
   landing P99: IM-2 4.1, Nobile rim 1 8.9, Malapert 11.2, Mons Mouton plateau 20.4 deg. The horizon cache is
   unchanged: it stores masks only, which D36 does not affect, so no cache version bump.
+- Trade-off core (`src/lunarnav/tradeoff/`): 6 computed FoMs from `Evaluation` plus up to 3 user FoMs;
+  single-level AHP with row geometric-mean weights and Saaty CR (team decision with the reference template);
+  default judgments all 1 (Governale et al. 2021 trades off micro-launchers, no matching criterion);
+  per-FoM normalization summing to 1 (complement for lower-is-better); D_k sensitivity on normalized values.
+  22 known-answer tests incl. the spec acceptance case (3 scenarios, fixed weights).
 
 ## Blockers
+- Trade-off contract models and TO-2 wording (geometric mean) requested from Gian; the module works on
+  internal types until then.
 
 ## Requests
 - Gian (README, demo checklist): after `scripts/terrain_download_dem.py`, run
