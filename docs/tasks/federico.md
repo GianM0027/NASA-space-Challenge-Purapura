@@ -4,10 +4,12 @@
 # Federico: tasks
 
 ## Status
-D36 done (100 m landing baseline, 99th percentile maxima). Next: trade-off (D37, spec 4.8): contract request to Gian.
+Trade-off complete: engine, export (autofit, no cut text), and the compare/ view (UI-3), redesigned as a guided
+popup opened from a dock pill. Waiting on Gian to mount it in the App dock.
 
 ## Next (in priority order)
-1. Trade-off (D37): UI-3, TO-1..TO-4, then TO-6; send the contract models to Gian first.
+1. Once mounted by Gian: polish the comparison view from team feedback; TO-6 sensitivity view is already in the table.
+2. If the PDF report is assigned to me: the trade-off section (ranking + details per criterion).
 
 Tips: the `Evaluator` receives an `EphemerisProvider` and a `TerrainProvider` in its constructor;
 for tests write small fakes of both that return the example payloads.
@@ -59,10 +61,38 @@ for tests write small fakes of both that return the example payloads.
   Known answers: exact plane, periodic roughness reduced by exactly 10/34, isolated spike ignored. Crew area,
   landing P99: IM-2 4.1, Nobile rim 1 8.9, Malapert 11.2, Mons Mouton plateau 20.4 deg. The horizon cache is
   unchanged: it stores masks only, which D36 does not affect, so no cache version bump.
+- Trade-off core (`src/lunarnav/tradeoff/`): 6 computed FoMs from `Evaluation` plus up to 3 user FoMs;
+  single-level AHP with row geometric-mean weights and Saaty CR (team decision with the reference template);
+  default judgments all 1 (Governale et al. 2021 trades off micro-launchers, no matching criterion);
+  per-FoM normalization summing to 1 (complement for lower-is-better); D_k sensitivity on normalized values.
+  22 known-answer tests incl. the spec acceptance case (3 scenarios, fixed weights).
+- Trade-off wired (D39): `LunarTradeoff` + `build_tradeoff()`; `/api/tradeoff` and `/api/tradeoff/export`
+  work. Live Excel export following the team's reference template (sheets 0-7: FoM, AHP with weight mode,
+  Scoring with direction, Decision, Sensitivity, Recommendation incl. AI comment, Data & sources); no array
+  formulas. Tests re-evaluate the workbook formulas (`formulas` package) and match the app's weights, CR,
+  scores, ranks and D_k; editing an input (FoM off) recomputes like the app. `openpyxl`, `formulas` added
+  to the tradeoff group. Sensitivity follows the contract: 1 / D_k with D_k in percent.
+- UI-3 view `frontend/src/compare/CompareView.tsx`: 2-4 scenarios (site, name, start) with shared mission (duration,
+  step, area, panel height); FoM toggles; up to 3 user FoMs; weights equal / pairwise AHP (Saaty select per pair) /
+  direct; results: scores and ranking, side-by-side table (value and share, D_k), CR check, AI comment, method;
+  Excel export download. Pure logic in `model.ts` (unit-tested), calls in `tradeoffApi.ts`. Checked in the browser
+  through the dev-only page `/src/compare/preview.html` (same numbers as the API; AHP CR 5.4 % shown as consistent).
+- Excel export layout: column widths and wrapped row heights fitted to the content, formula text estimated
+  from FoM and scenario names; test checks no text is cut (fails when the autofit is disabled).
+- UI-3 redesign: guided popup (1 scenarios with full-width site select, 2 mission settings collapsed with a
+  summary, 3 criteria with one-line hints and custom criteria, 4 weights as equal / pairwise sliders with a
+  Saaty readout / direct), results column with ranking bars and per-criterion table. Opened from a dock pill.
 
 ## Blockers
 
 ## Requests
+- Gian (App.tsx, D37 hook outside compare/): mount the comparison view in the bottom-left `.dock`, next to
+  `<AiAssistant />`: `<CompareView sites={sites} defaultWindow={panelWindow} initialSiteId={selectedSite?.id ?? null} />`.
+  It is self-contained like the AI assistant: a "Trade-off" pill that opens a full-app popup (fixed, z-index 50,
+  Esc or Minimize keeps the setup and result). Optional `onResult` prop hands every result to App (e.g. for a
+  PDF report). Optionally move `runTradeoff` / `downloadTradeoff` from `compare/tradeoffApi.ts` into `api/client.ts`.
+- Gian (proposal, owner to decide): PDF report builder, a dock pill "Report" with checkboxes per output
+  (site evaluation, mission analysis, AI ranking, trade-off) and a live preview; full brief sent by Federico.
 - Gian (README, demo checklist): after `scripts/terrain_download_dem.py`, run
   `uv run python scripts/terrain_warm_cache.py` (next to Michael's `scripts/ephemeris_warm_cache.py`).
 - Gian (D32 follow-up, D23 impact): (1) merging this PR restores `main` (13 tests red and terrain out of
