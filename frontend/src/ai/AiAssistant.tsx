@@ -19,6 +19,11 @@ import {
 
 type Tab = 'chat' | 'ranking'
 
+// Resize limits of the box, pixels: never shorter than the header plus a few lines, and always
+// leaving room for the app header and the legend above and below the dock.
+const MIN_HEIGHT_PX = 220
+const SCREEN_MARGIN_PX = 140
+
 const SOURCE_LABEL: Record<string, string> = { user: 'you', archetype: 'archetype', region: 'region', default: 'GUI' }
 
 /** One editable criterion chip: click to edit, × to remove. */
@@ -156,6 +161,28 @@ export function AiAssistant(props: {
   // Increments on every new ranking, so a late explanation of an older ranking is dropped.
   const generation = useRef(0)
   const lastText = useRef('')
+  // Height set by dragging the top edge; null lets the box size itself (up to the screen limit).
+  const [height, setHeight] = useState<number | null>(null)
+  const box = useRef<HTMLElement>(null)
+  const drag = useRef<{ y: number; height: number } | null>(null)
+  const chat = useRef<HTMLDivElement>(null)
+
+  // Keep the newest message in view.
+  useEffect(() => {
+    chat.current?.scrollTo({ top: chat.current.scrollHeight })
+  }, [history, busy, tab])
+
+  const onResizeStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!box.current) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    drag.current = { y: event.clientY, height: box.current.getBoundingClientRect().height }
+  }
+  const onResizeMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag.current) return
+    // The box is anchored at the bottom: dragging the top edge up makes it taller.
+    const wanted = drag.current.height + drag.current.y - event.clientY
+    setHeight(Math.min(Math.max(wanted, MIN_HEIGHT_PX), globalThis.innerHeight - SCREEN_MARGIN_PX))
+  }
 
   const names = new Map(sites.map((site) => [site.id, site.name]))
 
@@ -257,7 +284,15 @@ export function AiAssistant(props: {
   )
 
   return (
-    <section className="ai-box" aria-label="AI assistant">
+    <section className="ai-box" aria-label="AI assistant" ref={box} style={height ? { height } : undefined}>
+      <div
+        className="ai-resize"
+        title="Drag to resize; double-click for automatic height"
+        onPointerDown={onResizeStart}
+        onPointerMove={onResizeMove}
+        onPointerUp={() => (drag.current = null)}
+        onDoubleClick={() => setHeight(null)}
+      />
       <div className="ai-head">
         <div className="tabs">
           <button className={tab === 'chat' ? 'active' : undefined} onClick={() => setTab('chat')}>
@@ -303,7 +338,7 @@ export function AiAssistant(props: {
       )}
 
       {tab === 'chat' ? (
-        <div className="chat">
+        <div className="chat" ref={chat}>
           {history.length === 0 && (
             <p className="muted small">
               Describe the mission: type, dates, what it needs (light, Earth contact, flat ground).

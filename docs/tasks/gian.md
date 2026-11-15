@@ -23,6 +23,12 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- AI box: height capped to the screen with a scrolling chat (the cap had stopped working inside the
+  dock), vertical resize from a grip on the top edge (double-click: automatic), newest message kept
+  in view.
+- UI-6 (data attribution): short credit in the legend ("Data: NASA LRO, LOLA, JPL Horizons") with a
+  small popover listing spec section 7 plus NASA HLS, catalog and domain sources and Claude; the
+  site panel shows the coordinate source of the selected site.
 - UI-13 (decision D42): `report/sections/AiRanking.tsx` (request, criteria with sources, ranked
   sites with checked AI reasons, weights) with a smoke test; `onRanking` on the AI box.
 - TO-5: `/api/tradeoff` adds a two-sentence AI comment whose numbers must all appear in the result

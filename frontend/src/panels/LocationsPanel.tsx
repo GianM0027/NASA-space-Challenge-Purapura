@@ -1,4 +1,4 @@
-// ABOUTME: Coordinates box (analyze or save a typed or clicked point) and "My locations" (edit, delete)
+// ABOUTME: Coordinates box (analyze or save a typed or clicked point) and "Custom locations" (edit, delete)
 // ABOUTME: Owner: Gian. Presentational: the parent makes the API calls and returns an error message or null
 
 import { useState } from 'react'
@@ -31,6 +31,8 @@ export function CoordinatesBox(props: {
   const [description, setDescription] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  // Saving is offered for the point last analyzed; editing a coordinate withdraws it.
+  const [analyzed, setAnalyzed] = useState(false)
 
   /** Validate the fields; show the problem and return null when they are invalid. */
   function point(): GeoPoint | null {
@@ -64,36 +66,50 @@ export function CoordinatesBox(props: {
         onSubmit={(event) => {
           event.preventDefault()
           const location = point()
-          if (location) onAnalyze(location)
+          if (location) {
+            onAnalyze(location)
+            setAnalyzed(true)
+          }
         }}
       >
         <label title="Planetocentric latitude, degrees, -90 to 90">
           Lat
-          <input className="num" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="-89.5" />
+          <input className="num" value={lat} onChange={(e) => {
+              setLat(e.target.value)
+              setAnalyzed(false)
+            }} placeholder="-89.5" />
         </label>
         <label title="East-positive longitude, degrees, -180 to below 180">
           Lon E
-          <input className="num" value={lon} onChange={(e) => setLon(e.target.value)} placeholder="45" />
+          <input className="num" value={lon} onChange={(e) => {
+              setLon(e.target.value)
+              setAnalyzed(false)
+            }} placeholder="45" />
         </label>
-        <button type="submit">Analyze</button>
-      </form>
-      <form
-        className="controls"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name (required)" />
-        <input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description (optional)"
-        />
-        <button type="submit" disabled={saving}>
-          {saving ? 'Saving...' : 'Save as location'}
+        <button type="submit" className="primary">
+          Analyze
         </button>
       </form>
+      {/* Name, description and save appear once the typed point has been analyzed. */}
+      {analyzed && (
+        <form
+          className="controls"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void save()
+          }}
+        >
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name (required)" />
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (optional)"
+          />
+          <button type="submit" disabled={saving}>
+            {saving ? 'Saving...' : 'Save as custom location'}
+          </button>
+        </form>
+      )}
       {message && <p className="error">{message}</p>}
     </section>
   )
@@ -216,10 +232,10 @@ export function MyLocations(props: {
 
   return (
     <section className="panel">
-      <h2>My locations</h2>
+      <h2>Custom locations</h2>
       {notice && <p className="error">{notice}</p>}
       {sites.length === 0 ? (
-        <p className="muted">None yet: type coordinates or click the globe, then "Save as location".</p>
+        <p className="muted">None yet: type coordinates or click the globe, then "Save as custom location".</p>
       ) : (
         <ul className="sites">
           {sites.map((site) => (
