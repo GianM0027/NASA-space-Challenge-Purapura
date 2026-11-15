@@ -8,7 +8,14 @@ from pathlib import Path
 import pytest
 
 from lunarnav.catalog import JsonSiteCatalog, build_catalog
-from lunarnav.contracts import GeoPoint, Origin, Site
+from lunarnav.contracts import (
+    DuplicateSiteError,
+    GeoPoint,
+    Origin,
+    ReadOnlySiteError,
+    Site,
+    UnknownSiteError,
+)
 
 CURATED = Path(__file__).parents[2] / "data" / "catalog" / "sites.json"
 
@@ -123,6 +130,84 @@ def test_invalid_file_names_the_path(tmp_path: Path) -> None:
     bad.write_text('[{"id": "x"}]', encoding="utf-8")
     with pytest.raises(ValueError, match=r"bad\.json"):
         JsonSiteCatalog(curated_path=bad, user_path=tmp_path / "u.json")
+
+
+def test_errors_are_contract_errors(catalog: JsonSiteCatalog) -> None:
+    with pytest.raises(UnknownSiteError):
+        catalog.get_site("does-not-exist")
+    catalog.add_user_site(_user_site())
+    with pytest.raises(DuplicateSiteError):
+        catalog.add_user_site(_user_site())
+
+
+# --- D34: rename and remove user sites --------------------------------------------------------
+
+
+def test_remove_user_site(catalog: JsonSiteCatalog) -> None:
+    n = len(catalog.list_sites())
+    catalog.add_user_site(_user_site())
+    catalog.remove_user_site("my-crater")
+    assert len(catalog.list_sites()) == n
+    with pytest.raises(UnknownSiteError):
+        catalog.get_site("my-crater")
+
+
+def test_rename_user_site_strips_and_keeps_id(catalog: JsonSiteCatalog) -> None:
+    catalog.add_user_site(_user_site())
+    renamed = catalog.rename_user_site("my-crater", "  Shackleton rim camp  ")
+    assert renamed.id == "my-crater"
+    assert renamed.name == "Shackleton rim camp"
+    assert renamed.location == _user_site().location
+    assert catalog.get_site("my-crater") == renamed
+
+
+def test_rename_rejects_blank_name(catalog: JsonSiteCatalog) -> None:
+    catalog.add_user_site(_user_site())
+    with pytest.raises(ValueError, match="blank"):
+        catalog.rename_user_site("my-crater", "   ")
+    assert catalog.get_site("my-crater").name == "My crater"
+
+
+def test_curated_site_cannot_be_changed(catalog: JsonSiteCatalog) -> None:
+    with pytest.raises(ReadOnlySiteError):
+        catalog.remove_user_site("apollo-11")
+    with pytest.raises(ReadOnlySiteError):
+        catalog.rename_user_site("apollo-11", "Eagle")
+    assert catalog.get_site("apollo-11").name.startswith("Apollo 11")
+
+
+def test_unknown_site_cannot_be_changed(catalog: JsonSiteCatalog) -> None:
+    with pytest.raises(UnknownSiteError):
+        catalog.remove_user_site("nope")
+    with pytest.raises(UnknownSiteError):
+        catalog.rename_user_site("nope", "Name")
+
+
+def test_rename_and_remove_round_trip(tmp_path: Path) -> None:
+    user = tmp_path / "user" / "sites.json"
+    first = JsonSiteCatalog(curated_path=CURATED, user_path=user)
+    first.add_user_site(_user_site("keep"))
+    first.add_user_site(_user_site("drop"))
+    first.rename_user_site("keep", "Renamed")
+    first.remove_user_site("drop")
+    reloaded = JsonSiteCatalog(curated_path=CURATED, user_path=user)
+    assert reloaded.get_site("keep").name == "Renamed"
+    with pytest.raises(UnknownSiteError):
+        reloaded.get_site("drop")
+
+
+def test_two_catalogs_on_one_file_keep_both_additions(tmp_path: Path) -> None:
+    # Gian saw two dev servers overwrite each other's user sites: each change now re-reads the file
+    user = tmp_path / "user" / "sites.json"
+    a = JsonSiteCatalog(curated_path=CURATED, user_path=user)
+    b = JsonSiteCatalog(curated_path=CURATED, user_path=user)
+    a.add_user_site(_user_site("from-a"))
+    b.add_user_site(_user_site("from-b"))
+    a.rename_user_site("from-b", "Renamed by A")
+    ids = {s.id for s in JsonSiteCatalog(curated_path=CURATED, user_path=user).list_sites()}
+    assert {"from-a", "from-b"} <= ids
+    assert b.get_site("from-b").name == "Renamed by A"  # b sees a's change on read
+    assert not list(user.parent.glob("*.lock"))  # lock released
 
 
 def test_build_catalog_reads_repo_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
