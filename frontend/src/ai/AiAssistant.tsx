@@ -1,7 +1,7 @@
 // ABOUTME: AI box (spec UI-4): chat and ranking tabs sharing one bar of editable mission criteria
 // ABOUTME: Owner: Gian. Edits rerank without the LLM; rationales arrive after the ranking
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import type { ChatMessage, MissionRequirements, Site, SiteRanking, SiteScore, TimeWindow } from '../api/contracts'
 import { formatUtc, hoursBetween } from '../format'
@@ -136,8 +136,10 @@ export function AiAssistant(props: {
   defaultWindow: TimeWindow
   /** Select a ranked site; the window is the mission window the ranking used. */
   onPickSite: (siteId: string, window: TimeWindow | null) => void
+  /** Every new ranking, explanations included, e.g. for the PDF report (decision D42). */
+  onRanking?: (ranking: SiteRanking) => void
 }) {
-  const { sites, defaultWindow, onPickSite } = props
+  const { sites, defaultWindow, onPickSite, onRanking } = props
   // Starts as a pill: the box opens only when the user asks for it.
   const [minimized, setMinimized] = useState(true)
   const [tab, setTab] = useState<Tab>('chat')
@@ -156,6 +158,10 @@ export function AiAssistant(props: {
   const lastText = useRef('')
 
   const names = new Map(sites.map((site) => [site.id, site.name]))
+
+  useEffect(() => {
+    if (ranking) onRanking?.(ranking)
+  }, [ranking, onRanking])
 
   const showRanking = (next: SiteRanking, firstTime: boolean) => {
     const mine = ++generation.current

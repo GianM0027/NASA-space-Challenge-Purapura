@@ -45,7 +45,7 @@ export type SectionId = 'cover' | 'site' | 'analysis' | 'ranking' | 'tradeoff' |
 export type SectionProps<T> = { data: T; sites: Site[]; number: number }
 
 /** Data of each section. */
-export type CoverData = { window: TimeWindow; generatedUtc: string; contents: string[] }
+export type CoverData = { title: string; window: TimeWindow; generatedUtc: string; contents: string[] }
 export type SiteSectionData = Evaluation
 /** Only the tabs with a report, in the order of the analysis window. */
 export type MissionAnalysisData = AnalysisTab[]

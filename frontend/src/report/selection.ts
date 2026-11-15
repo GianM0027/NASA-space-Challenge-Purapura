@@ -29,12 +29,16 @@ export function isAvailable(id: SectionId, inputs: ReportInputs): boolean {
   }
 }
 
-/** Sections to print: checked and available, in print order, numbered from 1. */
+/** Sections to print: checked and available, in print order, numbered from 1 (the cover has no number: 0). */
 export function selectedSections(
   inputs: ReportInputs,
   checked: ReadonlySet<SectionId>,
 ): { id: SectionId; title: string; number: number }[] {
-  return SECTIONS.filter((s) => checked.has(s.id) && isAvailable(s.id, inputs)).map((s, k) => ({ ...s, number: k + 1 }))
+  let next = 1
+  return SECTIONS.filter((s) => checked.has(s.id) && isAvailable(s.id, inputs)).map((s) => ({
+    ...s,
+    number: s.id === 'cover' ? 0 : next++,
+  }))
 }
 
 /** Default checkboxes: every available section. */

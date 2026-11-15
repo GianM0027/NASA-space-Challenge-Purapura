@@ -51,6 +51,7 @@ from lunarnav.contracts import (
     SiteRanking,
     SiteScore,
     TimeWindow,
+    TradeoffResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -467,22 +468,36 @@ def report_numbers(report: RobustnessReport) -> list[float]:
         All numeric values in the report (fractions, hours, degrees, meters, shift days) and the
         number of shifts and of dispersion points.
     """
-    found: list[float] = [float(len(report.date_shifts)), float(len(report.dispersion))]
+    counts = [float(len(report.date_shifts)), float(len(report.dispersion))]
+    return counts + _numbers_of(report.model_dump(exclude={"summary", "ai_comment"}))
 
-    def walk(value: Any) -> None:
-        if isinstance(value, bool):
-            return
-        if isinstance(value, int | float):
-            found.append(float(value))
-        elif isinstance(value, dict):
-            for item in value.values():
-                walk(item)
-        elif isinstance(value, list):
-            for item in value:
-                walk(item)
 
-    walk(report.model_dump(exclude={"summary", "ai_comment"}))
-    return found
+def tradeoff_numbers(result: TradeoffResult) -> list[float]:
+    """Every number of a trade-off result, plus counts and ranks, for the number check.
+
+    Args:
+        result: The trade-off result.
+
+    Returns:
+        Scores, weights, raw and normalized values, judgments, consistency ratio, sensitivity,
+        the number of scenarios and of FoMs, and the ranks 1 to n.
+    """
+    counts = [float(len(result.labels)), float(len(result.foms))]
+    ranks = [float(rank) for rank in range(1, len(result.labels) + 1)]
+    return counts + ranks + _numbers_of(result.model_dump(exclude={"ai_comment", "method"}))
+
+
+def _numbers_of(value: Any) -> list[float]:
+    """All numbers inside a dumped model (nested dicts and lists), booleans excluded."""
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, int | float):
+        return [float(value)]
+    if isinstance(value, dict):
+        return [n for item in value.values() for n in _numbers_of(item)]
+    if isinstance(value, list):
+        return [n for item in value for n in _numbers_of(item)]
+    return []
 
 
 def _allowed_numbers(score: SiteScore, requirements: MissionRequirements) -> list[float]:
@@ -645,32 +660,86 @@ class ChatAssistant:
         Returns:
             The same report with ``ai_comment`` set, or None when no checked comment exists.
         """
-        system = (
+        task = (
             "You comment a robustness analysis of a lunar landing site for a mission planner: "
             "how its sunlight, Earth visibility and darkness change if the launch slips by the "
-            "listed days, and across points around the landing site. Write at most two sentences, "
-            "at most 45 words, saying whether the site is robust and what to watch. Fractions may "
-            "be written as percentages. Write no number that is not in the data. Use the language "
-            "of 'language_of' (English if empty)."
+            "listed days, and across points around the landing site. Say whether the site is "
+            "robust and what to watch."
         )
         payload = {
             "language_of": language_hint,
             "site": site_name,
             "report": report.model_dump(mode="json", exclude={"ai_comment"}),
         }
+        comment = self._checked_comment(task, payload, report_numbers(report))
+        return report.model_copy(update={"ai_comment": comment})
+
+    def comment_tradeoff(self, result: TradeoffResult, language_hint: str = "") -> TradeoffResult:
+        """Add a short AI comment to a trade-off result (spec TO-5).
+
+        The comment must quote only numbers of the result (``tradeoff_numbers``); when it does
+        not, or the LLM fails, there is no comment (``ai_comment`` stays None).
+
+        Args:
+            result: The trade-off from the trade-off module.
+            language_hint: The user's latest message, so the text matches their language.
+
+        Returns:
+            The same result with ``ai_comment`` set, or None when no checked comment exists.
+        """
+        task = (
+            "You comment a weighted trade-off between lunar landing scenarios for a mission "
+            "planner: which scenario ranks first, by how much, and which criteria decide it "
+            "(weights and normalized values). Say what would most change the outcome."
+        )
+        names = {fom.id: f"{fom.name} ({fom.direction} is better)" for fom in result.foms}
+        payload = {
+            "language_of": language_hint,
+            "scenarios": result.labels,
+            "ranking_best_first": [result.labels[i] for i in result.ranking],
+            "scores": dict(zip(result.labels, result.scores, strict=True)),
+            "weights": {names.get(k, k): v for k, v in result.weights.items()},
+            "values": {
+                label: {names.get(k, k): cell.model_dump() for k, cell in row.items()}
+                for label, row in zip(result.labels, result.table, strict=True)
+            },
+            "consistency_ratio": result.consistency_ratio,
+            "sensitivity": [s.model_dump() for s in result.sensitivity],
+        }
+        comment = self._checked_comment(task, payload, tradeoff_numbers(result))
+        return result.model_copy(update={"ai_comment": comment})
+
+    def _checked_comment(
+        self, task: str, payload: dict[str, Any], allowed: list[float]
+    ) -> str | None:
+        """Ask the LLM for a two-sentence comment and keep it only if its numbers are allowed.
+
+        Args:
+            task: What the comment is about, first part of the system prompt.
+            payload: The data the comment may quote, sent as JSON.
+            allowed: Every number the comment may contain (see ``unsupported_numbers``).
+
+        Returns:
+            The comment, or None when the LLM fails or the comment quotes another number.
+        """
+        system = (
+            f"{task} Write at most two sentences, at most 45 words. Fractions may be written as "
+            "percentages. Write no number that is not in the data. Use the language of "
+            "'language_of' (English if empty)."
+        )
         try:
             answer = self.llm.complete_json(
                 system, json.dumps(payload, ensure_ascii=False), _COMMENT_SCHEMA
             )
             text = str(answer.get("comment", "")).strip()
         except LlmError:
-            logger.exception("analysis comment: LLM failed, using the summary")
-            text = ""
-        if not text or len(text) > 500 or unsupported_numbers(text, report_numbers(report)):
+            logger.exception("AI comment: LLM failed, no comment")
+            return None
+        if not text or len(text) > 500 or unsupported_numbers(text, allowed):
             if text:
-                logger.warning("analysis comment dropped, unsupported numbers: %r", text)
-            return report.model_copy(update={"ai_comment": None})
-        return report.model_copy(update={"ai_comment": text})
+                logger.warning("AI comment dropped, unsupported numbers: %r", text)
+            return None
+        return text
 
     def explain(self, ranking: SiteRanking, language_hint: str = "") -> SiteRanking:
         """Add a one-sentence rationale to every result.

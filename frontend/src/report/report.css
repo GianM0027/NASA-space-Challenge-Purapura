@@ -1,0 +1,327 @@
+/* ABOUTME: Styles of the PDF report builder (UI-13, D42): popup, A4 preview and the print rules */
+/* ABOUTME: Owner: Federico. Popup uses the app variables; the document itself is black on white, like paper */
+
+/* ---------- Popup ---------- */
+.rpt-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(0 0 0 / 55%);
+}
+
+.rpt-dialog {
+  position: absolute;
+  inset: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 50%);
+}
+
+.rpt-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rpt-head h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.rpt-head p {
+  margin: 2px 0 0;
+}
+
+.rpt-head button {
+  margin-left: auto;
+}
+
+.rpt-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.rpt-controls {
+  text-align: left;
+  padding: 16px 20px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+
+.rpt-title-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rpt-checks {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+.rpt-checks li {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.rpt-checks label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.rpt-primary {
+  width: 100%;
+  padding: 9px 14px;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.rpt-preview {
+  overflow-y: auto;
+  padding: 24px;
+  background: #2a2f3a;
+}
+
+@media (max-width: 800px) {
+  .rpt-dialog {
+    inset: 0;
+    border-radius: 0;
+  }
+  .rpt-layout {
+    display: block;
+    overflow-y: auto;
+  }
+  .rpt-controls {
+    border-right: none;
+  }
+}
+
+/* A4 sheet on screen: 210 mm wide with 15 mm margins, as on paper. */
+.rpt-paper {
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 15mm;
+  background: #fff;
+  box-shadow: 0 4px 18px rgb(0 0 0 / 40%);
+}
+
+/* Only the print root is printed; on screen it is hidden. */
+.rpt-print-root {
+  display: none;
+}
+
+/* ---------- The document (screen preview and paper) ---------- */
+.rpt-doc {
+  color: #111;
+  font: 10.5pt/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+  text-align: left;
+}
+
+.rpt-doc h1 {
+  margin: 4mm 0 6mm;
+  font-size: 22pt;
+  line-height: 1.2;
+}
+
+.rpt-doc h2 {
+  margin: 0 0 3mm;
+  padding-bottom: 1.5mm;
+  border-bottom: 1.5px solid #1b4f8a;
+  color: #1b4f8a;
+  font-size: 14pt;
+}
+
+/* Reset the app heading styles (uppercase, muted) inside the paper. */
+.rpt-doc h1,
+.rpt-doc h2,
+.rpt-doc h3 {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.rpt-doc h3 {
+  margin: 4mm 0 2mm;
+  color: #111;
+  font-size: 11pt;
+}
+
+.rpt-section {
+  margin-bottom: 9mm;
+}
+
+.rpt-cover {
+  padding-bottom: 6mm;
+  border-bottom: 1px solid #ccd;
+}
+
+.rpt-kicker {
+  margin: 0;
+  color: #1b4f8a;
+  font-size: 9pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rpt-kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 1mm 5mm;
+  margin: 0 0 4mm;
+}
+
+.rpt-kv dt {
+  color: #555;
+}
+
+.rpt-kv dd {
+  margin: 0;
+}
+
+/* rpt-kv also as a table (th = label, td = value), as in the mission analysis section. */
+table.rpt-kv {
+  display: table;
+  border-collapse: collapse;
+}
+
+table.rpt-kv th,
+table.rpt-kv td {
+  padding: 0.5mm 5mm 0.5mm 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.rpt-kv th {
+  color: #555;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.rpt-contents,
+.rpt-list {
+  margin: 0 0 4mm;
+  padding-left: 6mm;
+}
+
+/* Entries already carry their section number. */
+.rpt-contents {
+  list-style: none;
+  padding-left: 0;
+}
+
+.rpt-table {
+  width: 100%;
+  margin: 2mm 0 3mm;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  break-inside: avoid;
+}
+
+.rpt-table th,
+.rpt-table td {
+  padding: 1.4mm 2mm;
+  border-bottom: 1px solid #d5d8de;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rpt-table th {
+  border-bottom: 1.5px solid #333;
+  font-weight: 600;
+}
+
+.rpt-best td,
+.rpt-top {
+  font-weight: 700;
+}
+
+.rpt-bar-cell {
+  width: 35%;
+}
+
+.rpt-bar {
+  display: block;
+  height: 3mm;
+  border-radius: 1mm;
+  background: #1b4f8a;
+}
+
+.rpt-note {
+  margin: 1mm 0 3mm;
+  color: #555;
+  font-size: 8.5pt;
+}
+
+.rpt-comment {
+  margin: 2mm 0 3mm;
+  padding: 2mm 3mm;
+  border-left: 2px solid #1b4f8a;
+  background: #f1f5fa;
+}
+
+.rpt-figure {
+  margin: 2mm 0 4mm;
+  break-inside: avoid;
+}
+
+.rpt-figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.rpt-figure text {
+  fill: #333;
+}
+
+.rpt-figure figcaption {
+  color: #555;
+  font-size: 8.5pt;
+}
+
+.rpt-doc h2,
+.rpt-doc h3 {
+  break-after: avoid;
+}
+
+/* ---------- Print: the report only, on A4 ---------- */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto;
+    background: #fff;
+  }
+  body > *:not(.rpt-print-root) {
+    display: none !important;
+  }
+  .rpt-print-root {
+    display: block;
+  }
+  .rpt-doc {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

@@ -44,6 +44,9 @@ from lunarnav.contracts import (
 
 logger = logging.getLogger(__name__)
 
+# How many trade-off comments the API keeps for the export to reuse (oldest dropped first).
+TRADEOFF_COMMENT_CACHE = 32
+
 
 def build_app(services: Services | None = None, status: ModuleStatus | None = None) -> FastAPI:
     """Create the FastAPI app.
@@ -176,10 +179,20 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         """Add a short AI rationale to every ranked site (numbers checked against the ranking)."""
         return svc.assistant.explain(request.ranking, request.language_hint)
 
+    # AI comments of the latest trade-off results, keyed by the result without comment: the
+    # export recomputes the same deterministic result and reuses its comment, no second LLM call.
+    tradeoff_comments: dict[str, str | None] = {}
+
     def tradeoff(request: TradeoffRequest) -> tuple[TradeoffResult, list[Evaluation]]:
-        """Evaluate the scenarios and run the trade-off on them."""
+        """Evaluate the scenarios, run the trade-off and add its AI comment (spec TO-5)."""
         evaluations = [evaluate(scenario) for scenario in request.scenarios]
-        return svc.tradeoff.analyze(evaluations, request.settings), evaluations
+        result = svc.tradeoff.analyze(evaluations, request.settings)
+        key = result.model_dump_json(exclude={"ai_comment"})
+        if key not in tradeoff_comments:
+            if len(tradeoff_comments) >= TRADEOFF_COMMENT_CACHE:
+                tradeoff_comments.pop(next(iter(tradeoff_comments)))
+            tradeoff_comments[key] = svc.assistant.comment_tradeoff(result).ai_comment
+        return result.model_copy(update={"ai_comment": tradeoff_comments[key]}), evaluations
 
     @app.post("/api/tradeoff")
     def tradeoff_result(request: TradeoffRequest) -> TradeoffResult:

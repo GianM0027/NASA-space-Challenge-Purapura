@@ -5,8 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiAssistant } from './ai/AiAssistant'
 import { MissionAnalysisBox, type AnalysisTab } from './analysis/MissionAnalysisBox'
 import { CompareView } from './compare/CompareView'
+import { ReportBuilder } from './report/ReportBuilder'
 import { api, ApiError, type ModuleStatus } from './api/client'
-import type { Evaluation, GeoPoint, Site, SkyState, TimeWindow } from './api/contracts'
+import type { Evaluation, GeoPoint, Site, SiteRanking, SkyState, TimeWindow, TradeoffResult } from './api/contracts'
 import { formatCoordinates, formatUtc, hoursBetween } from './format'
 import { MoonGlobe, type GlobeFocus } from './globe/MoonGlobe'
 import { MOON_TEXTURE_ATTRIBUTION } from './globe/moonTexture'
@@ -225,6 +226,10 @@ function App() {
 
   const placeholders = Object.entries(modules).filter(([, status]) => status !== 'real')
 
+  // Latest AI ranking and trade-off of the session, printed by the PDF report (decision D42).
+  const [lastRanking, setLastRanking] = useState<SiteRanking | null>(null)
+  const [lastTradeoff, setLastTradeoff] = useState<TradeoffResult | null>(null)
+
   // Mission analysis window (spec UI-5): one tab per site and window, kept until closed or reset.
   const [analyses, setAnalyses] = useState<AnalysisTab[]>([])
   const [activeAnalysis, setActiveAnalysis] = useState<string | null>(null)
@@ -357,8 +362,21 @@ function App() {
             <span className="muted">{MOON_TEXTURE_ATTRIBUTION}</span>
           </div>
           <div className="dock">
-            <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} />
-            <CompareView sites={sites} defaultWindow={panelWindow} initialSiteId={selectedSite?.id ?? null} />
+            <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} onRanking={setLastRanking} />
+            <CompareView
+              sites={sites}
+              defaultWindow={panelWindow}
+              initialSiteId={selectedSite?.id ?? null}
+              onResult={setLastTradeoff}
+            />
+            <ReportBuilder
+              sites={sites}
+              window={panelWindow}
+              evaluation={outcome?.evaluation ?? null}
+              analyses={analyses}
+              ranking={lastRanking}
+              tradeoff={lastTradeoff}
+            />
             <MissionAnalysisBox
               tabs={analyses}
               activeId={activeAnalysis}

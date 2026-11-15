@@ -259,7 +259,7 @@ the AI comment is Gian's.
 | `POST /api/ai/explain` | `{"ranking": SiteRanking, "language_hint": str}` | `SiteRanking` with a checked one-sentence `rationale` per site |
 | `POST /api/mission-analysis` | evaluate request plus `"shifts_days": list[float]` (empty: the module defaults) | `RobustnessReport` |
 | `POST /api/ai/comment-analysis` | `{"report": RobustnessReport, "site_name": str, "language_hint": str}` | `RobustnessReport` with a checked `ai_comment` (AI-6; null when no comment passes the check) |
-| `POST /api/tradeoff` | `{"scenarios": [evaluate request] (2 to 4), "settings": TradeoffSettings}` | `TradeoffResult` |
+| `POST /api/tradeoff` | `{"scenarios": [evaluate request] (2 to 4), "settings": TradeoffSettings}` | `TradeoffResult` with a checked `ai_comment` (TO-5; null when no comment passes the check; the export reuses it) |
 | `POST /api/tradeoff/export` | same as `/api/tradeoff` | `.xlsx` workbook (501 until the trade-off module exists) |
 
   Errors: HTTP 422 for invalid input (Pydantic detail, or a `ValueError` raised by a module),
