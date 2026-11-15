@@ -181,18 +181,22 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
 
     # AI comments of the latest trade-off results, keyed by the result without comment: the
     # export recomputes the same deterministic result and reuses its comment, no second LLM call.
-    tradeoff_comments: dict[str, str | None] = {}
+    # Only comments that exist are kept, so a result without one is asked again next time.
+    tradeoff_comments: dict[str, str] = {}
 
     def tradeoff(request: TradeoffRequest) -> tuple[TradeoffResult, list[Evaluation]]:
         """Evaluate the scenarios, run the trade-off and add its AI comment (spec TO-5)."""
         evaluations = [evaluate(scenario) for scenario in request.scenarios]
         result = svc.tradeoff.analyze(evaluations, request.settings)
         key = result.model_dump_json(exclude={"ai_comment"})
-        if key not in tradeoff_comments:
-            if len(tradeoff_comments) >= TRADEOFF_COMMENT_CACHE:
-                tradeoff_comments.pop(next(iter(tradeoff_comments)))
-            tradeoff_comments[key] = svc.assistant.comment_tradeoff(result).ai_comment
-        return result.model_copy(update={"ai_comment": tradeoff_comments[key]}), evaluations
+        comment = tradeoff_comments.get(key)
+        if comment is None:
+            comment = svc.assistant.comment_tradeoff(result).ai_comment
+            if comment is not None:
+                if len(tradeoff_comments) >= TRADEOFF_COMMENT_CACHE:
+                    tradeoff_comments.pop(next(iter(tradeoff_comments)))
+                tradeoff_comments[key] = comment
+        return result.model_copy(update={"ai_comment": comment}), evaluations
 
     @app.post("/api/tradeoff")
     def tradeoff_result(request: TradeoffRequest) -> TradeoffResult:
