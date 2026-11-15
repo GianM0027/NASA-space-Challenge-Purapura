@@ -6,7 +6,7 @@ import type { ReportInputs, SectionId } from './types'
 /** Sections in print order, with the checkbox label. */
 export const SECTIONS: { id: SectionId; title: string }[] = [
   { id: 'cover', title: 'Cover and mission parameters' },
-  { id: 'site', title: 'Site evaluation' },
+  { id: 'site', title: 'Landing site evaluation' },
   { id: 'analysis', title: 'Mission analysis' },
   { id: 'ranking', title: 'AI assistant ranking' },
   { id: 'tradeoff', title: 'Trade-off' },
