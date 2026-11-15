@@ -22,6 +22,14 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- UI-5 and AI-6 (decision D40): "Mission analysis" button in the site panel, one tab per analysis
+  in a minimizable window next to the AI box (close one, or Reset), AI comment checked against the
+  report with Michael's summary as fallback, date-slip and dispersion tables. Checked in the
+  browser on Apollo 11 (21 s, real modules) and with a second tab (IM-1), close and minimize.
+- Trade-off contract, port and routes for Federico (decision D39).
+- Mission analysis tab (decision D41): AI comment only; touchdown verdict, target diagram (Sun and
+  Earth fill, red ring for slope over 10 deg) and collapsed details. Checked on IM-1 at +-1 km.
+- Mission analysis request sends no shifts by default, so Michael's analyzer picks them.
 - AI-7 (named regions): `lunarnav.ai.regions` reads `docs/domain/regions.md` (Michael; none until
   it lands), the LLM picks only a region id, code applies latitude and longitude bounds (source
   "region"; a user number wins); longitude scope crosses 180 deg. Real CLI with a test table:

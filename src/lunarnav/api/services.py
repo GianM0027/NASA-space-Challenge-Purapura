@@ -80,6 +80,12 @@ class Assistant(Protocol):
         """Return ``ranking`` with a short rationale on every result."""
         ...
 
+    def comment_analysis(
+        self, report: RobustnessReport, site_name: str, language_hint: str = ""
+    ) -> RobustnessReport:
+        """Return ``report`` with a short checked AI comment (spec AI-6)."""
+        ...
+
 
 @dataclass(frozen=True)
 class Services:
@@ -439,3 +445,9 @@ class ExampleAssistant:
             for score in ranking.results
         ]
         return ranking.model_copy(update={"results": results})
+
+    def comment_analysis(
+        self, report: RobustnessReport, site_name: str, language_hint: str = ""
+    ) -> RobustnessReport:
+        """Return ``report`` with a fixed example comment (no LLM)."""
+        return report.model_copy(update={"ai_comment": "Example comment (no LLM)."})

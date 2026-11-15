@@ -251,7 +251,8 @@ the AI comment is Gian's.
 | `POST /api/rank` | `MissionRequirements` | `SiteRanking` |
 | `POST /api/ai/ask` | `AiRequest` (message, history, current requirements, locked fields, GUI window) | `AiAnswer` (ranking null when the AI asks back) |
 | `POST /api/ai/explain` | `{"ranking": SiteRanking, "language_hint": str}` | `SiteRanking` with a checked one-sentence `rationale` per site |
-| `POST /api/mission-analysis` | evaluate request plus `"shifts_days": list[float]` | `RobustnessReport` |
+| `POST /api/mission-analysis` | evaluate request plus `"shifts_days": list[float]` (empty: the module defaults) | `RobustnessReport` |
+| `POST /api/ai/comment-analysis` | `{"report": RobustnessReport, "site_name": str, "language_hint": str}` | `RobustnessReport` with a checked `ai_comment` (AI-6; null when no comment passes the check) |
 | `POST /api/tradeoff` | `{"scenarios": [evaluate request] (2 to 4), "settings": TradeoffSettings}` | `TradeoffResult` |
 | `POST /api/tradeoff/export` | same as `/api/tradeoff` | `.xlsx` workbook (501 until the trade-off module exists) |
 

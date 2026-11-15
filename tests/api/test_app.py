@@ -107,6 +107,16 @@ def test_tradeoff_export_needs_the_real_module(client: TestClient) -> None:
     assert client.post("/api/tradeoff/export", json=body).status_code == 501
 
 
+def test_ai_comment_analysis(client: TestClient) -> None:
+    scenario = {"location": {"lat_deg": -89, "lon_deg": 0}, "window": WINDOW}
+    report = client.post("/api/mission-analysis", json=scenario).json()
+    response = client.post(
+        "/api/ai/comment-analysis", json={"report": report, "site_name": "Test point"}
+    )
+    assert response.status_code == 200
+    assert RobustnessReport.model_validate(response.json()).ai_comment
+
+
 def test_add_user_site(client: TestClient) -> None:
     site = {
         "id": "my-site",

@@ -20,6 +20,12 @@ export type ChatMessage = {
   text: string
 }
 
+export type CommentAnalysisRequest = {
+  report: RobustnessReportInput
+  site_name: string
+  language_hint?: string
+}
+
 export type CompareRequest = {
   scenarios: EvaluateRequest[]
 }
@@ -27,6 +33,13 @@ export type CompareRequest = {
 export type DateShiftResult = {
   shift_days: number
   metrics: VisibilityMetrics
+}
+
+export type DispersionSampleInput = {
+  location: GeoPointInput
+  offset_m: number
+  metrics: VisibilityMetrics
+  slope_max_deg: number
 }
 
 export type DispersionSample = {
@@ -201,12 +214,22 @@ export type PairwiseJudgment = {
 
 export type RequirementSource = "user" | "archetype" | "region" | "default"
 
+export type RobustnessReportInput = {
+  site_id: string | null
+  nominal: VisibilityMetrics
+  date_shifts: DateShiftResult[]
+  dispersion: DispersionSampleInput[]
+  summary?: string | null
+  ai_comment?: string | null
+}
+
 export type RobustnessReport = {
   site_id: string | null
   nominal: VisibilityMetrics
   date_shifts: DateShiftResult[]
   dispersion: DispersionSample[]
   summary: string | null
+  ai_comment: string | null
 }
 
 export type Site = {

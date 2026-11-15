@@ -3,9 +3,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiAssistant } from './ai/AiAssistant'
+import { MissionAnalysisBox, type AnalysisTab } from './analysis/MissionAnalysisBox'
 import { api, ApiError, type ModuleStatus } from './api/client'
 import type { Evaluation, GeoPoint, Site, SkyState, TimeWindow } from './api/contracts'
-import { formatUtc, hoursBetween } from './format'
+import { formatCoordinates, formatUtc, hoursBetween } from './format'
 import { MoonGlobe, type GlobeFocus } from './globe/MoonGlobe'
 import { MOON_TEXTURE_ATTRIBUTION } from './globe/moonTexture'
 import { CoordinatesBox, MyLocations } from './panels/LocationsPanel'
@@ -223,6 +224,20 @@ function App() {
 
   const placeholders = Object.entries(modules).filter(([, status]) => status !== 'real')
 
+  // Mission analysis window (spec UI-5): one tab per site and window, kept until closed or reset.
+  const [analyses, setAnalyses] = useState<AnalysisTab[]>([])
+  const [activeAnalysis, setActiveAnalysis] = useState<string | null>(null)
+  const [analysesMinimized, setAnalysesMinimized] = useState(false)
+  const updateAnalysis = useCallback(
+    (id: string, update: Partial<AnalysisTab>) =>
+      setAnalyses((tabs) => tabs.map((tab) => (tab.id === id ? { ...tab, ...update } : tab))),
+    [],
+  )
+  const closeAnalysis = useCallback((id: string) => {
+    setAnalyses((tabs) => tabs.filter((tab) => tab.id !== id))
+    setActiveAnalysis((active) => (active === id ? null : active))
+  }, [])
+
   // The window of the site panel is also the AI's default when a request gives no dates.
   const panelWindow: TimeWindow = useMemo(
     () => ({
@@ -231,6 +246,38 @@ function App() {
       step_minutes: settings.stepMinutes,
     }),
     [startUtc, settings.durationHours, settings.stepMinutes],
+  )
+
+  const startAnalysis = useCallback(
+    (landingPrecisionM: number) => {
+      if (!target || !selectedLocation) return
+      const center = selectedLocation
+      const id = JSON.stringify([target, panelWindow, landingPrecisionM])
+      setActiveAnalysis(id)
+      setAnalysesMinimized(false)
+      if (analyses.some((tab) => tab.id === id)) return
+      const label =
+        selectedSite?.name ?? formatCoordinates(center)
+      setAnalyses((tabs) => [
+        ...tabs,
+        { id, label, window: panelWindow, landingPrecisionM, center, report: null, commentDone: false, error: null },
+      ])
+      api
+        .missionAnalysis({
+          ...('siteId' in target ? { site_id: target.siteId } : { location: target.location }),
+          window: panelWindow,
+          area: { landing_precision_m: landingPrecisionM },
+        })
+        .then((report) => {
+          updateAnalysis(id, { report })
+          return api
+            .commentAnalysis({ report, site_name: label })
+            .then((commented) => updateAnalysis(id, { report: commented, commentDone: true }))
+            .catch(() => updateAnalysis(id, { commentDone: true }))
+        })
+        .catch((reason: unknown) => updateAnalysis(id, { error: String(reason) }))
+    },
+    [target, panelWindow, analyses, selectedSite, selectedLocation, updateAnalysis],
   )
 
   return (
@@ -308,7 +355,18 @@ function App() {
             </span>
             <span className="muted">{MOON_TEXTURE_ATTRIBUTION}</span>
           </div>
-          <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} />
+          <div className="dock">
+            <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} />
+            <MissionAnalysisBox
+              tabs={analyses}
+              activeId={activeAnalysis}
+              minimized={analysesMinimized}
+              onSelect={setActiveAnalysis}
+              onClose={closeAnalysis}
+              onReset={() => setAnalyses([])}
+              onMinimize={setAnalysesMinimized}
+            />
+          </div>
         </div>
 
         <aside>
@@ -350,6 +408,7 @@ function App() {
             onSettings={setSettings}
             viewOffsetHours={viewOffsetHours}
             onViewOffset={setViewOffsetHours}
+            onMissionAnalysis={startAnalysis}
             evaluation={outcome?.evaluation ?? null}
             loading={loading}
             error={loading ? null : (outcome?.error ?? null)}
