@@ -960,3 +960,25 @@ button.primary {
 button.primary:hover {
   filter: brightness(1.1);
 }
+
+/* Legend categories as toggles: click to hide or show their markers on the globe. */
+.legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: inherit;
+  font-size: 12px;
+}
+
+.legend-toggle:hover {
+  border-color: var(--border);
+}
+
+.legend-toggle.off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
