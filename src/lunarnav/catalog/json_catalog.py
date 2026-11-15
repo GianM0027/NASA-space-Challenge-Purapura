@@ -134,15 +134,44 @@ class JsonSiteCatalog:
             ReadOnlySiteError: If the site is curated (``origin != "user"``).
             ValueError: If ``name`` is empty after stripping.
         """
-        new_name = name.strip()
-        if not new_name:
-            raise ValueError("site name must not be blank")
+        return self.update_user_site(site_id, name=name)
+
+    def update_user_site(
+        self, site_id: str, *, name: str | None = None, description: str | None = None
+    ) -> Site:
+        """Change the name and/or description of a user-defined site, persistently.
+
+        Not yet part of the ``SiteCatalog`` port (requested to Gian): it lets the GUI edit the
+        description it already asks for when a location is saved. The id never changes.
+
+        Args:
+            site_id: Id of the site to edit.
+            name: New display name, stripped; None keeps the current one.
+            description: New description, stripped; None keeps it, "" clears it.
+
+        Returns:
+            The updated site.
+
+        Raises:
+            UnknownSiteError: If no site has that id.
+            ReadOnlySiteError: If the site is curated (``origin != "user"``).
+            ValueError: If ``name`` is given but empty after stripping.
+        """
+        update: dict[str, str] = {}
+        if name is not None:
+            if not name.strip():
+                raise ValueError("site name must not be blank")
+            update["name"] = name.strip()
+        if description is not None:
+            update["description"] = description.strip()
 
         def change(user: list[Site]) -> Site:
             index = self._user_index(user, site_id)
-            renamed = user[index].model_copy(update={"name": new_name})
-            user[index] = renamed
-            return renamed
+            if not update:
+                return user[index]
+            edited = user[index].model_copy(update=update)
+            user[index] = edited
+            return edited
 
         return self._update_user(change)
 
