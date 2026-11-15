@@ -269,6 +269,13 @@ table.rpt-kv th {
   font-size: 8.5pt;
 }
 
+/* The app's AI badge, in the paper colors. */
+.rpt-doc .ai-badge {
+  border-color: #1b4f8a;
+  background: #e8eef6;
+  color: #1b4f8a;
+}
+
 .rpt-comment {
   margin: 2mm 0 3mm;
   padding: 2mm 3mm;

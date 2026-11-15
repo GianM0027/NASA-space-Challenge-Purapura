@@ -33,7 +33,7 @@ export type SectionId = 'cover' | 'site' | 'analysis' | 'ranking' | 'tradeoff' |
 
 /**
  * Props every section component receives. `data` is the section's own input, never null: the builder renders a
- * section only when its data exists. `number` is the heading number in the printed report ("2. Site evaluation").
+ * section only when its data exists. `number` is the heading number in the printed report ("2. Landing site evaluation").
  *
  * Rendering rules, so all sections print alike:
  * - root element `<section className="rpt-section">` with an `<h2>` of `{number}. {title}` as first child;

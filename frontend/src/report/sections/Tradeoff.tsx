@@ -1,6 +1,7 @@
 // ABOUTME: Report section of the last trade-off (UI-13, D42): ranking and details per criterion, as in the popup
 // ABOUTME: Owner: Federico. Values from the TradeoffResult contract; static HTML only
 
+import { AiBadge } from '../../ai/AiBadge'
 import { consistencyLabel, ordinal } from '../../compare/model'
 import { formatPercent } from '../../format'
 import type { SectionProps, TradeoffSectionData } from '../types'
@@ -46,7 +47,12 @@ export function Tradeoff({ data, number }: SectionProps<TradeoffSectionData>) {
         Score: weighted sum of the normalized criteria (sums to 1 over the scenarios). Weights: {METHODS[data.weight_method]};
         consistency ratio {cr.text}.
       </p>
-      {data.ai_comment && <p className="rpt-comment">{data.ai_comment}</p>}
+      {data.ai_comment && (
+        <p className="rpt-comment">
+          <AiBadge />
+          {data.ai_comment}
+        </p>
+      )}
 
       <h3>Details per criterion</h3>
       <table className="rpt-table">

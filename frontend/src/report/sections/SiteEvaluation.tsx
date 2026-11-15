@@ -49,10 +49,10 @@ export function SiteEvaluation({ data, sites, number }: SectionProps<SiteSection
   return (
     <section className="rpt-section">
       <h2>
-        {number}. Site evaluation: {site?.name ?? 'custom point'}
+        {number}. Landing site evaluation: {site?.name ?? 'custom point'}
       </h2>
       <dl className="rpt-kv">
-        <dt>Location</dt>
+        <dt>Landing site</dt>
         <dd>{formatCoordinates(data.location)}</dd>
         <dt>Window</dt>
         <dd>

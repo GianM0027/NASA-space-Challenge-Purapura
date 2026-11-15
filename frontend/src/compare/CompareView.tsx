@@ -2,6 +2,7 @@
 // ABOUTME: Owner: Federico (D37). Self-contained: a pill in the App dock that opens a popup, like the AI assistant
 
 import { useEffect, useMemo, useState } from 'react'
+import { AiBadge } from '../ai/AiBadge'
 import type { Site, TimeWindow, TradeoffResult } from '../api/contracts'
 import { formatPercent, fromInputValue, toInputValue } from '../format'
 import './compare.css'
@@ -211,7 +212,7 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
       <header className="cmp-head">
         <div>
           <h2>Compare landing scenarios</h2>
-          <p className="muted small">Pick 2 to 4 sites, choose what matters, and get a ranked trade-off.</p>
+          <p className="muted small">Pick 2 to 4 landing sites, choose what matters, and get a ranked trade-off.</p>
         </div>
         <div className="cmp-head-actions">
           <button onClick={resetAll} disabled={busy !== null} title="Back to the initial setup; clears the result">
@@ -240,10 +241,10 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
                     className="cmp-site"
                     value={s.siteId}
                     title={sites.find((x) => x.id === s.siteId)?.name}
-                    aria-label={`Scenario ${LETTERS[k]} site`}
+                    aria-label={`Scenario ${LETTERS[k]} landing site`}
                     onChange={(e) => setScenario(k, { siteId: e.target.value, label: siteName(e.target.value) })}
                   >
-                    <option value="">Pick a site…</option>
+                    <option value="">Pick a landing site…</option>
                     {sites.map((site) => (
                       <option key={site.id} value={site.id}>
                         {site.name}
@@ -502,7 +503,7 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
                 <strong>No results yet.</strong>
               </p>
               <p className="muted small">
-                Set up the scenarios on the left and press <em>Run trade-off</em>. Each site is simulated over the mission window,
+                Set up the scenarios on the left and press <em>Run trade-off</em>. Each landing site is simulated over the mission window,
                 then scored on the criteria you kept. The Excel download contains the same trade-off with live formulas you can edit.
               </p>
             </div>
@@ -538,7 +539,12 @@ function Results({ result }: { result: TradeoffResult }) {
         <p className={`small ${cr.ok ? 'muted' : 'error'}`}>
           Score = weighted sum of the normalized criteria (sums to 1 over the scenarios). Consistency of the judgments: {cr.text}.
         </p>
-        {result.ai_comment && <p className="cmp-comment">{result.ai_comment}</p>}
+        {result.ai_comment && (
+          <p className="cmp-comment">
+            <AiBadge />
+            {result.ai_comment}
+          </p>
+        )}
       </section>
 
       <section className="cmp-card">
