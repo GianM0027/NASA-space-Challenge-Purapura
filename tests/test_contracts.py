@@ -86,3 +86,25 @@ def test_catalog_site_needs_a_source_but_user_site_does_not() -> None:
 def test_unknown_fields_are_rejected() -> None:
     with pytest.raises(ValidationError):
         GeoPoint.model_validate({"lat_deg": 0.0, "lon_deg": 0.0, "altitude": 3.0})
+
+
+def test_tradeoff_settings_reject_inconsistent_input() -> None:
+    from lunarnav.contracts import FomDirection, PairwiseJudgment, TradeoffSettings, UserFom
+
+    judgment = PairwiseJudgment(a="x", b="y", value=3, source="user")
+    with pytest.raises(ValidationError):
+        TradeoffSettings(labels=["A", "B"], judgments=[judgment], weights={"x": 1.0})
+    with pytest.raises(ValidationError):
+        TradeoffSettings(
+            labels=["A", "B"],
+            user_foms=[UserFom(name="cost", direction=FomDirection.LOWER, values=[1.0])],
+        )
+    with pytest.raises(ValidationError):
+        PairwiseJudgment(a="x", b="y", value=10, source="user")
+    with pytest.raises(ValidationError):
+        UserFom(name="cost", direction=FomDirection.LOWER, values=[1.0, -2.0])
+    ok = TradeoffSettings(
+        labels=["A", "B"],
+        user_foms=[UserFom(name="cost", direction=FomDirection.LOWER, values=[1.0, 2.0])],
+    )
+    assert ok.excluded_foms == []

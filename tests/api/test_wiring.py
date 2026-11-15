@@ -68,6 +68,7 @@ def test_build_services_falls_back_to_examples_everywhere(monkeypatch: pytest.Mo
         "mission_analysis",
         "ranking",
         "assistant",
+        "tradeoff",
     }
 
 

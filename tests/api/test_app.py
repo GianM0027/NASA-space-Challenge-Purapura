@@ -19,6 +19,7 @@ from lunarnav.contracts import (
     RobustnessReport,
     Site,
     SiteRanking,
+    TradeoffResult,
 )
 
 START = datetime(2027, 1, 1, tzinfo=UTC)
@@ -87,6 +88,23 @@ def test_compare_accepts_two_to_four_scenarios(client: TestClient) -> None:
     assert ok.status_code == 200
     assert len([Evaluation.model_validate(e) for e in ok.json()]) == 2
     assert too_few.status_code == 422
+
+
+def test_tradeoff_with_the_placeholder(client: TestClient) -> None:
+    scenario = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    body = {"scenarios": [scenario, scenario], "settings": {"labels": ["A", "B"]}}
+    response = client.post("/api/tradeoff", json=body)
+    assert response.status_code == 200
+    result = TradeoffResult.model_validate(response.json())
+    assert result.labels == ["A", "B"] and len(result.scores) == 2
+    mismatch = {"scenarios": [scenario, scenario], "settings": {"labels": ["A", "B", "C"]}}
+    assert client.post("/api/tradeoff", json=mismatch).status_code == 422
+
+
+def test_tradeoff_export_needs_the_real_module(client: TestClient) -> None:
+    scenario = {"location": {"lat_deg": 0, "lon_deg": 0}, "window": WINDOW}
+    body = {"scenarios": [scenario, scenario], "settings": {"labels": ["A", "B"]}}
+    assert client.post("/api/tradeoff/export", json=body).status_code == 501
 
 
 def test_add_user_site(client: TestClient) -> None:
