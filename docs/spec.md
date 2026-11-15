@@ -179,6 +179,12 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
   never queues more than one `GET /api/sky` at a time.
 - **UI-12** (P1, Gian): final visual pass over the whole app: remove redundant elements,
   consistent layout and typography, readable at a projector resolution.
+- **UI-13** (P2, Federico with sections by Michael and Gian, decision D42): "Report" button in the
+  dock opening a two-pane window: on the left a checkbox per result already computed in the
+  session (cover and mission parameters, site evaluation, each mission-analysis tab, AI ranking,
+  trade-off, sources and methods), on the right an A4 preview of the checked sections. "Download
+  PDF" prints exactly the preview (`window.print()` on the report node, "Save as PDF"); sections
+  without data are disabled ("Run it first"). Frontend only, no new API.
 
 ### 4.8 Trade-off (TO)
 

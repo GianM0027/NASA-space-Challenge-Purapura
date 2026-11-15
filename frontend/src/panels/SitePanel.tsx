@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import type { Evaluation, GeoPoint } from '../api/contracts'
+import { SLOPE_LIMIT_DEG } from '../analysis/dispersion'
 import { ElevationTimeline } from '../timeline/ElevationTimeline'
 import { TimeWheel } from '../timeline/TimeWheel'
 import { sampleIndex } from '../timeline/wheel'
@@ -62,9 +63,28 @@ function NextEvent(props: { label: string; startUtc: string; eventUtc: string | 
   )
 }
 
-function Metric(props: { label: string; value: string }) {
+// The terrain module fits the 100 m landing plane only on DEMs with cells up to 50 m (decision
+// D36, lunarnav.terrain.slope); on coarser DEMs the slope is measured on the DEM cells.
+const LANDING_PLANE_MAX_CELL_M = 50
+
+/** One line on how the landing slope was measured, for the panel note. */
+function slopeNote(evaluation: Evaluation): string {
+  const terrain = evaluation.terrain
+  const cell = Math.round(terrain.dem_resolution_m)
+  const baseline =
+    cell <= LANDING_PLANE_MAX_CELL_M
+      ? "Slope on a 100 m baseline, as in NASA's landing criterion"
+      : `Slope on the ${cell} m cells of the elevation model, coarser than the 100 m of NASA's criterion`
+  const where =
+    terrain.landing_radius_m > 0
+      ? `99th percentile within ${Math.round(terrain.landing_radius_m)} m`
+      : 'at the point'
+  return `${baseline}, ${where}. Limit ${SLOPE_LIMIT_DEG}°: NASA HLS Overview 2025, p. 21.`
+}
+
+function Metric(props: { label: string; value: string; bad?: boolean }) {
   return (
-    <div className="metric">
+    <div className={props.bad ? 'metric bad' : 'metric'}>
       <span className="metric-value">{props.value}</span>
       <span className="metric-label">{props.label}</span>
     </div>
@@ -260,15 +280,15 @@ export function SitePanel(props: Props) {
           </div>
 
           <h3>Terrain</h3>
-          <p className="muted small">
-            Regional slopes, measured over a {Math.round(evaluation.terrain.dem_resolution_m)} m
-            baseline (one elevation-model pixel); not lander-scale.
-          </p>
           <div className="metrics">
-            <Metric label="max slope" value={`${evaluation.terrain.slope_max_deg.toFixed(1)}°`} />
-            <Metric label="mean slope" value={`${evaluation.terrain.slope_mean_deg.toFixed(1)}°`} />
+            <Metric
+              label={`landing slope (limit ${SLOPE_LIMIT_DEG}°)`}
+              value={`${evaluation.terrain.landing_slope_max_deg.toFixed(1)}°`}
+              bad={evaluation.terrain.landing_slope_max_deg > SLOPE_LIMIT_DEG}
+            />
             <Metric label="elevation" value={`${Math.round(evaluation.terrain.elevation_m)} m`} />
           </div>
+          <p className="muted small">{slopeNote(evaluation)}</p>
           <p className="muted small">
             Horizon: {evaluation.horizon.dem_source}. {evaluation.times_utc.length} samples from{' '}
             {formatUtc(start)}. A ≥ marks a period cut by the window: it may last longer.

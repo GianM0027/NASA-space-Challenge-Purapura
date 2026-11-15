@@ -48,3 +48,9 @@ export function formatAtLeast(hours: number, truncated: boolean): string {
   const text = formatDuration(hours)
   return truncated && hours > 0 ? `≥ ${text}` : text
 }
+
+/** A window shift with its sign and at most one decimal: "+29.5 d", "+7 d", "-3 d". */
+export function formatShiftDays(days: number): string {
+  const rounded = Number(days.toFixed(1))
+  return `${rounded > 0 ? '+' : ''}${rounded} d`
+}
