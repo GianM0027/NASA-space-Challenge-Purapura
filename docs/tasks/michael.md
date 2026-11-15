@@ -72,6 +72,9 @@ recent missions, Haworth/de Gerlache points on the rim.
   fake evaluator; live API: Apollo 11, 14 days, 1 km disk, 6.1 s, badge "real".
 
 ## Blockers
+- UI-13 / D42 report section `frontend/src/report/sections/MissionAnalysis.tsx` (P2, Michael):
+  waiting for Federico's ReportBuilder, which defines its props (input: an `AnalysisTab` from
+  `frontend/src/analysis/MissionAnalysisBox.tsx`; output: printable HTML/SVG only).
 
 ## Requests
 - To Gian (MA, D23 impact): Michael's decisions on the analyzer: (A) shifts add one synodic month
