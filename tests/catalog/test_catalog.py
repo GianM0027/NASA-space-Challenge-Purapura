@@ -168,6 +168,24 @@ def test_rename_rejects_blank_name(catalog: JsonSiteCatalog) -> None:
     assert catalog.get_site("my-crater").name == "My crater"
 
 
+def test_update_description_keeps_name_and_id(tmp_path: Path) -> None:
+    user = tmp_path / "user" / "sites.json"
+    catalog = JsonSiteCatalog(curated_path=CURATED, user_path=user)
+    catalog.add_user_site(_user_site())
+    edited = catalog.update_user_site("my-crater", description="  near the ridge  ")
+    assert (edited.id, edited.name, edited.description) == (
+        "my-crater",
+        "My crater",
+        "near the ridge",
+    )
+    both = catalog.update_user_site("my-crater", name="Rim camp", description="")
+    assert (both.name, both.description) == ("Rim camp", "")  # "" clears the description
+    reloaded = JsonSiteCatalog(curated_path=CURATED, user_path=user)
+    assert reloaded.get_site("my-crater") == both
+    with pytest.raises(ReadOnlySiteError):
+        catalog.update_user_site("apollo-11", description="x")
+
+
 def test_curated_site_cannot_be_changed(catalog: JsonSiteCatalog) -> None:
     with pytest.raises(ReadOnlySiteError):
         catalog.remove_user_site("apollo-11")
