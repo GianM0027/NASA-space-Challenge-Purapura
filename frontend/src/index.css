@@ -394,8 +394,9 @@ p {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
   width: min(400px, calc(100% - 24px));
-  max-height: calc(100% - 150px);
+  max-height: calc(100vh - 140px);
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -497,8 +498,35 @@ p {
 
 .chat,
 .ranking {
+  flex: 1 1 auto;
   min-height: 80px;
   overflow-y: auto;
+}
+
+/* Grip on the top edge of the AI box: drag to resize it vertically. */
+.ai-resize {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.ai-resize::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: calc(50% - 16px);
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.ai-resize:hover::before {
+  background: var(--accent);
 }
 
 .bubble {
@@ -612,7 +640,7 @@ button.link {
   font: inherit;
 }
 
-/* Description of a user site: under the name in "My locations", under the title in the site panel. */
+/* Description of a custom location: under its name in "Custom locations", under the title in the site panel. */
 .site-description {
   display: block;
   color: var(--muted);
@@ -877,4 +905,58 @@ button.link {
 /* A metric over its limit (e.g. landing slope over 10 deg). */
 .metric.bad .metric-value {
   color: var(--bad);
+}
+
+/* Data sources (spec UI-6): a short credit in the legend, the full list in a small popover. */
+.data-sources {
+  position: relative;
+}
+
+.data-sources > button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.data-sources-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  width: min(420px, 80vw);
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #141925f2;
+  font-size: 11px;
+}
+
+.data-sources-popover ul {
+  margin: 0;
+  padding-left: 14px;
+}
+
+.data-sources-popover li {
+  margin: 2px 0;
+}
+
+.site-source {
+  margin: -2px 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The main action of a form (e.g. Analyze in the coordinates box). */
+button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+button.primary:hover {
+  filter: brightness(1.1);
 }

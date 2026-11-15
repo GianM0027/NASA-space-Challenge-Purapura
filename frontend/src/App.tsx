@@ -10,8 +10,8 @@ import { api, ApiError, type ModuleStatus } from './api/client'
 import type { Evaluation, GeoPoint, Site, SiteRanking, SkyState, TimeWindow, TradeoffResult } from './api/contracts'
 import { formatCoordinates, formatUtc, hoursBetween } from './format'
 import { MoonGlobe, type GlobeFocus } from './globe/MoonGlobe'
-import { MOON_TEXTURE_ATTRIBUTION } from './globe/moonTexture'
 import { CoordinatesBox, MyLocations } from './panels/LocationsPanel'
+import { DataSources } from './panels/DataSources'
 import { SitePanel, type WindowSettings } from './panels/SitePanel'
 import { buildUserSite, describeSiteError } from './sites/userSites'
 
@@ -290,17 +290,6 @@ function App() {
     <div className="app">
       <header>
         <h1>LunarNav</h1>
-        <div className="modules" title="Which engine modules are live (GET /api/modules)">
-          {Object.entries(modules).map(([name, status]) => (
-            <span
-              key={name}
-              className={`badge ${status === 'real' ? 'real' : status === 'example' ? 'example' : 'failed'}`}
-              title={status}
-            >
-              {name}
-            </span>
-          ))}
-        </div>
       </header>
 
       {bootError && <p className="error banner">Backend unreachable: {bootError}</p>}
@@ -348,9 +337,6 @@ function App() {
               <i className="dot landed" /> landed
             </span>
             <span>
-              <i className="dot planned" /> planned
-            </span>
-            <span>
               <i className="dot candidate" /> candidate
             </span>
             <span>
@@ -359,7 +345,7 @@ function App() {
             <span className="muted">
               {sky ? `Sunlight at ${formatUtc(sky.time_utc)}` : 'Sun direction unavailable'}
             </span>
-            <span className="muted">{MOON_TEXTURE_ATTRIBUTION}</span>
+            <DataSources />
           </div>
           <div className="dock">
             <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} onRanking={setLastRanking} />
@@ -391,7 +377,7 @@ function App() {
 
         <aside>
           <section className="panel">
-            <h2>Sites</h2>
+            <h2>Preloaded locations</h2>
             <ul className="sites">
               {curatedSites.map((site) => (
                 <li key={site.id}>
@@ -423,6 +409,7 @@ function App() {
           <SitePanel
             title={selectedSite?.name ?? null}
             description={selectedSite?.description ?? ''}
+            sources={selectedSite?.sources ?? []}
             location={selectedLocation}
             settings={settings}
             onSettings={setSettings}

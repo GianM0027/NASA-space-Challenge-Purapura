@@ -6,6 +6,7 @@ import type { Evaluation, GeoPoint } from '../api/contracts'
 import { SLOPE_LIMIT_DEG } from '../analysis/dispersion'
 import { ElevationTimeline } from '../timeline/ElevationTimeline'
 import { TimeWheel } from '../timeline/TimeWheel'
+import { shortSource } from './sources'
 import { sampleIndex } from '../timeline/wheel'
 import {
   formatAtLeast,
@@ -25,6 +26,8 @@ type Props = {
   title: string | null
   /** Description of the selected catalog site, empty for none. */
   description: string
+  /** Citations of the selected catalog site's coordinates; empty for a clicked point. */
+  sources: string[]
   location: GeoPoint | null
   settings: WindowSettings
   onSettings: (settings: WindowSettings) => void
@@ -96,6 +99,7 @@ export function SitePanel(props: Props) {
   const {
     title,
     description,
+    sources,
     location,
     settings,
     onSettings,
@@ -166,7 +170,7 @@ export function SitePanel(props: Props) {
   if (!location) {
     return (
       <section className="panel">
-        <h2>Site</h2>
+        <h2>Location</h2>
         {controls}
         {wheel}
         <p className="muted">Pick a site marker or click anywhere on the globe.</p>
@@ -177,7 +181,7 @@ export function SitePanel(props: Props) {
   const start = evaluation?.window.start_utc
   return (
     <section className="panel">
-      <h2>{title ?? 'Custom location'}</h2>
+      <h2>{title ?? 'Selected point'}</h2>
       <p className="muted">{formatCoordinates(location)}</p>
       <div className="row analysis-start">
         <button
@@ -199,6 +203,12 @@ export function SitePanel(props: Props) {
         </label>
       </div>
       {description && <p className="site-description">{description}</p>}
+      {sources.length > 0 && (
+        <p className="muted small site-source" title={sources.join(' | ')}>
+          Coordinates: {shortSource(sources[0])}
+          {sources.length > 1 && ` (+${sources.length - 1} sources)`}
+        </p>
+      )}
       {controls}
       {wheel}
 
