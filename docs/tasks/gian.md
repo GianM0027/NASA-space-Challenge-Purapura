@@ -23,6 +23,10 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Phones in portrait: one-column layout below 760 px (globe on top, panels in the page scroll),
+  scrollable toolbar and legend, AI box and mission analysis as bottom sheets, full-screen report,
+  16 px inputs. Account moved to a corner button with a popover, closed by default (owner's
+  request). Verified with headless Chrome screenshots at 390x844 and 1440x900, plus 3 tests.
 - Optional accounts and site proposals (D45): `lunarnav.accounts` (SQLite, scrypt, sessions,
   guests), per-request catalog in the API, auth/proposal/admin routes, Account panel with login,
   sign-up, logout, account deletion, proposals and admin review; "Propose" on each saved site.

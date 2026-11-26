@@ -1024,6 +1024,61 @@ button.icon-button {
   padding: 4px 8px;
 }
 
+/* Account button in the top-right corner and its popover (decision D45). */
+.account-menu {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: 12px;
+  z-index: 40;
+}
+
+.account-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  background: #141925e6;
+}
+
+.account-button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.account-button-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.account-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(340px, calc(100vw - 24px));
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 50%);
+}
+
+.account-popover .panel {
+  border-bottom: 0;
+}
+
 /* Account panel and proposal review (decision D45). */
 .account-tabs {
   margin-bottom: 6px;
@@ -1113,4 +1168,141 @@ button.icon-button {
 
 button.link.danger {
   color: var(--bad);
+}
+
+/* ---------- Phones in portrait (task: mobile layout) ----------
+   One column: the globe on top, the panels below it in the normal page scroll. The AI box and
+   the mission analysis window become bottom sheets; full-screen popups lose their margins. */
+@media (max-width: 760px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+  }
+
+  .app {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stage {
+    flex: none;
+    height: max(360px, min(64dvh, 620px));
+  }
+
+  aside {
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .account-button-label {
+    display: none;
+  }
+
+  .ai-box {
+    background: var(--surface);
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  /* View buttons: one scrollable row instead of a column over the globe. */
+  /* right: room for the account button in the top-right corner. */
+  .toolbar {
+    top: 8px;
+    left: 8px;
+    right: 64px;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbar > * {
+    flex: none;
+  }
+
+  .toolbar button {
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+
+  /* Legend: one scrollable line at the bottom of the globe, with the dock just above it. */
+  .legend {
+    left: 8px;
+    right: 8px;
+    bottom: 6px;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-size: 11px;
+    scrollbar-width: none;
+  }
+
+  .legend::-webkit-scrollbar {
+    display: none;
+  }
+
+  .legend > * {
+    flex: none;
+  }
+
+  .dock {
+    left: 8px;
+    right: 8px;
+    bottom: 34px;
+    flex-wrap: wrap;
+  }
+
+  /* AI box and mission analysis: sheets over the bottom of the screen. */
+  .ai-box,
+  .analysis-box {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    width: auto;
+    max-height: 78dvh;
+    box-shadow: 0 -8px 30px rgb(0 0 0 / 50%);
+  }
+
+  .rpt-dialog,
+  .cmp-overlay {
+    inset: 0;
+    border-radius: 0;
+  }
+
+  /* Touch: bigger targets, and 16px text so phones do not zoom into focused fields. */
+  button,
+  select {
+    min-height: 34px;
+  }
+
+  input:not([type='checkbox']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .sites {
+    max-height: 240px;
+  }
 }
