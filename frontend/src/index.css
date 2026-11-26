@@ -180,7 +180,7 @@ button:hover {
   border-color: var(--accent);
 }
 
-aside {
+main > aside {
   overflow-y: auto;
   border-left: 1px solid var(--border);
   background: var(--surface);
@@ -1223,7 +1223,7 @@ button.danger:hover {
     height: max(360px, min(64dvh, 620px));
   }
 
-  aside {
+  main > aside {
     overflow: visible;
     border-left: 0;
     border-top: 1px solid var(--border);
@@ -1323,7 +1323,7 @@ button.danger:hover {
     height: calc(100dvh - 60px - env(safe-area-inset-bottom, 0px));
   }
 
-  .app[data-tab='globe'] aside {
+  .app[data-tab='globe'] main > aside {
     display: none;
   }
 
@@ -1343,7 +1343,7 @@ button.danger:hover {
     display: none;
   }
 
-  aside {
+  main > aside {
     border-top: 0;
   }
 

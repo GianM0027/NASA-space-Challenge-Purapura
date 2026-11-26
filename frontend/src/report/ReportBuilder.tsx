@@ -1,7 +1,7 @@
 // ABOUTME: PDF report builder (UI-13, D42): dock pill, popup with section checkboxes and a live A4 preview
 // ABOUTME: Owner: Federico. "Download PDF" prints only the report node (window.print(), print rules in report.css)
 
-import { useEffect, useState, type ComponentType } from 'react'
+import { type ComponentType, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './report.css'
 import { AiRanking } from './sections/AiRanking'
@@ -81,6 +81,24 @@ export function ReportBuilder(inputs: ReportBuilderProps) {
   const [excluded, setExcluded] = useState<Set<SectionId>>(new Set())
   const [title, setTitle] = useState(DEFAULT_TITLE)
   const [generatedUtc, setGeneratedUtc] = useState(() => new Date().toISOString())
+  // The A4 preview keeps its paper layout and is scaled down to fit narrow screens (phones).
+  const preview = useRef<HTMLDivElement>(null)
+  const [paperScale, setPaperScale] = useState(1)
+  useEffect(() => {
+    const box = preview.current
+    if (!open || !box) return
+    const fit = () => {
+      const paper = box.firstElementChild as HTMLElement | null
+      if (!paper) return
+      const style = getComputedStyle(box)
+      const room = box.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+      setPaperScale(Math.min(1, room / paper.offsetWidth))
+    }
+    const observer = new ResizeObserver(fit)
+    observer.observe(box)
+    fit()
+    return () => observer.disconnect()
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -130,7 +148,7 @@ export function ReportBuilder(inputs: ReportBuilderProps) {
         <header className="rpt-head">
           <div>
             <h2>PDF report</h2>
-            <p className="muted small">Tick what to include: the preview on the right is exactly what the PDF will contain.</p>
+            <p className="muted small">Tick what to include: the preview is exactly what the PDF will contain.</p>
           </div>
           <CloseButton what="the report" hint="your choices are kept · Esc" onClick={() => setOpen(false)} />
         </header>
@@ -172,8 +190,10 @@ export function ReportBuilder(inputs: ReportBuilderProps) {
               footers.
             </p>
           </aside>
-          <div className="rpt-preview">
-            <div className="rpt-paper">{doc}</div>
+          <div className="rpt-preview" ref={preview}>
+            <div className="rpt-paper" style={paperScale < 1 ? { zoom: paperScale } : undefined}>
+              {doc}
+            </div>
           </div>
         </div>
       </div>
