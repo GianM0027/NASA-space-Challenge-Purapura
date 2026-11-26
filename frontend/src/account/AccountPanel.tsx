@@ -146,13 +146,10 @@ export function AccountPanel(props: {
       )}
       {registered && (
         <>
-          <div className="row account-head">
-            <span>
-              Logged in as <strong>{account.username}</strong>
-              {account.is_admin && <span className="badge">admin</span>}
-            </span>
-            <button onClick={() => void api.logout().then(onChanged)}>Log out</button>
-          </div>
+          <p className="account-head">
+            Logged in as <strong>{account.username}</strong>
+            {account.is_admin && <span className="badge">admin</span>}
+          </p>
           {proposals.length > 0 && (
             <>
               <h3>Your proposals</h3>
@@ -175,19 +172,25 @@ export function AccountPanel(props: {
               {reviewing && <ProposalReview onChanged={onChanged} />}
             </>
           )}
-          {deleting ? (
-            <DeleteAccount
-              onCancel={() => setDeleting(false)}
-              onDone={() => {
-                setDeleting(false)
-                onChanged()
-              }}
-            />
-          ) : (
-            <button className="link danger" onClick={() => setDeleting(true)}>
-              Delete account…
-            </button>
-          )}
+          {/* Session actions at the bottom, apart from the review tools above. */}
+          <div className="account-actions">
+            {deleting ? (
+              <DeleteAccount
+                onCancel={() => setDeleting(false)}
+                onDone={() => {
+                  setDeleting(false)
+                  onChanged()
+                }}
+              />
+            ) : (
+              <div className="row">
+                <button onClick={() => void api.logout().then(onChanged)}>Log out</button>
+                <button className="danger" onClick={() => setDeleting(true)}>
+                  Delete account…
+                </button>
+              </div>
+            )}
+          </div>
         </>
       )}
     </section>
