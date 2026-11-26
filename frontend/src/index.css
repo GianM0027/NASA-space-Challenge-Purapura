@@ -1014,3 +1014,12 @@ button.primary:hover {
   vertical-align: middle;
   cursor: help;
 }
+
+/* Square icon button, e.g. the arrow that analyzes typed coordinates. */
+button.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2em;
+  padding: 4px 8px;
+}
