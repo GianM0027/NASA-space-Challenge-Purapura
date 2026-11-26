@@ -5,6 +5,7 @@ import { AiBadge } from '../ai/AiBadge'
 import type { DispersionSample, GeoPoint, RobustnessReport, TimeWindow, VisibilityMetrics } from '../api/contracts'
 import { formatDuration, formatPercent, formatShiftDays, formatUtc } from '../format'
 import { bearingDeg, classify, compass, isSteep, SAME_FRACTION, SLOPE_LIMIT_DEG, touchdownVerdict } from './dispersion'
+import { CloseButton } from '../ui/CloseButton'
 
 /** One analysis tab: its request, then the report and the AI comment as they arrive. */
 export type AnalysisTab = {
@@ -272,9 +273,7 @@ export function MissionAnalysisBox(props: {
         <button title="Close every analysis" onClick={onReset}>
           Reset
         </button>
-        <button title="Minimize" onClick={() => onMinimize(true)}>
-          –
-        </button>
+        <CloseButton what="mission analysis" hint="the analyses are kept" onClick={() => onMinimize(true)} />
       </div>
       <AnalysisView tab={active} />
     </section>

@@ -1185,6 +1185,12 @@ button.danger:hover {
   border-color: var(--bad);
 }
 
+/* Full-screen popups (comparison, report) open from the dock: lift the whole dock above the
+   account button and the phone tab bar while one is open, so its header buttons stay usable. */
+.dock:has(.cmp-backdrop, .rpt-backdrop) {
+  z-index: 60;
+}
+
 /* Phone-only controls: the tab bar and the "See analysis" hint (shown in the media query below). */
 .mobile-tabs,
 .mobile-only {
@@ -1328,19 +1334,13 @@ button.danger:hover {
   }
 
   .app:not([data-tab='globe']) .ai-box,
-  .app:not([data-tab='globe']) .analysis-box,
-  .app:not([data-tab='globe']) .account-menu {
+  .app:not([data-tab='globe']) .analysis-box {
     visibility: visible;
   }
 
   .app[data-tab='sites'] .group-analysis,
   .app[data-tab='analysis'] .group-sites {
     display: none;
-  }
-
-  .account-menu {
-    position: fixed;
-    z-index: 36;
   }
 
   aside {
@@ -1427,4 +1427,16 @@ button.danger:hover {
   .sites {
     max-height: 240px;
   }
+}
+
+/* The × that closes every floating window (AI box, mission analysis, comparison, report). */
+button.close-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
 }
