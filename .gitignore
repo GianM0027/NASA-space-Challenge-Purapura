@@ -34,3 +34,4 @@ Thumbs.db
 # Local Claude Code configuration (personal, not shared)
 .claude/launch.json
 .claude/settings.local.json
+data/state/

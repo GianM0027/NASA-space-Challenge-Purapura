@@ -2,6 +2,7 @@
 // ABOUTME: Owner: Gian. Presentational: the parent makes the API calls and returns an error message or null
 
 import { useState } from 'react'
+import type { ProposalInfo } from '../api/client'
 import type { GeoPoint, Site } from '../api/contracts'
 import { formatCoordinates } from '../format'
 import { parseCoordinates } from '../sites/userSites'
@@ -125,9 +126,14 @@ function LocationRow(props: {
   onPick: (siteId: string) => void
   onEdit: Action<[siteId: string, name: string, description: string]>
   onDelete: Action<[siteId: string]>
+  /** Propose this site for the shared catalog; absent without an account (decision D45). */
+  onPropose?: Action<[siteId: string, note: string]>
+  /** Status of this site's latest proposal, if any. */
+  proposal?: ProposalInfo['status']
 }) {
-  const { site, active, onPick, onEdit, onDelete } = props
-  const [mode, setMode] = useState<'view' | 'edit' | 'confirm'>('view')
+  const { site, active, onPick, onEdit, onDelete, onPropose, proposal } = props
+  const [mode, setMode] = useState<'view' | 'edit' | 'confirm' | 'propose'>('view')
+  const [note, setNote] = useState('')
   const [draft, setDraft] = useState(site.name)
   const [draftDescription, setDraftDescription] = useState(site.description)
   const [message, setMessage] = useState<string | null>(null)
@@ -198,7 +204,41 @@ function LocationRow(props: {
           <button title="Delete" onClick={() => setMode('confirm')}>
             Delete
           </button>
+          {onPropose && proposal !== 'pending' && proposal !== 'approved' && (
+            <button title="Ask the admin to add this site to the shared catalog" onClick={() => setMode('propose')}>
+              Propose
+            </button>
+          )}
         </div>
+      )}
+      {proposal === 'pending' && <span className="badge pending small">proposed, waiting for review</span>}
+      {proposal === 'approved' && <span className="badge approved small">added to the catalog</span>}
+      {mode === 'propose' && onPropose && (
+        <form
+          className="row confirm"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void onPropose(site.id, note).then((error) => {
+              if (!error) {
+                setNote('')
+                setMode('view')
+              }
+            })
+          }}
+        >
+          <input
+            autoFocus
+            value={note}
+            maxLength={1000}
+            aria-label={`Why ${site.name} should join the catalog`}
+            placeholder="Why should it join the catalog? Sources help."
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <button type="submit">Send</button>
+          <button type="button" onClick={() => setMode('view')}>
+            Cancel
+          </button>
+        </form>
       )}
       {mode === 'confirm' && (
         <div className="row confirm">
@@ -219,8 +259,15 @@ export function MyLocations(props: {
   onPick: (siteId: string) => void
   onEdit: Action<[siteId: string, name: string, description: string]>
   onDelete: Action<[siteId: string]>
+  /** Present for a registered account: lets each site be proposed for the catalog. */
+  onPropose?: Action<[siteId: string, note: string]>
+  /** The account's proposals, newest first, for the per-site status. */
+  proposals?: ProposalInfo[]
 }) {
-  const { sites, selectedId, onPick, onEdit, onDelete } = props
+  const { sites, selectedId, onPick, onEdit, onDelete, onPropose, proposals = [] } = props
+  // Latest proposal status per site id (the list is newest first).
+  const status = new Map<string, ProposalInfo['status']>()
+  for (const proposal of proposals) if (!status.has(proposal.site.id)) status.set(proposal.site.id, proposal.status)
   // The last edit or delete error, kept here because the row it concerns may be gone.
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -249,6 +296,8 @@ export function MyLocations(props: {
               onPick={onPick}
               onEdit={reporting(onEdit)}
               onDelete={reporting(onDelete)}
+              onPropose={onPropose && reporting(onPropose)}
+              proposal={status.get(site.id)}
             />
           ))}
         </ul>

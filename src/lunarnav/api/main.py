@@ -22,6 +22,8 @@ from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
+from lunarnav.accounts import AccountError, AccountStore, build_account_store
+from lunarnav.api.accounts import SessionDep, build_accounts_router
 from lunarnav.api.ratelimit import RateLimitMiddleware, limiter_from_env
 from lunarnav.api.requests import (
     CommentAnalysisRequest,
@@ -44,6 +46,7 @@ from lunarnav.contracts import (
     ReadOnlySiteError,
     RobustnessReport,
     Site,
+    SiteCatalog,
     SiteRanking,
     SkyState,
     TradeoffResult,
@@ -70,13 +73,18 @@ def _llm_module() -> ModuleType | None:
 TRADEOFF_COMMENT_CACHE = 32
 
 
-def build_app(services: Services | None = None, status: ModuleStatus | None = None) -> FastAPI:
+def build_app(
+    services: Services | None = None,
+    status: ModuleStatus | None = None,
+    accounts: AccountStore | None = None,
+) -> FastAPI:
     """Create the FastAPI app.
 
     Args:
         services: Services to use; built by ``wiring.build_services`` when None.
         status: Per-service origin reported by ``GET /api/modules``; ignored unless
             ``services`` is given.
+        accounts: Account store; opened from the environment when None (decision D45).
 
     Returns:
         The configured application.
@@ -85,6 +93,8 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         svc, modules = build_services()
     else:
         svc, modules = services, status or {}
+    if accounts is None:
+        accounts = build_account_store()
     app = FastAPI(title="LunarNav API", version="0.1.0")
     limiter = limiter_from_env()
     if limiter is not None:  # per-client limits for the public deployment (decision D44)
@@ -122,19 +132,29 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
                 status_code=503, content={"detail": "The AI assistant needs an Anthropic API key."}
             )
 
-    def resolve(request: EvaluateRequest) -> tuple[GeoPoint, str | None]:
-        """Return the point to evaluate and its site id; 404 for an unknown site."""
+    # Accounts (decision D45): every route below sees the catalog of the person asking.
+    app.state.accounts = accounts
+    app.state.base_catalog = svc.catalog
+    app.include_router(build_accounts_router(accounts))
+
+    def ranker_for(catalog: SiteCatalog) -> Any:
+        """The ranker over this person's catalog (their own sites included)."""
+        with_catalog = getattr(svc.ranker, "with_catalog", None)
+        return with_catalog(catalog) if callable(with_catalog) else svc.ranker
+
+    def resolve(request: EvaluateRequest, catalog: SiteCatalog) -> tuple[GeoPoint, str | None]:
+        """Return the point to evaluate and its site id; 404 for a site this person cannot see."""
         if request.site_id is None:
             assert request.location is not None  # guaranteed by EvaluateRequest validation
             return request.location, None
         try:
-            return svc.catalog.get_site(request.site_id).location, request.site_id
+            return catalog.get_site(request.site_id).location, request.site_id
         except KeyError as error:
             raise HTTPException(404, f"unknown site id {request.site_id!r}") from error
 
-    def evaluate(request: EvaluateRequest) -> Evaluation:
+    def evaluate(request: EvaluateRequest, catalog: SiteCatalog) -> Evaluation:
         """Evaluate one resolved scenario."""
-        location, site_id = resolve(request)
+        location, site_id = resolve(request, catalog)
         return svc.evaluator.evaluate(location, request.window, request.area, site_id=site_id)
 
     @app.get("/api/health")
@@ -147,21 +167,25 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         """Report, per service, whether it is "real", "example" or "error: ..."."""
         return modules
 
-    def assistant_for(api_key: str | None) -> Any:
-        """Return the assistant answering with the caller's key, or the shared one without it.
+    def assistant_for(api_key: str | None, catalog: SiteCatalog) -> Any:
+        """Return the assistant for this request: the caller's key and their catalog.
 
-        422 for a key of impossible shape; 501 when the wired assistant cannot take a key.
+        Without a key the server's LLM answers. 422 for a key of impossible shape; 501 when the
+        wired assistant cannot take a key.
         """
-        if api_key is None or not api_key.strip():
+        rebind = getattr(svc.assistant, "rebind", None)
+        llm_client = None
+        if api_key is not None and api_key.strip():
+            llm = _llm_module()
+            if llm is None or not callable(rebind):
+                raise HTTPException(501, "this server cannot use an Anthropic API key")
+            try:
+                llm_client = llm.api_client_for_key(api_key)
+            except ValueError as error:
+                raise HTTPException(422, str(error)) from error
+        if not callable(rebind):
             return svc.assistant
-        llm = _llm_module()
-        with_llm = getattr(svc.assistant, "with_llm", None)
-        if llm is None or not callable(with_llm):
-            raise HTTPException(501, "this server cannot use an Anthropic API key")
-        try:
-            return with_llm(llm.api_client_for_key(api_key))
-        except ValueError as error:
-            raise HTTPException(422, str(error)) from error
+        return rebind(llm=llm_client, ranker=ranker_for(catalog), catalog=catalog)
 
     @app.get("/api/ai/config")
     def ai_config() -> dict[str, Any]:
@@ -172,7 +196,7 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         server_llm = getattr(getattr(svc.assistant, "llm", None), "provider", None)
         return {
             "server_llm": server_llm or "example",
-            "accepts_user_key": callable(getattr(svc.assistant, "with_llm", None))
+            "accepts_user_key": callable(getattr(svc.assistant, "rebind", None))
             and _llm_module() is not None,
             "key_header": API_KEY_HEADER,
         }
@@ -183,30 +207,27 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         return sky_state(svc.ephemeris, time_utc)
 
     @app.get("/api/sites")
-    def list_sites() -> list[Site]:
-        """List all catalog and user sites."""
-        return svc.catalog.list_sites()
+    def list_sites(session: SessionDep) -> list[Site]:
+        """Shared catalog sites, then the visitor's own sites."""
+        return session.catalog().list_sites()
 
     @app.post("/api/sites")
-    def add_site(site: Site) -> Site:
-        """Add a user site; 409 if the id exists."""
+    def add_site(site: Site, session: SessionDep, response: Response) -> Site:
+        """Save a personal site (a first save starts a guest session); 409 if the id exists."""
         try:
-            return svc.catalog.add_user_site(site)
+            saved = session.catalog().add_user_site(site)
+        except AccountError as error:
+            raise HTTPException(409, str(error)) from error
         except ValueError as error:
             raise HTTPException(409, str(error)) from error
-
-    def require_editable_catalog(method: str) -> None:
-        """Answer 501 while the wired catalog lacks a ``SiteCatalog`` method added later."""
-        if not callable(getattr(svc.catalog, method, None)):
-            name = type(svc.catalog).__name__
-            raise HTTPException(501, f"{name} does not implement {method} yet")
+        session.write_cookie(response)
+        return saved
 
     @app.delete("/api/sites/{site_id}", status_code=204)
-    def remove_site(site_id: str) -> Response:
-        """Delete a user site; 404 if unknown, 403 if curated."""
-        require_editable_catalog("remove_user_site")
+    def remove_site(site_id: str, session: SessionDep) -> Response:
+        """Delete a personal site; 404 if unknown, 403 if it belongs to the shared catalog."""
         try:
-            svc.catalog.remove_user_site(site_id)
+            session.catalog().remove_user_site(site_id)
         except UnknownSiteError as error:
             raise HTTPException(404, f"unknown site id {site_id!r}") from error
         except ReadOnlySiteError as error:
@@ -214,14 +235,13 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         return Response(status_code=204)
 
     @app.patch("/api/sites/{site_id}")
-    def update_site(site_id: str, request: UpdateSiteRequest) -> Site:
-        """Edit a user site's name and/or description (id unchanged).
+    def update_site(site_id: str, request: UpdateSiteRequest, session: SessionDep) -> Site:
+        """Edit a personal site's name and/or description (id unchanged).
 
-        404 if unknown, 403 if curated, 422 if the body is empty or the name blank.
+        404 if unknown, 403 if shared, 422 if the body is empty or the name blank.
         """
-        require_editable_catalog("update_user_site")
         try:
-            return svc.catalog.update_user_site(
+            return session.catalog().update_user_site(
                 site_id, name=request.name, description=request.description
             )
         except UnknownSiteError as error:
@@ -230,29 +250,34 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
             raise HTTPException(403, str(error)) from error
 
     @app.post("/api/evaluate")
-    def evaluate_one(request: EvaluateRequest) -> Evaluation:
+    def evaluate_one(request: EvaluateRequest, session: SessionDep) -> Evaluation:
         """Evaluate one site or point over a window."""
-        return evaluate(request)
+        return evaluate(request, session.catalog())
 
     @app.post("/api/compare")
-    def compare(request: CompareRequest) -> list[Evaluation]:
+    def compare(request: CompareRequest, session: SessionDep) -> list[Evaluation]:
         """Evaluate 2 to 4 scenarios side by side."""
-        return [evaluate(scenario) for scenario in request.scenarios]
+        catalog = session.catalog()
+        return [evaluate(scenario, catalog) for scenario in request.scenarios]
 
     @app.post("/api/rank")
-    def rank(requirements: MissionRequirements) -> SiteRanking:
-        """Rank catalog sites against explicit requirements (no LLM)."""
-        return svc.ranker.rank(requirements)
+    def rank(requirements: MissionRequirements, session: SessionDep) -> SiteRanking:
+        """Rank catalog sites (and the visitor's own) against explicit requirements (no LLM)."""
+        return ranker_for(session.catalog()).rank(requirements)
 
     @app.post("/api/ai/ask")
-    def ask(request: AiRequest, api_key: ApiKey = None) -> AiAnswer:
+    def ask(request: AiRequest, session: SessionDep, api_key: ApiKey = None) -> AiAnswer:
         """Turn one chat turn into updated requirements and, when possible, a ranking."""
-        return assistant_for(api_key).ask(request)
+        return assistant_for(api_key, session.catalog()).ask(request)
 
     @app.post("/api/ai/explain")
-    def explain(request: ExplainRequest, api_key: ApiKey = None) -> SiteRanking:
+    def explain(
+        request: ExplainRequest, session: SessionDep, api_key: ApiKey = None
+    ) -> SiteRanking:
         """Add a short AI rationale to every ranked site (numbers checked against the ranking)."""
-        return assistant_for(api_key).explain(request.ranking, request.language_hint)
+        return assistant_for(api_key, session.catalog()).explain(
+            request.ranking, request.language_hint
+        )
 
     # AI comments of the latest trade-off results, keyed by the result without comment: the
     # export recomputes the same deterministic result and reuses its comment, no second LLM call.
@@ -260,15 +285,15 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
     tradeoff_comments: dict[str, str] = {}
 
     def tradeoff(
-        request: TradeoffRequest, api_key: str | None
+        request: TradeoffRequest, api_key: str | None, catalog: SiteCatalog
     ) -> tuple[TradeoffResult, list[Evaluation]]:
         """Evaluate the scenarios, run the trade-off and add its AI comment (spec TO-5)."""
-        evaluations = [evaluate(scenario) for scenario in request.scenarios]
+        evaluations = [evaluate(scenario, catalog) for scenario in request.scenarios]
         result = svc.tradeoff.analyze(evaluations, request.settings)
         key = result.model_dump_json(exclude={"ai_comment"})
         comment = tradeoff_comments.get(key)
         if comment is None:
-            comment = assistant_for(api_key).comment_tradeoff(result).ai_comment
+            comment = assistant_for(api_key, catalog).comment_tradeoff(result).ai_comment
             if comment is not None:
                 if len(tradeoff_comments) >= TRADEOFF_COMMENT_CACHE:
                     tradeoff_comments.pop(next(iter(tradeoff_comments)))
@@ -276,17 +301,21 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         return result.model_copy(update={"ai_comment": comment}), evaluations
 
     @app.post("/api/tradeoff")
-    def tradeoff_result(request: TradeoffRequest, api_key: ApiKey = None) -> TradeoffResult:
+    def tradeoff_result(
+        request: TradeoffRequest, session: SessionDep, api_key: ApiKey = None
+    ) -> TradeoffResult:
         """AHP trade-off of 2 to 4 scenarios (spec section 4.8)."""
-        return tradeoff(request, api_key)[0]
+        return tradeoff(request, api_key, session.catalog())[0]
 
     @app.post("/api/tradeoff/export")
-    def tradeoff_export(request: TradeoffRequest, api_key: ApiKey = None) -> Response:
+    def tradeoff_export(
+        request: TradeoffRequest, session: SessionDep, api_key: ApiKey = None
+    ) -> Response:
         """The same trade-off as a live Excel workbook (spec TO-4); 501 without the module."""
         export = getattr(svc.tradeoff, "export_xlsx", None)
         if not callable(export):
             raise HTTPException(501, f"{type(svc.tradeoff).__name__} cannot export a workbook yet")
-        result, evaluations = tradeoff(request, api_key)
+        result, evaluations = tradeoff(request, api_key, session.catalog())
         content = export(result, evaluations)
         return Response(
             content,
@@ -296,17 +325,17 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
 
     @app.post("/api/ai/comment-analysis")
     def comment_analysis(
-        request: CommentAnalysisRequest, api_key: ApiKey = None
+        request: CommentAnalysisRequest, session: SessionDep, api_key: ApiKey = None
     ) -> RobustnessReport:
         """Add a short AI comment to a mission-analysis report (numbers checked)."""
-        return assistant_for(api_key).comment_analysis(
+        return assistant_for(api_key, session.catalog()).comment_analysis(
             request.report, request.site_name, request.language_hint
         )
 
     @app.post("/api/mission-analysis")
-    def mission_analysis(request: MissionAnalysisRequest) -> RobustnessReport:
+    def mission_analysis(request: MissionAnalysisRequest, session: SessionDep) -> RobustnessReport:
         """Robustness of a scenario to date shifts and landing dispersion."""
-        location, site_id = resolve(request)
+        location, site_id = resolve(request, session.catalog())
         return svc.analyzer.analyze(
             location, request.window, request.area, request.shifts_days, site_id=site_id
         )
