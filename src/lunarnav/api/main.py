@@ -22,6 +22,7 @@ from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
+from lunarnav.api.ratelimit import RateLimitMiddleware, limiter_from_env
 from lunarnav.api.requests import (
     CommentAnalysisRequest,
     CompareRequest,
@@ -85,6 +86,9 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
     else:
         svc, modules = services, status or {}
     app = FastAPI(title="LunarNav API", version="0.1.0")
+    limiter = limiter_from_env()
+    if limiter is not None:  # per-client limits for the public deployment (decision D44)
+        app.add_middleware(RateLimitMiddleware, limiter=limiter)
 
     @app.exception_handler(ValueError)
     def invalid_input(_: Request, error: ValueError) -> JSONResponse:
