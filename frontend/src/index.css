@@ -630,6 +630,32 @@ button.link {
   gap: 6px;
 }
 
+/* Own Anthropic API key panel inside the AI box (decision D43). */
+.ai-key {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  margin: 4px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.ai-key p {
+  margin: 0;
+}
+
+.ai-key a {
+  color: var(--accent);
+}
+
+.ai-key-remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .ask input {
   flex: 1;
   padding: 5px 8px;

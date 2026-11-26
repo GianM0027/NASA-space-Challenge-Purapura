@@ -555,6 +555,14 @@ class ChatAssistant:
         self.archetypes = archetypes
         self.regions: Mapping[str, Region] = regions or {}
 
+    def with_llm(self, llm: LlmClient) -> ChatAssistant:
+        """Return an assistant sharing every collaborator but answering with ``llm``.
+
+        Used per request when a user sends their own API key (decision D43); the shared
+        assistant is left untouched, so concurrent requests never see each other's key.
+        """
+        return ChatAssistant(self.ranker, self.catalog, llm, self.archetypes, self.regions)
+
     def _extraction_prompt(self, request: AiRequest) -> str:
         """Return the data of the extraction call as JSON text."""
         current: dict[str, Any] = {}

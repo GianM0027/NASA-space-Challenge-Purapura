@@ -70,6 +70,16 @@ npm run dev
 ```
 
 Open http://localhost:5173 (the dev server proxies `/api` to the backend).
+
+### AI provider
+
+The AI box uses the server's LLM, chosen by `LUNARNAV_LLM_PROVIDER` (see `.env.example`): `cli`
+(default: the Claude Code CLI with your logged-in plan), `api` (Anthropic API with the server's
+`ANTHROPIC_API_KEY`) or `none`. Any visitor can also add their own Anthropic API key with the
+**API key** button in the AI box: it stays in their browser and is sent only with AI requests,
+which the server passes to Anthropic without storing it (decision D43). For a public deployment
+use `LUNARNAV_LLM_PROVIDER=none`, so visitors never spend your plan; without a key the rest of the
+app works and the AI texts fall back to deterministic sentences.
 API docs: http://localhost:8000/docs. The header badges show which modules are live; a module
 that is missing or fails falls back to a labelled placeholder (spec IF-5), and
 http://localhost:8000/api/modules gives the reason.

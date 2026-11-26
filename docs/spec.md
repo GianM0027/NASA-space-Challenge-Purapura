@@ -138,10 +138,14 @@ Format: **ID** (priority, owner): requirement. *Acceptance*: how we know it work
 - **AI-3** (P0, Gian): the LLM never outputs lunar numbers of its own; explanations cite only values
   from `SiteRanking`/`RobustnessReport`.
 - **AI-4** (P0, Gian): the LLM provider is a swappable component (`LlmClient`), selected by
-  `LUNARNAV_LLM_PROVIDER`: `cli` (default, implemented) runs the Claude Code CLI headless with
-  every context source off (empty folder, no settings, skills, MCP or tools), so the model sees
-  only the task prompt; `api` (Anthropic API) is the planned alternative if CLI latency is too
-  high for the demo.
+  `LUNARNAV_LLM_PROVIDER`: `cli` (default) runs the Claude Code CLI headless with every context
+  source off (empty folder, no settings, skills, MCP or tools), so the model sees only the task
+  prompt; `api` calls the Anthropic Messages API with structured outputs and the server's
+  `ANTHROPIC_API_KEY`; `none` gives the server no LLM. On any provider a visitor may send their
+  own Anthropic API key in the `X-Anthropic-Api-Key` header of the AI calls (key panel in the AI
+  box): that key answers that request only and is never stored or logged (D43). Without an LLM,
+  `/api/ai/ask` answers 503 and every other AI text falls back to its deterministic version or
+  is left out (explanations: template sentence; comments: none).
 - **AI-5** (P1, Gian with content by Michael): mission archetypes (e.g. robotic ISRU, short human
   stay, long-duration outpost, communication relay) as domain knowledge with **sourced** typical
   values, used to suggest requirements.

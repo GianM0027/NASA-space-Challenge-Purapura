@@ -23,6 +23,13 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Own Anthropic API key for public hosting (D43): AI routes take the visitor's key in
+  `X-Anthropic-Api-Key` (`AnthropicApiClient`, structured outputs), provider `none` for a server
+  without LLM, `api` provider implemented, `GET /api/ai/config`; key panel in the AI box (session
+  storage, opt-in remember); 503/401/422 handled in the chat, no endless "Explanation on the way"
+  when explanations fail. Verified: 30 new backend tests and 6 frontend tests; live server with
+  provider `none`: 503 without key, 401 from Anthropic with a fake key, key absent from the logs.
+  Not yet verified with a real key.
 - AI comments fixed (trade-off, mission analysis, ranking reasons): numbers in site names ("Apollo
   11", "IM-2") were counted as invented, so most comments were dropped; a rejected comment is now
   asked again once with the offending numbers named; the API no longer remembers "no comment".
