@@ -1,6 +1,7 @@
 // ABOUTME: Trade-off calls of the comparison view: POST /api/tradeoff and the Excel export download
 // ABOUTME: Owner: Federico (D37). Kept here until Gian moves them into api/client.ts (his file)
 
+import { aiKeyHeaders } from '../api/aiKey'
 import { ApiError } from '../api/client'
 import type { TradeoffRequest, TradeoffResult } from '../api/contracts'
 
@@ -9,7 +10,8 @@ async function post(path: string, body: TradeoffRequest): Promise<Response> {
   try {
     response = await fetch(path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // The visitor's own API key, if saved, writes the AI comment of the result (decision D43).
+      headers: { 'Content-Type': 'application/json', ...aiKeyHeaders() },
       body: JSON.stringify(body),
     })
   } catch {

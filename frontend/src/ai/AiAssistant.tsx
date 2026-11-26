@@ -1,9 +1,11 @@
 // ABOUTME: AI box (spec UI-4): chat and ranking tabs sharing one bar of editable mission criteria
-// ABOUTME: Owner: Gian. Edits rerank without the LLM; rationales arrive after the ranking
+// ABOUTME: Owner: Gian. Edits rerank without the LLM; rationales arrive after the ranking; own API key (D43)
 
 import { useEffect, useRef, useState } from 'react'
-import { api } from '../api/client'
+import { getAiKey, onAiKeyChange } from '../api/aiKey'
+import { api, ApiError, type AiConfig } from '../api/client'
 import { AiBadge } from './AiBadge'
+import { AiKeyPanel } from './AiKeyPanel'
 import type { ChatMessage, MissionRequirements, Site, SiteRanking, SiteScore, TimeWindow } from '../api/contracts'
 import { formatUtc, hoursBetween } from '../format'
 import {
@@ -84,9 +86,10 @@ function RankRow(props: {
   name: string
   requirements: MissionRequirements
   open: boolean
+  explaining: boolean
   onClick: () => void
 }) {
-  const { score, name, requirements, open, onClick } = props
+  const { score, name, requirements, open, explaining, onClick } = props
   const [met, total] = constraintsCount(score)
   return (
     <li className={open ? 'rank-row open' : 'rank-row'}>
@@ -110,9 +113,9 @@ function RankRow(props: {
               <AiBadge />
               {score.rationale}
             </p>
-          ) : (
+          ) : explaining ? (
             <p className="rationale muted">Explanation on the way…</p>
-          )}
+          ) : null}
           <table className="checks">
             <tbody>
               {Object.entries(score.constraints_met).map(([field, ok]) => {
@@ -166,6 +169,11 @@ export function AiAssistant(props: {
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showMisses, setShowMisses] = useState(false)
+  const [explaining, setExplaining] = useState(false)
+  // Own API key (decision D43): the server's AI provider, the saved key and the key panel.
+  const [aiConfig, setAiConfig] = useState<AiConfig | null>(null)
+  const [aiKey, setAiKeyState] = useState<string | null>(getAiKey())
+  const [keyPanel, setKeyPanel] = useState(false)
   // Increments on every new ranking, so a late explanation of an older ranking is dropped.
   const generation = useRef(0)
   const lastText = useRef('')
@@ -174,6 +182,17 @@ export function AiAssistant(props: {
   const box = useRef<HTMLElement>(null)
   const drag = useRef<{ y: number; height: number } | null>(null)
   const chat = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    api
+      .aiConfig()
+      .then(setAiConfig)
+      .catch(() => setAiConfig(null))
+    return onAiKeyChange(() => setAiKeyState(getAiKey()))
+  }, [])
+  const acceptsKey = aiConfig?.accepts_user_key ?? false
+  // Without a server AI and without a key the chat cannot work: show the key panel instead.
+  const needsKey = acceptsKey && aiConfig?.server_llm === 'none' && !aiKey
 
   // Keep the newest message in view.
   useEffect(() => {
@@ -205,10 +224,12 @@ export function AiAssistant(props: {
     setShowMisses(!next.results.some((score) => score.all_constraints_met))
     if (firstTime) setTab('ranking')
     else setUnseen(true)
+    setExplaining(true)
     api
       .explain({ ranking: next, language_hint: lastText.current })
       .then((explained) => mine === generation.current && setRanking(explained))
       .catch(() => undefined)
+      .finally(() => mine === generation.current && setExplaining(false))
   }
 
   const send = async () => {
@@ -232,7 +253,17 @@ export function AiAssistant(props: {
       setRequirements(answer.requirements)
       if (answer.ranking) showRanking(answer.ranking, ranking === null)
     } catch (reason) {
-      setError(String(reason))
+      if (reason instanceof ApiError && (reason.status === 401 || reason.status === 503)) {
+        // A key problem the visitor can fix: say so and open the key panel.
+        setError(
+          reason.status === 401
+            ? 'Your Anthropic API key was rejected: check it below.'
+            : 'The AI assistant needs an Anthropic API key: add yours below.',
+        )
+        setKeyPanel(true)
+      } else {
+        setError(String(reason))
+      }
     } finally {
       setBusy(null)
     }
@@ -284,6 +315,7 @@ export function AiAssistant(props: {
       name={names.get(score.site_id) ?? score.site_id}
       requirements={ranking!.requirements}
       open={open === score.site_id}
+      explaining={explaining}
       onClick={() => {
         setOpen(open === score.site_id ? null : score.site_id)
         onPickSite(score.site_id, ranking!.requirements.window)
@@ -317,6 +349,15 @@ export function AiAssistant(props: {
             {unseen && tab !== 'ranking' && <i className="unseen" />}
           </button>
         </div>
+        {acceptsKey && (
+          <button
+            className={keyPanel ? 'active' : undefined}
+            title={aiKey ? 'Your Anthropic API key is set' : 'Add your Anthropic API key'}
+            onClick={() => setKeyPanel(!keyPanel)}
+          >
+            {aiKey ? 'API key ✓' : 'API key'}
+          </button>
+        )}
         <button title="Start a new conversation" onClick={reset}>
           Reset
         </button>
@@ -345,9 +386,19 @@ export function AiAssistant(props: {
         </div>
       )}
 
+      {(keyPanel || needsKey) && (
+        <AiKeyPanel
+          required={needsKey}
+          onDone={() => {
+            setKeyPanel(false)
+            setError(null)
+          }}
+        />
+      )}
+
       {tab === 'chat' ? (
         <div className="chat" ref={chat}>
-          {history.length === 0 && (
+          {history.length === 0 && !needsKey && (
             <p className="muted small">
               Describe the mission: type, dates, what it needs (light, Earth contact, flat ground).
               The AI fills the criteria above; every number in the ranking is computed by the engine.
@@ -395,11 +446,17 @@ export function AiAssistant(props: {
       >
         <input
           value={draft}
-          placeholder={history.length ? 'Add a detail…' : 'e.g. two-week robotic lander near the south pole'}
+          placeholder={
+            needsKey
+              ? 'Add an API key above to chat'
+              : history.length
+                ? 'Add a detail…'
+                : 'e.g. two-week robotic lander near the south pole'
+          }
           onChange={(event) => setDraft(event.target.value)}
-          disabled={busy !== null}
+          disabled={busy !== null || needsKey}
         />
-        <button type="submit" disabled={busy !== null || !draft.trim()}>
+        <button type="submit" disabled={busy !== null || needsKey || !draft.trim()}>
           Send
         </button>
       </form>

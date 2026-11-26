@@ -5,13 +5,20 @@
 
 Concrete module classes are chosen in ``lunarnav.api.wiring`` (real module when its factory
 exists, placeholder otherwise); ``GET /api/modules`` reports which is which.
+
+AI routes accept the caller's own Anthropic API key in the ``X-Anthropic-Api-Key`` header
+(decision D43): the key answers that request only and is never stored or logged. Without it the
+server's provider answers (``LUNARNAV_LLM_PROVIDER``); with none, ``/api/ai/ask`` answers 503
+and the other AI texts fall back to their deterministic versions.
 """
 
 from __future__ import annotations
 
 import logging
+from types import ModuleType
+from typing import Annotated, Any
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import AwareDatetime
 
@@ -43,6 +50,20 @@ from lunarnav.contracts import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Header carrying a user's own Anthropic API key for the AI routes (decision D43).
+API_KEY_HEADER = "X-Anthropic-Api-Key"
+ApiKey = Annotated[str | None, Header(alias=API_KEY_HEADER)]
+
+
+def _llm_module() -> ModuleType | None:
+    """Return ``lunarnav.ai.llm``, or None when the AI module is not installed."""
+    try:
+        from lunarnav.ai import llm
+    except ImportError:
+        return None
+    return llm
+
 
 # How many trade-off comments the API keeps for the export to reuse (oldest dropped first).
 TRADEOFF_COMMENT_CACHE = 32
@@ -77,6 +98,26 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         detail = f"{type(error).__name__}: {error}"
         return JSONResponse(status_code=502, content={"detail": detail})
 
+    llm_module = _llm_module()
+    if llm_module is not None:
+        # Registered per class (not in the catch-all above) so these answers are final: AI
+        # failures the user can fix are not server errors and leave no traceback in the log.
+
+        @app.exception_handler(llm_module.LlmAuthError)
+        def rejected_key(_: Request, error: Exception) -> JSONResponse:
+            """Anthropic rejected the caller's key: 401."""
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "The Anthropic API key was rejected: check it and try again."},
+            )
+
+        @app.exception_handler(llm_module.LlmUnavailableError)
+        def no_llm(_: Request, error: Exception) -> JSONResponse:
+            """No server LLM and no key in the request: 503."""
+            return JSONResponse(
+                status_code=503, content={"detail": "The AI assistant needs an Anthropic API key."}
+            )
+
     def resolve(request: EvaluateRequest) -> tuple[GeoPoint, str | None]:
         """Return the point to evaluate and its site id; 404 for an unknown site."""
         if request.site_id is None:
@@ -101,6 +142,36 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
     def module_status() -> ModuleStatus:
         """Report, per service, whether it is "real", "example" or "error: ..."."""
         return modules
+
+    def assistant_for(api_key: str | None) -> Any:
+        """Return the assistant answering with the caller's key, or the shared one without it.
+
+        422 for a key of impossible shape; 501 when the wired assistant cannot take a key.
+        """
+        if api_key is None or not api_key.strip():
+            return svc.assistant
+        llm = _llm_module()
+        with_llm = getattr(svc.assistant, "with_llm", None)
+        if llm is None or not callable(with_llm):
+            raise HTTPException(501, "this server cannot use an Anthropic API key")
+        try:
+            return with_llm(llm.api_client_for_key(api_key))
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+
+    @app.get("/api/ai/config")
+    def ai_config() -> dict[str, Any]:
+        """Report the server's LLM provider and whether a user key is accepted.
+
+        ``server_llm``: "cli", "api" or "none"; "example" for the placeholder assistant.
+        """
+        server_llm = getattr(getattr(svc.assistant, "llm", None), "provider", None)
+        return {
+            "server_llm": server_llm or "example",
+            "accepts_user_key": callable(getattr(svc.assistant, "with_llm", None))
+            and _llm_module() is not None,
+            "key_header": API_KEY_HEADER,
+        }
 
     @app.get("/api/sky")
     def sky(time_utc: AwareDatetime) -> SkyState:
@@ -170,28 +241,30 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         return svc.ranker.rank(requirements)
 
     @app.post("/api/ai/ask")
-    def ask(request: AiRequest) -> AiAnswer:
+    def ask(request: AiRequest, api_key: ApiKey = None) -> AiAnswer:
         """Turn one chat turn into updated requirements and, when possible, a ranking."""
-        return svc.assistant.ask(request)
+        return assistant_for(api_key).ask(request)
 
     @app.post("/api/ai/explain")
-    def explain(request: ExplainRequest) -> SiteRanking:
+    def explain(request: ExplainRequest, api_key: ApiKey = None) -> SiteRanking:
         """Add a short AI rationale to every ranked site (numbers checked against the ranking)."""
-        return svc.assistant.explain(request.ranking, request.language_hint)
+        return assistant_for(api_key).explain(request.ranking, request.language_hint)
 
     # AI comments of the latest trade-off results, keyed by the result without comment: the
     # export recomputes the same deterministic result and reuses its comment, no second LLM call.
     # Only comments that exist are kept, so a result without one is asked again next time.
     tradeoff_comments: dict[str, str] = {}
 
-    def tradeoff(request: TradeoffRequest) -> tuple[TradeoffResult, list[Evaluation]]:
+    def tradeoff(
+        request: TradeoffRequest, api_key: str | None
+    ) -> tuple[TradeoffResult, list[Evaluation]]:
         """Evaluate the scenarios, run the trade-off and add its AI comment (spec TO-5)."""
         evaluations = [evaluate(scenario) for scenario in request.scenarios]
         result = svc.tradeoff.analyze(evaluations, request.settings)
         key = result.model_dump_json(exclude={"ai_comment"})
         comment = tradeoff_comments.get(key)
         if comment is None:
-            comment = svc.assistant.comment_tradeoff(result).ai_comment
+            comment = assistant_for(api_key).comment_tradeoff(result).ai_comment
             if comment is not None:
                 if len(tradeoff_comments) >= TRADEOFF_COMMENT_CACHE:
                     tradeoff_comments.pop(next(iter(tradeoff_comments)))
@@ -199,17 +272,17 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         return result.model_copy(update={"ai_comment": comment}), evaluations
 
     @app.post("/api/tradeoff")
-    def tradeoff_result(request: TradeoffRequest) -> TradeoffResult:
+    def tradeoff_result(request: TradeoffRequest, api_key: ApiKey = None) -> TradeoffResult:
         """AHP trade-off of 2 to 4 scenarios (spec section 4.8)."""
-        return tradeoff(request)[0]
+        return tradeoff(request, api_key)[0]
 
     @app.post("/api/tradeoff/export")
-    def tradeoff_export(request: TradeoffRequest) -> Response:
+    def tradeoff_export(request: TradeoffRequest, api_key: ApiKey = None) -> Response:
         """The same trade-off as a live Excel workbook (spec TO-4); 501 without the module."""
         export = getattr(svc.tradeoff, "export_xlsx", None)
         if not callable(export):
             raise HTTPException(501, f"{type(svc.tradeoff).__name__} cannot export a workbook yet")
-        result, evaluations = tradeoff(request)
+        result, evaluations = tradeoff(request, api_key)
         content = export(result, evaluations)
         return Response(
             content,
@@ -218,9 +291,11 @@ def build_app(services: Services | None = None, status: ModuleStatus | None = No
         )
 
     @app.post("/api/ai/comment-analysis")
-    def comment_analysis(request: CommentAnalysisRequest) -> RobustnessReport:
+    def comment_analysis(
+        request: CommentAnalysisRequest, api_key: ApiKey = None
+    ) -> RobustnessReport:
         """Add a short AI comment to a mission-analysis report (numbers checked)."""
-        return svc.assistant.comment_analysis(
+        return assistant_for(api_key).comment_analysis(
             request.report, request.site_name, request.language_hint
         )
 

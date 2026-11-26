@@ -16,9 +16,17 @@ import type {
   SkyState,
   UpdateSiteRequest,
 } from './contracts'
+import { aiKeyHeaders } from './aiKey'
 
 /** Per-service origin reported by the backend: "real", "example" or "error: ...". */
 export type ModuleStatus = Record<string, string>
+
+/** The server's LLM (GET /api/ai/config): "none" means only a visitor's own key enables the AI. */
+export interface AiConfig {
+  server_llm: 'cli' | 'api' | 'none' | 'example'
+  accepts_user_key: boolean
+  key_header: string
+}
 
 /** An HTTP error answer: the status code and the backend's `detail` text. */
 export class ApiError extends Error {
@@ -46,12 +54,17 @@ function errorDetail(body: string): string {
   return body
 }
 
-async function request<T>(path: string, body?: unknown, method?: string): Promise<T> {
+async function request<T>(
+  path: string,
+  body?: unknown,
+  method?: string,
+  extraHeaders: Record<string, string> = {},
+): Promise<T> {
   let response: Response
   try {
     response = await fetch(path, {
       method: method ?? (body === undefined ? 'GET' : 'POST'),
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...extraHeaders },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
@@ -75,8 +88,11 @@ export const api = {
   sky: (timeUtc: string) => request<SkyState>(`/api/sky?time_utc=${encodeURIComponent(timeUtc)}`),
   evaluate: (body: EvaluateRequest) => request<Evaluation>('/api/evaluate', body),
   rank: (body: MissionRequirementsInput) => request<SiteRanking>('/api/rank', body),
-  ask: (body: AiRequest) => request<AiAnswer>('/api/ai/ask', body),
-  explain: (body: ExplainRequest) => request<SiteRanking>('/api/ai/explain', body),
+  // AI calls carry the visitor's own API key when one is saved (decision D43); no other call does.
+  aiConfig: () => request<AiConfig>('/api/ai/config'),
+  ask: (body: AiRequest) => request<AiAnswer>('/api/ai/ask', body, undefined, aiKeyHeaders()),
+  explain: (body: ExplainRequest) => request<SiteRanking>('/api/ai/explain', body, undefined, aiKeyHeaders()),
   missionAnalysis: (body: MissionAnalysisRequest) => request<RobustnessReport>('/api/mission-analysis', body),
-  commentAnalysis: (body: CommentAnalysisRequest) => request<RobustnessReport>('/api/ai/comment-analysis', body),
+  commentAnalysis: (body: CommentAnalysisRequest) =>
+    request<RobustnessReport>('/api/ai/comment-analysis', body, undefined, aiKeyHeaders()),
 }

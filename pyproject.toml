@@ -23,7 +23,9 @@ terrain = [
 ]
 evaluation = ["numpy>=2.0"]
 mission_analysis = ["numpy>=2.0"]
-ai = []
+ai = [
+    "anthropic>=2.8.0",
+]
 api = [
     "fastapi>=0.115",
     "httpx>=0.28.1",

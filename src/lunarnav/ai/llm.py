@@ -1,12 +1,16 @@
-# ABOUTME: LLM provider port and the Claude Code CLI adapter (spec AI-4), structured JSON only
-# ABOUTME: Owner: Gian. The CLI runs headless in an empty folder and sees only the task prompt
+# ABOUTME: LLM provider port with Claude Code CLI, Anthropic API and no-LLM adapters (spec AI-4)
+# ABOUTME: Owner: Gian. Structured JSON only; a user's own API key overrides the server provider
 
 """LLM access for the AI module.
 
 ``LlmClient`` is the substitution point (spec AI-4): the assistant depends on it only, and the
-provider is chosen by ``LUNARNAV_LLM_PROVIDER``. ``ClaudeCliClient`` runs ``claude -p`` with
-every source of context switched off (no settings, CLAUDE.md, skills, MCP servers or tools,
+server's provider is chosen by ``LUNARNAV_LLM_PROVIDER``. ``ClaudeCliClient`` runs ``claude -p``
+with every source of context switched off (no settings, CLAUDE.md, skills, MCP servers or tools,
 empty working directory), so the model receives only the system prompt and the request.
+``AnthropicApiClient`` calls the Messages API with structured outputs, with the server's key or
+with a key a user sends for their own requests (``api_client_for_key``, decision D43).
+``UnavailableLlmClient`` is the server without an LLM: AI calls fail with
+``LlmUnavailableError`` and every caller falls back to its deterministic output.
 """
 
 from __future__ import annotations
@@ -22,6 +26,20 @@ from typing import Any, Protocol
 
 class LlmError(RuntimeError):
     """The LLM could not produce a valid answer (provider failure, timeout, invalid output)."""
+
+
+class LlmUnavailableError(LlmError):
+    """No LLM is configured: the server has none and the request carries no API key."""
+
+
+class LlmAuthError(LlmError):
+    """The provider rejected the API key (invalid, revoked or without permission)."""
+
+
+# Default model of the Anthropic API adapter; LUNARNAV_LLM_MODEL overrides it.
+DEFAULT_API_MODEL = "claude-opus-5-5"
+# Longest accepted API key: real keys are about 110 characters; anything far longer is not a key.
+MAX_API_KEY_LENGTH = 256
 
 
 class LlmClient(Protocol):
@@ -119,6 +137,8 @@ class ClaudeCliClient:
         self.model = model
         self.timeout_s = timeout_s
 
+    provider = "cli"
+
     def command(self, system_file: Path, schema: dict[str, Any]) -> list[str]:
         """Return the CLI arguments for one call.
 
@@ -174,19 +194,164 @@ class ClaudeCliClient:
         return parse_cli_output(completed.stdout)
 
 
-def build_llm_client() -> LlmClient:
-    """Build the LLM client chosen by ``LUNARNAV_LLM_PROVIDER`` (default ``cli``).
+def parse_api_message(message: Any) -> dict[str, Any]:
+    """Extract the JSON answer from a Messages API response with a JSON-schema output format.
 
-    Optional settings: ``LUNARNAV_LLM_MODEL`` (model name), ``LUNARNAV_CLAUDE_BIN`` (CLI path).
+    Args:
+        message: The response of ``messages.create`` (SDK object).
+
+    Returns:
+        The answer object.
 
     Raises:
-        RuntimeError: If the CLI is not installed.
-        ValueError: If the provider is unknown or not implemented yet.
+        LlmError: If the model refused, was cut off, or returned no JSON object.
+    """
+    if message.stop_reason == "refusal":
+        raise LlmError("the model declined to answer this request")
+    if message.stop_reason == "max_tokens":
+        raise LlmError("the model's answer was cut off (max_tokens)")
+    text = next((block.text for block in message.content if block.type == "text"), None)
+    if text is None:
+        raise LlmError("the model's answer has no text")
+    try:
+        answer = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise LlmError(f"the model returned non-JSON output: {text[:200]!r}") from error
+    if not isinstance(answer, dict):
+        raise LlmError("the model returned an unexpected JSON value")
+    return answer
+
+
+class AnthropicApiClient:
+    """``LlmClient`` backed by the Anthropic Messages API with structured outputs.
+
+    The key is used for the calls of this client only: it is never logged or stored. Errors
+    carry the provider's message, which never contains the key.
+
+    Attributes:
+        model: Model id sent with every call.
+        timeout_s: Maximum seconds per HTTP request.
+    """
+
+    provider = "api"
+
+    def __init__(self, api_key: str, model: str | None = None, timeout_s: float = 60.0) -> None:
+        """Create the SDK client.
+
+        Args:
+            api_key: Anthropic API key.
+            model: Model id; None uses ``DEFAULT_API_MODEL``.
+            timeout_s: Maximum seconds per HTTP request.
+
+        Raises:
+            RuntimeError: If the ``anthropic`` package is not installed (``uv sync --group ai``).
+        """
+        try:
+            import anthropic
+        except ImportError as error:
+            raise RuntimeError("the anthropic package is missing: uv sync --group ai") from error
+        self._anthropic = anthropic
+        self._client = anthropic.Anthropic(api_key=api_key, max_retries=1, timeout=timeout_s)
+        self.model = model or DEFAULT_API_MODEL
+        self.timeout_s = timeout_s
+
+    def __repr__(self) -> str:
+        """Describe the client without the key."""
+        return f"AnthropicApiClient(model={self.model!r})"
+
+    def complete_json(self, system: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
+        """Run one Messages API call constrained to ``schema``.
+
+        Effort ``low``: the tasks are short extractions and comments, and the user waits.
+        Server-side refusal fallback is on, so a declined request is retried on another model.
+
+        Raises:
+            LlmAuthError: If the key is rejected.
+            LlmError: On any other provider failure or an invalid answer.
+        """
+        anthropic = self._anthropic
+        try:
+            message = self._client.beta.messages.create(
+                model=self.model,
+                max_tokens=16000,
+                system=system,
+                messages=[{"role": "user", "content": prompt}],
+                output_config={
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": schema},
+                },
+                betas=["server-side-fallback-2026-07-01"],
+                fallbacks="default",
+            )
+        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as error:
+            raise LlmAuthError(f"Anthropic rejected the API key: {error.message}") from error
+        except anthropic.RateLimitError as error:
+            raise LlmError("Anthropic rate limit reached for this API key") from error
+        except anthropic.APIStatusError as error:
+            raise LlmError(f"Anthropic API error {error.status_code}: {error.message}") from error
+        except anthropic.APIConnectionError as error:  # includes timeouts
+            raise LlmError(f"Anthropic API unreachable: {type(error).__name__}") from error
+        return parse_api_message(message)
+
+
+class UnavailableLlmClient:
+    """``LlmClient`` used when the server has no LLM: every call asks for an API key."""
+
+    provider = "none"
+
+    def complete_json(self, system: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
+        """Always fail with ``LlmUnavailableError``."""
+        raise LlmUnavailableError("the AI needs an Anthropic API key")
+
+
+def validate_api_key(api_key: str) -> str:
+    """Return the key without surrounding spaces, or raise ``ValueError`` if it cannot be one.
+
+    Only the shape is checked (printable ASCII, no spaces, bounded length); Anthropic decides
+    whether the key is valid.
+    """
+    key = api_key.strip()
+    if not key or len(key) > MAX_API_KEY_LENGTH or not all("!" <= c <= "~" for c in key):
+        raise ValueError("the API key is not a valid key string")
+    return key
+
+
+def api_client_for_key(api_key: str) -> AnthropicApiClient:
+    """Build the API client for a key supplied by a user (model from ``LUNARNAV_LLM_MODEL``).
+
+    Raises:
+        ValueError: If the key has an impossible shape.
+        RuntimeError: If the ``anthropic`` package is not installed.
+    """
+    return AnthropicApiClient(
+        validate_api_key(api_key), model=os.environ.get("LUNARNAV_LLM_MODEL") or None
+    )
+
+
+def build_llm_client() -> LlmClient:
+    """Build the server's LLM client chosen by ``LUNARNAV_LLM_PROVIDER`` (default ``cli``).
+
+    Providers: ``cli`` (Claude Code CLI with the logged-in plan), ``api`` (Anthropic API with
+    the server's ``ANTHROPIC_API_KEY``), ``none`` (no server LLM: only users who send their own
+    key get AI answers). Optional settings: ``LUNARNAV_LLM_MODEL`` (model name),
+    ``LUNARNAV_CLAUDE_BIN`` (CLI path).
+
+    Raises:
+        RuntimeError: If the chosen provider is not available (CLI or key missing).
+        ValueError: If the provider is unknown.
     """
     provider = os.environ.get("LUNARNAV_LLM_PROVIDER", "cli")
+    model = os.environ.get("LUNARNAV_LLM_MODEL") or None
+    if provider == "none":
+        return UnavailableLlmClient()
+    if provider == "api":
+        key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not key.strip():
+            raise RuntimeError("LUNARNAV_LLM_PROVIDER=api needs ANTHROPIC_API_KEY")
+        return AnthropicApiClient(validate_api_key(key), model=model)
     if provider != "cli":
-        raise ValueError(f"LLM provider {provider!r} is not implemented (use 'cli')")
+        raise ValueError(f"unknown LLM provider {provider!r} (use 'cli', 'api' or 'none')")
     executable = find_claude_executable()
     if executable is None:
         raise RuntimeError("Claude Code CLI not found: install it or set LUNARNAV_CLAUDE_BIN")
-    return ClaudeCliClient(executable, model=os.environ.get("LUNARNAV_LLM_MODEL") or None)
+    return ClaudeCliClient(executable, model=model)
