@@ -93,6 +93,11 @@ from another browser brings them along. Registered users can **propose** one of 
 shared catalog; the usernames in `LUNARNAV_ADMIN_USERS` review proposals in the Account panel, and
 approved sites appear in the catalog for everyone. Data lives in one SQLite file under
 `LUNARNAV_STATE_DIR` (default `data/state/`, git-ignored); passwords are hashed with scrypt.
+
+Admins also see **Site version** in the Account panel (decision D46): the live commit, the latest
+`main` on GitHub with what changed, and an **Update the site** button. The app only drops a request
+file in `LUNARNAV_CONTROL_DIR`; a service of the server's owner runs the deploy (tests, maintenance
+page, rollback on failure) and writes `status.json` there, which the panel polls.
 API docs: http://localhost:8000/docs. The header badges show which modules are live; a module
 that is missing or fails falls back to a labelled placeholder (spec IF-5), and
 http://localhost:8000/api/modules gives the reason.

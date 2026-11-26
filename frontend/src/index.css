@@ -1440,3 +1440,51 @@ button.close-button {
   min-height: 30px;
   padding: 0;
 }
+
+/* Admin "Site version" panel (decision D46). */
+.site-update {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.site-update p {
+  margin: 0;
+}
+
+.site-update-changes {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.site-update-progress {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--accent);
+}
+
+.spinner {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

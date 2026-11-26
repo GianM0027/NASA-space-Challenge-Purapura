@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from lunarnav.accounts import AccountError, AccountLimitError, AccountStore, Proposal, User
 from lunarnav.accounts.store import SESSION_TTL, UsernameTakenError
+from lunarnav.api.site_update import DISABLED, SiteUpdater, SiteUpdateStatus, UpdateError
 from lunarnav.contracts import Origin, Site, SiteCatalog
 from lunarnav.contracts.errors import DuplicateSiteError, ReadOnlySiteError, UnknownSiteError
 
@@ -272,11 +273,12 @@ def _account_error(error: AccountError) -> HTTPException:
     return HTTPException(status, str(error))
 
 
-def build_accounts_router(store: AccountStore) -> APIRouter:
-    """Routes for accounts, proposals and the admin review.
+def build_accounts_router(store: AccountStore, updater: SiteUpdater | None = None) -> APIRouter:
+    """Routes for accounts, proposals, the admin review and site updates.
 
     Args:
         store: Account store (the same as ``app.state.accounts``).
+        updater: Site updater (decision D46); None when updating from the app is off.
     """
     router = APIRouter()
 
@@ -381,6 +383,23 @@ def build_accounts_router(store: AccountStore) -> APIRouter:
         """Reject a proposal, with a note for the proposer (admin)."""
         session.require_admin()
         return decided(lambda: store.reject(proposal_id, body.admin_note))
+
+    @router.get("/api/admin/site-update")
+    def site_update_status(session: SessionDep) -> SiteUpdateStatus:
+        """Live version, latest version on GitHub, what changed, deploy state (admin, D46)."""
+        session.require_admin()
+        return updater.status() if updater is not None else DISABLED
+
+    @router.post("/api/admin/site-update", status_code=202)
+    def request_site_update(session: SessionDep) -> SiteUpdateStatus:
+        """Ask the server to publish the latest version of main (admin, D46)."""
+        user = session.require_admin()
+        if updater is None:
+            raise HTTPException(503, DISABLED.message)
+        try:
+            return updater.request(user.username or "admin")
+        except UpdateError as error:
+            raise HTTPException(409, str(error)) from error
 
     @router.delete("/api/admin/community-sites/{site_id}", status_code=204)
     def remove_community_site(site_id: str, session: SessionDep) -> None:

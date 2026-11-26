@@ -48,6 +48,25 @@ export interface ProposalInfo {
   community_site_id: string | null
 }
 
+/** A commit as the admin "Site version" panel shows it (decision D46). */
+export interface CommitInfo {
+  sha: string
+  date: string | null
+  title: string
+}
+
+/** Live version, latest version on GitHub and deploy state (GET /api/admin/site-update). */
+export interface SiteUpdateStatus {
+  enabled: boolean
+  live: CommitInfo | null
+  deployed_at: string | null
+  latest: CommitInfo | null
+  update_available: boolean
+  changes: string[]
+  state: 'idle' | 'requested' | 'running' | 'failed' | 'unknown'
+  message: string
+}
+
 /** Edits the admin may make when approving a proposal. */
 export interface ApproveBody {
   name?: string | null
@@ -140,6 +159,8 @@ export const api = {
     request<ProposalInfo>(`/api/admin/proposals/${id}/approve`, body),
   rejectProposal: (id: number, adminNote: string) =>
     request<ProposalInfo>(`/api/admin/proposals/${id}/reject`, { admin_note: adminNote }),
+  siteUpdateStatus: () => request<SiteUpdateStatus>('/api/admin/site-update'),
+  requestSiteUpdate: () => request<SiteUpdateStatus>('/api/admin/site-update', {}),
   removeCommunitySite: (siteId: string) =>
     request<void>(`/api/admin/community-sites/${encodeURIComponent(siteId)}`, undefined, 'DELETE'),
 }

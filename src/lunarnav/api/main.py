@@ -35,6 +35,7 @@ from lunarnav.api.requests import (
     UpdateSiteRequest,
 )
 from lunarnav.api.services import Services
+from lunarnav.api.site_update import updater_from_env
 from lunarnav.api.sky import sky_state
 from lunarnav.api.wiring import ModuleStatus, build_services
 from lunarnav.contracts import (
@@ -135,7 +136,7 @@ def build_app(
     # Accounts (decision D45): every route below sees the catalog of the person asking.
     app.state.accounts = accounts
     app.state.base_catalog = svc.catalog
-    app.include_router(build_accounts_router(accounts))
+    app.include_router(build_accounts_router(accounts, updater_from_env()))
 
     def ranker_for(catalog: SiteCatalog) -> Any:
         """The ranker over this person's catalog (their own sites included)."""
