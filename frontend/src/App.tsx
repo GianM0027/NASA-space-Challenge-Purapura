@@ -6,7 +6,7 @@ import { AiAssistant } from './ai/AiAssistant'
 import { MissionAnalysisBox, type AnalysisTab } from './analysis/MissionAnalysisBox'
 import { CompareView } from './compare/CompareView'
 import { ReportBuilder } from './report/ReportBuilder'
-import { AccountPanel } from './account/AccountPanel'
+import { AccountMenu } from './account/AccountMenu'
 import { accountError } from './account/errors'
 import { api, ApiError, type AccountInfo, type ModuleStatus, type ProposalInfo } from './api/client'
 import type { Evaluation, GeoPoint, Site, SiteRanking, SkyState, TimeWindow, TradeoffResult } from './api/contracts'
@@ -342,6 +342,7 @@ function App() {
 
   return (
     <div className="app">
+      <AccountMenu account={account} proposals={proposals} savedCount={userSites.length} onChanged={accountChanged} />
       {bootError && <p className="error banner">Backend unreachable: {bootError}</p>}
       {placeholders.length > 0 && (
         <p className="banner">
@@ -435,12 +436,6 @@ function App() {
         </div>
 
         <aside>
-          <AccountPanel
-            account={account}
-            proposals={proposals}
-            savedCount={userSites.length}
-            onChanged={accountChanged}
-          />
           <section className="panel">
             <h2>Preloaded landing sites</h2>
             <ul className="sites">
