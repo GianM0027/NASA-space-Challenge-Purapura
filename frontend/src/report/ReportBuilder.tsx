@@ -12,6 +12,7 @@ import { Sources } from './sections/Sources'
 import { Tradeoff } from './sections/Tradeoff'
 import { isAvailable, SECTIONS, selectedSections } from './selection'
 import type { ReportBuilderProps, ReportInputs, SectionId, SectionProps } from './types'
+import { CloseButton } from '../ui/CloseButton'
 
 /**
  * Section components, by id: mission analysis by Michael, AI ranking by Gian, the others by Federico (D42).
@@ -131,9 +132,7 @@ export function ReportBuilder(inputs: ReportBuilderProps) {
             <h2>PDF report</h2>
             <p className="muted small">Tick what to include: the preview on the right is exactly what the PDF will contain.</p>
           </div>
-          <button onClick={() => setOpen(false)} title="Keeps your choices (Esc)">
-            Minimize
-          </button>
+          <CloseButton what="the report" hint="your choices are kept · Esc" onClick={() => setOpen(false)} />
         </header>
         <div className="rpt-layout">
           <aside className="rpt-controls">

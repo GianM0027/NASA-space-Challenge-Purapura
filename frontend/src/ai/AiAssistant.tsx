@@ -6,6 +6,7 @@ import { getAiKey, onAiKeyChange } from '../api/aiKey'
 import { api, ApiError, type AiConfig } from '../api/client'
 import { AiBadge } from './AiBadge'
 import { AiKeyPanel } from './AiKeyPanel'
+import { CloseButton } from '../ui/CloseButton'
 import type { ChatMessage, MissionRequirements, Site, SiteRanking, SiteScore, TimeWindow } from '../api/contracts'
 import { formatUtc, hoursBetween } from '../format'
 import {
@@ -361,9 +362,7 @@ export function AiAssistant(props: {
         <button title="Start a new conversation" onClick={reset}>
           Reset
         </button>
-        <button title="Minimize" onClick={() => setMinimized(true)}>
-          –
-        </button>
+        <CloseButton what="the AI assistant" hint="the conversation is kept" onClick={() => setMinimized(true)} />
       </div>
 
       {requirements && (

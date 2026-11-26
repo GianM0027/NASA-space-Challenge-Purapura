@@ -29,6 +29,7 @@ import {
   validate,
 } from './model'
 import { downloadTradeoff, runTradeoff } from './tradeoffApi'
+import { CloseButton } from '../ui/CloseButton'
 
 type Props = {
   sites: Site[]
@@ -218,9 +219,7 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
           <button onClick={resetAll} disabled={busy !== null} title="Back to the initial setup; clears the result">
             Reset
           </button>
-          <button onClick={() => setOpen(false)} aria-label="Minimize comparison" title="Keeps your setup and result (Esc)">
-            Minimize
-          </button>
+          <CloseButton what="the comparison" hint="setup and result are kept · Esc" onClick={() => setOpen(false)} />
         </div>
       </header>
 
