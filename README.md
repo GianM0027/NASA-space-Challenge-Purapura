@@ -80,6 +80,10 @@ The AI box uses the server's LLM, chosen by `LUNARNAV_LLM_PROVIDER` (see `.env.e
 which the server passes to Anthropic without storing it (decision D43). For a public deployment
 use `LUNARNAV_LLM_PROVIDER=none`, so visitors never spend your plan; without a key the rest of the
 app works and the AI texts fall back to deterministic sentences.
+
+The API limits requests per client and minute (decision D44; `LUNARNAV_RATE_LIMITS` in
+`.env.example`): generous for a person using the GUI, HTTP 429 with `Retry-After` beyond. Behind a
+reverse proxy run uvicorn with `--proxy-headers` so each visitor is counted by their own address.
 API docs: http://localhost:8000/docs. The header badges show which modules are live; a module
 that is missing or fails falls back to a labelled placeholder (spec IF-5), and
 http://localhost:8000/api/modules gives the reason.
