@@ -1185,6 +1185,12 @@ button.danger:hover {
   border-color: var(--bad);
 }
 
+/* Phone-only controls: the tab bar and the "See analysis" hint (shown in the media query below). */
+.mobile-tabs,
+.mobile-only {
+  display: none;
+}
+
 /* ---------- Phones in portrait (task: mobile layout) ----------
    One column: the globe on top, the panels below it in the normal page scroll. The AI box and
    the mission analysis window become bottom sheets; full-screen popups lose their margins. */
@@ -1293,11 +1299,107 @@ button.danger:hover {
     position: fixed;
     left: 8px;
     right: 8px;
-    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
     z-index: 30;
     width: auto;
     max-height: 78dvh;
     box-shadow: 0 -8px 30px rgb(0 0 0 / 50%);
+  }
+
+  /* Tabs: one section at a time, with a fixed bar at the bottom. The globe area is hidden
+     with visibility (not display) on other tabs, so its fixed sheets (AI box, mission
+     analysis) and the account button can still show there. */
+  .app {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app[data-tab='globe'] .stage {
+    height: calc(100dvh - 60px - env(safe-area-inset-bottom, 0px));
+  }
+
+  .app[data-tab='globe'] aside {
+    display: none;
+  }
+
+  .app:not([data-tab='globe']) .stage {
+    visibility: hidden;
+    height: 0;
+    min-height: 0;
+  }
+
+  .app:not([data-tab='globe']) .ai-box,
+  .app:not([data-tab='globe']) .analysis-box,
+  .app:not([data-tab='globe']) .account-menu {
+    visibility: visible;
+  }
+
+  .app[data-tab='sites'] .group-analysis,
+  .app[data-tab='analysis'] .group-sites {
+    display: none;
+  }
+
+  .account-menu {
+    position: fixed;
+    z-index: 36;
+  }
+
+  aside {
+    border-top: 0;
+  }
+
+  .mobile-tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 35;
+    display: flex;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .mobile-tabs button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .mobile-tabs button.active {
+    color: var(--accent);
+  }
+
+  .mobile-tab-icon {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .mobile-tab-dot {
+    position: absolute;
+    top: -2px;
+    right: -5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .mobile-only {
+    display: inline-flex;
+  }
+
+  .analysis-hint {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .rpt-dialog,

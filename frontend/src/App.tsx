@@ -7,6 +7,7 @@ import { MissionAnalysisBox, type AnalysisTab } from './analysis/MissionAnalysis
 import { CompareView } from './compare/CompareView'
 import { ReportBuilder } from './report/ReportBuilder'
 import { AccountMenu } from './account/AccountMenu'
+import { MobileTabs, type MobileTab } from './panels/MobileTabs'
 import { accountError } from './account/errors'
 import { api, ApiError, type AccountInfo, type ModuleStatus, type ProposalInfo } from './api/client'
 import type { Evaluation, GeoPoint, Site, SiteRanking, SkyState, TimeWindow, TradeoffResult } from './api/contracts'
@@ -134,8 +135,18 @@ function App() {
   const selectedLocation =
     selectedSite?.location ?? (target && 'location' in target ? target.location : null)
 
+  // Phones show one section at a time (Moon, Sites, Analysis); wide screens ignore this state.
+  const [mobileTab, setMobileTab] = useState<MobileTab>('globe')
+  // A new result picked from the globe or the AI box: a dot on the Analysis tab until it is opened.
+  const [unseenAnalysis, setUnseenAnalysis] = useState(false)
+  const openTab = useCallback((tab: MobileTab) => {
+    setMobileTab(tab)
+    if (tab === 'analysis') setUnseenAnalysis(false)
+  }, [])
+
   const pickSite = useCallback(
     (siteId: string) => {
+      setUnseenAnalysis(true)
       setTarget({ siteId })
       const site = sites.find((candidate) => candidate.id === siteId)
       if (site) {
@@ -159,14 +170,26 @@ function App() {
     [pickSite],
   )
   const pickLocation = useCallback((location: GeoPoint) => {
+    setUnseenAnalysis(true)
     setTarget({ location })
     setClicked({ point: location, nonce: Date.now() })
   }, [])
   // Typed coordinates are evaluated exactly like a globe click (site_id null).
+  // On a phone the user stays on the Sites tab, where the save controls appear; the dot on
+  // Analysis says the result is ready.
   const analyzePoint = useCallback((location: GeoPoint) => {
+    setUnseenAnalysis(true)
     setTarget({ location })
     setFocus({ lat_deg: location.lat_deg, lon_deg: location.lon_deg, nonce: Date.now() })
   }, [])
+  // A site picked from a list (Sites tab) opens its analysis right away on a phone.
+  const pickFromList = useCallback(
+    (siteId: string) => {
+      pickSite(siteId)
+      openTab('analysis')
+    },
+    [pickSite, openTab],
+  )
 
   const refreshSites = useCallback(async () => {
     try {
@@ -341,7 +364,7 @@ function App() {
   )
 
   return (
-    <div className="app">
+    <div className="app" data-tab={mobileTab}>
       {bootError && <p className="error banner">Backend unreachable: {bootError}</p>}
       {placeholders.length > 0 && (
         <p className="banner">
@@ -409,6 +432,11 @@ function App() {
             <DataSources />
           </div>
           <div className="dock">
+            {unseenAnalysis && target && (
+              <button className="mobile-only analysis-hint" onClick={() => openTab('analysis')}>
+                See analysis ›
+              </button>
+            )}
             <AiAssistant sites={sites} defaultWindow={panelWindow} onPickSite={pickRanked} onRanking={setLastRanking} />
             <CompareView
               sites={sites}
@@ -437,6 +465,7 @@ function App() {
         </div>
 
         <aside>
+          <div className="aside-group group-sites">
           <section className="panel">
             <h2>Preloaded landing sites</h2>
             <ul className="sites">
@@ -444,7 +473,7 @@ function App() {
                 <li key={site.id}>
                   <button
                     className={selectedSite?.id === site.id ? 'active' : undefined}
-                    onClick={() => pickSite(site.id)}
+                    onClick={() => pickFromList(site.id)}
                   >
                     <i className={`dot ${site.status}`} />
                     {site.name}
@@ -457,7 +486,7 @@ function App() {
           <MyLocations
             sites={userSites}
             selectedId={selectedSite?.id ?? null}
-            onPick={pickSite}
+            onPick={pickFromList}
             onEdit={editLocation}
             onDelete={deleteLocation}
             onPropose={account && !account.is_guest ? proposeLocation : undefined}
@@ -469,6 +498,8 @@ function App() {
             onAnalyze={analyzePoint}
             onSave={saveLocation}
           />
+          </div>
+          <div className="aside-group group-analysis">
           <SitePanel
             title={selectedSite?.name ?? null}
             description={selectedSite?.description ?? ''}
@@ -483,8 +514,10 @@ function App() {
             loading={loading}
             error={loading ? null : (outcome?.error ?? null)}
           />
+          </div>
         </aside>
       </main>
+      <MobileTabs tab={mobileTab} unseen={unseenAnalysis} onTab={openTab} />
     </div>
   )
 }

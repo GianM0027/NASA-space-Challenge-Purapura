@@ -23,6 +23,10 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Phone tabs (owner's request): bottom bar Moon / Sites / Analysis below 760 px, one section at a
+  time; a list pick opens Analysis, a globe tap or typed coordinates leave a dot and a "See
+  analysis" hint; AI box, mission analysis and account stay reachable on every tab. Verified by
+  scripted clicks in headless Chrome (390x844) and 2 tests; desktop unchanged.
 - Phones in portrait: one-column layout below 760 px (globe on top, panels in the page scroll),
   scrollable toolbar and legend, AI box and mission analysis as bottom sheets, full-screen report,
   16 px inputs. Account moved to a corner button with a popover, closed by default (owner's
