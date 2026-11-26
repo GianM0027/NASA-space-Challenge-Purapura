@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { api, type AccountInfo, type ProposalInfo } from '../api/client'
 import { accountError } from './errors'
 import { ProposalReview } from './ProposalReview'
+import { SiteUpdatePanel } from './SiteUpdatePanel'
 
 const STATUS_LABEL: Record<ProposalInfo['status'], string> = {
   pending: 'waiting for review',
@@ -128,6 +129,7 @@ export function AccountPanel(props: {
   const { account, proposals, savedCount, onChanged } = props
   const [deleting, setDeleting] = useState(false)
   const [reviewing, setReviewing] = useState(false)
+  const [versioning, setVersioning] = useState(false)
   const registered = account !== null && !account.is_guest
 
   return (
@@ -170,6 +172,10 @@ export function AccountPanel(props: {
                 {reviewing ? '▾' : '▸'} Review proposals
               </button>
               {reviewing && <ProposalReview onChanged={onChanged} />}
+              <button className="link" onClick={() => setVersioning(!versioning)}>
+                {versioning ? '▾' : '▸'} Site version
+              </button>
+              {versioning && <SiteUpdatePanel />}
             </>
           )}
           {/* Session actions at the bottom, apart from the review tools above. */}

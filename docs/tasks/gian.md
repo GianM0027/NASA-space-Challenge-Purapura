@@ -23,6 +23,9 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Site version panel for admins (D46): live vs latest commit, changes, "Update the site" writes a
+  request file that the server's deploy service picks up; polling and reload. Verified: 8 backend
+  tests (GitHub faked, no network), 1 frontend test.
 - Phone tabs (owner's request): bottom bar Moon / Sites / Analysis below 760 px, one section at a
   time; a list pick opens Analysis, a globe tap or typed coordinates leave a dot and a "See
   analysis" hint; AI box, mission analysis and account stay reachable on every tab. Verified by
