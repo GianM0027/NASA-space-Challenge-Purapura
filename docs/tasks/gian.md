@@ -23,6 +23,9 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Per-client rate limiting (D44): `lunarnav.api.ratelimit`, sliding 60 s window per address and
+  group (default 300, heavy 40, ai 20, write 30 per minute), 429 with Retry-After,
+  `LUNARNAV_RATE_LIMITS` to tune or turn off. Verified: 16 new tests (fake clock).
 - Own Anthropic API key for public hosting (D43): AI routes take the visitor's key in
   `X-Anthropic-Api-Key` (`AnthropicApiClient`, structured outputs), provider `none` for a server
   without LLM, `api` provider implemented, `GET /api/ai/config`; key panel in the AI box (session
