@@ -1102,8 +1102,7 @@ button.icon-button {
 }
 
 .account-head {
-  justify-content: space-between;
-  align-items: center;
+  margin: 0 0 4px;
 }
 
 .account h3 {
@@ -1166,8 +1165,24 @@ button.icon-button {
   font-style: italic;
 }
 
-button.link.danger {
+/* Log out and delete account: a separate row at the bottom of the account popover. */
+.account-actions {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.account-actions .row {
+  justify-content: space-between;
+}
+
+button.danger {
   color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--border));
+}
+
+button.danger:hover {
+  border-color: var(--bad);
 }
 
 /* ---------- Phones in portrait (task: mobile layout) ----------

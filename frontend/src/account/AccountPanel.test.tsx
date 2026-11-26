@@ -70,4 +70,16 @@ describe('AccountPanel', () => {
     expect(html).toContain('Review proposals')
     expect(html).toContain('admin')
   })
+
+  it('puts log out and delete side by side at the bottom, after the admin tools', () => {
+    const html = renderToStaticMarkup(
+      <AccountPanel account={{ username: 'gian', is_guest: false, is_admin: true }} proposals={[]} savedCount={0} onChanged={noop} />,
+    )
+    const review = html.indexOf('Review proposals')
+    const actions = html.indexOf('account-actions')
+    expect(review).toBeGreaterThan(-1)
+    expect(actions).toBeGreaterThan(review)
+    expect(html.indexOf('Log out')).toBeGreaterThan(actions)
+    expect(html.indexOf('Delete account')).toBeGreaterThan(html.indexOf('Log out'))
+  })
 })
