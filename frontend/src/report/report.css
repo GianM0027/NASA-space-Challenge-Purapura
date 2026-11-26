@@ -109,13 +109,16 @@
   }
   .rpt-controls {
     border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .rpt-preview {
+    padding: 12px;
   }
 }
 
 /* A4 sheet on screen: 210 mm wide with 15 mm margins, as on paper. */
 .rpt-paper {
   width: 210mm;
-  max-width: 100%;
   min-height: 297mm;
   margin: 0 auto;
   padding: 15mm;
