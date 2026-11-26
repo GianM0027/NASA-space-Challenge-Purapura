@@ -1026,10 +1026,10 @@ button.icon-button {
 
 /* Account button in the top-right corner and its popover (decision D45). */
 .account-menu {
-  position: fixed;
-  top: calc(10px + env(safe-area-inset-top, 0px));
+  position: absolute;
+  top: 12px;
   right: 12px;
-  z-index: 40;
+  z-index: 5;
 }
 
 .account-button {
@@ -1219,6 +1219,11 @@ button.danger:hover {
 
   .account-button-label {
     display: none;
+  }
+
+  .account-menu {
+    top: 8px;
+    right: 8px;
   }
 
   .ai-box {

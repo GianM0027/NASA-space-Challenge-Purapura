@@ -342,7 +342,6 @@ function App() {
 
   return (
     <div className="app">
-      <AccountMenu account={account} proposals={proposals} savedCount={userSites.length} onChanged={accountChanged} />
       {bootError && <p className="error banner">Backend unreachable: {bootError}</p>}
       {placeholders.length > 0 && (
         <p className="banner">
@@ -353,6 +352,8 @@ function App() {
 
       <main>
         <div className="stage">
+          {/* Account: top-right corner of the globe, away from the busy side column. */}
+          <AccountMenu account={account} proposals={proposals} savedCount={userSites.length} onChanged={accountChanged} />
           <MoonGlobe
             sites={globeSites}
             selected={selectedLocation}
