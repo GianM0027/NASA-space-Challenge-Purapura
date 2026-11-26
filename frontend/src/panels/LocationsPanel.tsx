@@ -31,8 +31,9 @@ export function CoordinatesBox(props: {
   const [description, setDescription] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  // Saving is offered for the point last analyzed; editing a coordinate withdraws it.
-  const [analyzed, setAnalyzed] = useState(false)
+  // Saving is offered for the point last analyzed; editing a coordinate withdraws it. A point
+  // clicked on the globe is analyzed at once, so it starts as analyzed, like a typed point after →.
+  const [analyzed, setAnalyzed] = useState(initial !== null)
 
   /** Validate the fields; show the problem and return null when they are invalid. */
   function point(): GeoPoint | null {
@@ -86,11 +87,13 @@ export function CoordinatesBox(props: {
               setAnalyzed(false)
             }} placeholder="45" />
         </label>
-        <button type="submit" className="primary">
-          Analyze
+        <button type="submit" className="primary icon-button" title="Analyze these coordinates" aria-label="Analyze these coordinates">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       </form>
-      {/* Name, description and save appear once the typed point has been analyzed. */}
+      {/* Name, description and save appear once the point has been analyzed (→ or a globe click). */}
       {analyzed && (
         <form
           className="controls"
