@@ -23,6 +23,11 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Optional accounts and site proposals (D45): `lunarnav.accounts` (SQLite, scrypt, sessions,
+  guests), per-request catalog in the API, auth/proposal/admin routes, Account panel with login,
+  sign-up, logout, account deletion, proposals and admin review; "Propose" on each saved site.
+  Verified: 31 new backend tests, 4 frontend tests, a live server run with cookies (guest save,
+  register, propose, approve, community site visible to everyone, login rate limit).
 - Per-client rate limiting (D44): `lunarnav.api.ratelimit`, sliding 60 s window per address and
   group (default 300, heavy 40, ai 20, write 30 per minute), 429 with Retry-After,
   `LUNARNAV_RATE_LIMITS` to tune or turn off. Verified: 16 new tests (fake clock).

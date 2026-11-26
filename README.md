@@ -84,6 +84,15 @@ app works and the AI texts fall back to deterministic sentences.
 The API limits requests per client and minute (decision D44; `LUNARNAV_RATE_LIMITS` in
 `.env.example`): generous for a person using the GUI, HTTP 429 with `Retry-After` beyond. Behind a
 reverse proxy run uvicorn with `--proxy-headers` so each visitor is counted by their own address.
+
+### Accounts and site proposals
+
+Accounts are optional (decision D45). A visitor's first saved site starts a guest session: their
+sites are private and last until the browser is closed. Creating an account keeps them; logging in
+from another browser brings them along. Registered users can **propose** one of their sites for the
+shared catalog; the usernames in `LUNARNAV_ADMIN_USERS` review proposals in the Account panel, and
+approved sites appear in the catalog for everyone. Data lives in one SQLite file under
+`LUNARNAV_STATE_DIR` (default `data/state/`, git-ignored); passwords are hashed with scrypt.
 API docs: http://localhost:8000/docs. The header badges show which modules are live; a module
 that is missing or fails falls back to a labelled placeholder (spec IF-5), and
 http://localhost:8000/api/modules gives the reason.

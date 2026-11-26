@@ -339,6 +339,13 @@ class CatalogRanker:
         self.evaluator = evaluator
         self.archetypes = archetypes
 
+    def with_catalog(self, catalog: SiteCatalog) -> CatalogRanker:
+        """Return a ranker over ``catalog`` sharing the evaluator and archetypes (decision D45).
+
+        Used per request, so a person's own saved sites are ranked with the shared catalog.
+        """
+        return CatalogRanker(catalog, self.evaluator, self.archetypes)
+
     def weights(self, requirements: MissionRequirements) -> dict[str, float]:
         """Return the criterion weights for ``requirements`` (archetype priority, if any)."""
         archetype = self.archetypes.get(requirements.archetype_id or "")

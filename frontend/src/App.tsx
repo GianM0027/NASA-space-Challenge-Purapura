@@ -6,7 +6,9 @@ import { AiAssistant } from './ai/AiAssistant'
 import { MissionAnalysisBox, type AnalysisTab } from './analysis/MissionAnalysisBox'
 import { CompareView } from './compare/CompareView'
 import { ReportBuilder } from './report/ReportBuilder'
-import { api, ApiError, type ModuleStatus } from './api/client'
+import { AccountPanel } from './account/AccountPanel'
+import { accountError } from './account/errors'
+import { api, ApiError, type AccountInfo, type ModuleStatus, type ProposalInfo } from './api/client'
 import type { Evaluation, GeoPoint, Site, SiteRanking, SkyState, TimeWindow, TradeoffResult } from './api/contracts'
 import { formatCoordinates, formatUtc, hoursBetween } from './format'
 import { MoonGlobe, type GlobeFocus } from './globe/MoonGlobe'
@@ -174,6 +176,46 @@ function App() {
     }
   }, [])
 
+  // Optional account (decision D45): who is logged in and their proposals.
+  const [account, setAccount] = useState<AccountInfo | null>(null)
+  const [proposals, setProposals] = useState<ProposalInfo[]>([])
+  const refreshAccount = useCallback(async () => {
+    try {
+      const { user } = await api.me()
+      setAccount(user)
+      setProposals(user && !user.is_guest ? await api.myProposals() : [])
+    } catch {
+      setAccount(null)
+      setProposals([])
+    }
+  }, [])
+  useEffect(() => {
+    api
+      .me()
+      .then(async ({ user }) => {
+        setAccount(user)
+        if (user && !user.is_guest) setProposals(await api.myProposals())
+      })
+      .catch(() => setAccount(null))
+  }, [])
+  // Logging in or out changes the saved sites too.
+  const accountChanged = useCallback(() => {
+    void refreshAccount()
+    void refreshSites()
+  }, [refreshAccount, refreshSites])
+  const proposeLocation = useCallback(
+    async (siteId: string, note: string): Promise<string | null> => {
+      try {
+        await api.propose(siteId, note)
+        await refreshAccount()
+        return null
+      } catch (reason: unknown) {
+        return accountError(reason)
+      }
+    },
+    [refreshAccount],
+  )
+
   const saveLocation = useCallback(
     async (name: string, description: string, location: GeoPoint): Promise<string | null> => {
       const built = buildUserSite(name, location, description)
@@ -181,13 +223,15 @@ function App() {
       try {
         const saved = await api.addSite(built.site)
         await refreshSites()
+        // A first save starts a guest session: show it in the account panel.
+        if (account === null) void refreshAccount()
         setTarget({ siteId: saved.id })
         return null
       } catch (reason: unknown) {
         return describeSiteError(reason, built.site.id)
       }
     },
-    [refreshSites],
+    [refreshSites, account, refreshAccount],
   )
 
   const editLocation = useCallback(
@@ -391,6 +435,12 @@ function App() {
         </div>
 
         <aside>
+          <AccountPanel
+            account={account}
+            proposals={proposals}
+            savedCount={userSites.length}
+            onChanged={accountChanged}
+          />
           <section className="panel">
             <h2>Preloaded landing sites</h2>
             <ul className="sites">
@@ -414,6 +464,8 @@ function App() {
             onPick={pickSite}
             onEdit={editLocation}
             onDelete={deleteLocation}
+            onPropose={account && !account.is_guest ? proposeLocation : undefined}
+            proposals={proposals}
           />
           <CoordinatesBox
             key={clicked?.nonce ?? 0}

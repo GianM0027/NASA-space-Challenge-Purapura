@@ -1023,3 +1023,94 @@ button.icon-button {
   min-width: 2.2em;
   padding: 4px 8px;
 }
+
+/* Account panel and proposal review (decision D45). */
+.account-tabs {
+  margin-bottom: 6px;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.account-form input,
+.review-item input,
+.review-item textarea {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.account-head {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.account h3 {
+  margin: 10px 0 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.badge.pending {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.badge.approved {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.badge.rejected {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.proposal-list,
+.review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.review-item p {
+  margin: 0;
+}
+
+.review-note {
+  color: var(--muted);
+  font-style: italic;
+}
+
+button.link.danger {
+  color: var(--bad);
+}

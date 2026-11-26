@@ -5,7 +5,8 @@
 
 Each request under ``/api/`` counts against the ``default`` group and, when its route is
 expensive, against one more group (``heavy``: evaluations and analyses, ``ai``: LLM calls,
-``write``: changes to saved sites). A client over any limit gets HTTP 429 with ``Retry-After``.
+``write``: changes to saved sites, ``auth``: log in, register and delete account). A client
+over any limit gets HTTP 429 with ``Retry-After``.
 
 The client is ``request.client.host``: behind the proxies (Tailscale Funnel, then Caddy, then
 uvicorn with ``--proxy-headers``) it is the visitor's address. State lives in this process only,
@@ -26,7 +27,8 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 WINDOW_S = 60.0
 # Requests per client per minute, by group. Generous for a person clicking around the GUI
 # (one evaluation per click, a few AI calls per question), tight for a script.
-DEFAULT_LIMITS: dict[str, int] = {"default": 300, "heavy": 40, "ai": 20, "write": 30}
+# "auth" (log in, register, delete account) slows down password guessing (decision D45).
+DEFAULT_LIMITS: dict[str, int] = {"default": 300, "heavy": 40, "ai": 20, "write": 30, "auth": 10}
 # Distinct clients remembered at once; the least recently seen is forgotten first.
 MAX_CLIENTS = 10_000
 
@@ -41,6 +43,8 @@ def route_group(method: str, path: str) -> str | None:
         method: HTTP method.
         path: URL path.
     """
+    if path.startswith("/api/auth/") and method == "POST" and path != "/api/auth/logout":
+        return "auth"
     if path.startswith(_AI_PREFIXES) and method == "POST":
         return "ai"
     if path.startswith(_HEAVY_PREFIXES) and method == "POST":

@@ -561,7 +561,27 @@ class ChatAssistant:
         Used per request when a user sends their own API key (decision D43); the shared
         assistant is left untouched, so concurrent requests never see each other's key.
         """
-        return ChatAssistant(self.ranker, self.catalog, llm, self.archetypes, self.regions)
+        return self.rebind(llm=llm)
+
+    def rebind(
+        self,
+        *,
+        llm: LlmClient | None = None,
+        ranker: Ranker | None = None,
+        catalog: SiteCatalog | None = None,
+    ) -> ChatAssistant:
+        """Return an assistant for one request; None keeps the shared collaborator.
+
+        ``llm``: the caller's own key (D43); ``ranker`` and ``catalog``: the person's catalog
+        with their own sites (D45). The shared assistant is never changed.
+        """
+        return ChatAssistant(
+            ranker or self.ranker,
+            catalog or self.catalog,
+            llm or self.llm,
+            self.archetypes,
+            self.regions,
+        )
 
     def _extraction_prompt(self, request: AiRequest) -> str:
         """Return the data of the extraction call as JSON text."""

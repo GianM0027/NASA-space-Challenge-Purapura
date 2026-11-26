@@ -28,6 +28,34 @@ export interface AiConfig {
   key_header: string
 }
 
+/** The visitor's account (decision D45): null fields for a guest; null as a whole for nobody. */
+export interface AccountInfo {
+  username: string | null
+  is_guest: boolean
+  is_admin: boolean
+}
+
+/** A proposal to add a personal site to the shared catalog, with its review outcome. */
+export interface ProposalInfo {
+  id: number
+  username: string
+  site: Site
+  note: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  decided_at: string | null
+  admin_note: string
+  community_site_id: string | null
+}
+
+/** Edits the admin may make when approving a proposal. */
+export interface ApproveBody {
+  name?: string | null
+  description?: string | null
+  sources?: string[]
+  admin_note?: string
+}
+
 /** An HTTP error answer: the status code and the backend's `detail` text. */
 export class ApiError extends Error {
   readonly status: number
@@ -95,4 +123,23 @@ export const api = {
   missionAnalysis: (body: MissionAnalysisRequest) => request<RobustnessReport>('/api/mission-analysis', body),
   commentAnalysis: (body: CommentAnalysisRequest) =>
     request<RobustnessReport>('/api/ai/comment-analysis', body, undefined, aiKeyHeaders()),
+
+  // Accounts and proposals (decision D45); the session is an HttpOnly cookie sent automatically.
+  me: () => request<{ user: AccountInfo | null }>('/api/auth/me'),
+  register: (username: string, password: string) =>
+    request<{ user: AccountInfo }>('/api/auth/register', { username, password }),
+  login: (username: string, password: string) =>
+    request<{ user: AccountInfo }>('/api/auth/login', { username, password }),
+  logout: () => request<void>('/api/auth/logout', {}),
+  deleteAccount: (password: string) => request<void>('/api/auth/delete-account', { password }),
+  propose: (siteId: string, note: string) => request<ProposalInfo>('/api/proposals', { site_id: siteId, note }),
+  myProposals: () => request<ProposalInfo[]>('/api/proposals'),
+  adminProposals: (status?: ProposalInfo['status']) =>
+    request<ProposalInfo[]>(`/api/admin/proposals${status ? `?status=${status}` : ''}`),
+  approveProposal: (id: number, body: ApproveBody) =>
+    request<ProposalInfo>(`/api/admin/proposals/${id}/approve`, body),
+  rejectProposal: (id: number, adminNote: string) =>
+    request<ProposalInfo>(`/api/admin/proposals/${id}/reject`, { admin_note: adminNote }),
+  removeCommunitySite: (siteId: string) =>
+    request<void>(`/api/admin/community-sites/${encodeURIComponent(siteId)}`, undefined, 'DELETE'),
 }

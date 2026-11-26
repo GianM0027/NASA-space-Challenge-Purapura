@@ -256,27 +256,12 @@ def test_update_needs_a_field(client: TestClient) -> None:
     assert client.patch("/api/sites/user-crater-rim", json={}).status_code == 422
 
 
-class _AddOnlyCatalog:
-    """A catalog written before remove and update joined the port."""
-
-    def list_sites(self) -> list[Site]:
-        return []
-
-    def get_site(self, site_id: str) -> Site:
-        raise KeyError(site_id)
-
-    def add_user_site(self, site: Site) -> Site:
-        return site
-
-
-def test_catalog_without_remove_or_rename_is_501() -> None:
-    services, status = build_services(use_real=False)
-    old = dataclasses.replace(services, catalog=_AddOnlyCatalog())
-    client = TestClient(build_app(old, status))
-    assert client.delete("/api/sites/x").status_code == 501
-    response = client.patch("/api/sites/x", json={"name": "X"})
-    assert response.status_code == 501
-    assert "update_user_site" in response.json()["detail"]
+def test_shared_sites_are_read_only_and_unknown_ones_404(client: TestClient) -> None:
+    # Personal sites live in the account store (decision D45): the base catalog is never edited.
+    curated = _curated_id(client)
+    assert client.delete(f"/api/sites/{curated}").status_code == 403
+    assert client.patch(f"/api/sites/{curated}", json={"name": "X"}).status_code == 403
+    assert client.delete("/api/sites/user-nothing").status_code == 404
 
 
 def test_rank(client: TestClient) -> None:
