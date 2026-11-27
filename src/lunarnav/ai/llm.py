@@ -36,8 +36,13 @@ class LlmAuthError(LlmError):
     """The provider rejected the API key (invalid, revoked or without permission)."""
 
 
-# Default model of the Anthropic API adapter; LUNARNAV_LLM_MODEL overrides it.
-DEFAULT_API_MODEL = "claude-opus-5-5"
+# Default model of the Anthropic API adapter (owner's choice: the AI tasks are short extractions
+# and comments, Haiku is enough and cheapest); LUNARNAV_LLM_MODEL or the visitor's pick wins.
+DEFAULT_API_MODEL = "claude-haiku-5-5"
+# Models a visitor may pick for their own key, by token use (cost): low, medium, high.
+USER_MODELS = ("claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5")
+# Models that accept the server-side refusal fallback (Claude Haiku 5.5 has none).
+FALLBACK_MODELS = {"claude-opus-5-5", "claude-sonnet-5-5"}
 # Longest accepted API key: real keys are about 110 characters; anything far longer is not a key.
 MAX_API_KEY_LENGTH = 256
 
@@ -270,6 +275,11 @@ class AnthropicApiClient:
             LlmError: On any other provider failure or an invalid answer.
         """
         anthropic = self._anthropic
+        fallback: dict[str, Any] = (
+            {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
+            if self.model in FALLBACK_MODELS
+            else {}
+        )
         try:
             message = self._client.beta.messages.create(
                 model=self.model,
@@ -280,8 +290,7 @@ class AnthropicApiClient:
                     "effort": "low",
                     "format": {"type": "json_schema", "schema": schema},
                 },
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
+                **fallback,
             )
         except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as error:
             raise LlmAuthError(f"Anthropic rejected the API key: {error.message}") from error
@@ -316,15 +325,23 @@ def validate_api_key(api_key: str) -> str:
     return key
 
 
-def api_client_for_key(api_key: str) -> AnthropicApiClient:
-    """Build the API client for a key supplied by a user (model from ``LUNARNAV_LLM_MODEL``).
+def api_client_for_key(api_key: str, model: str | None = None) -> AnthropicApiClient:
+    """Build the API client for a key supplied by a user.
+
+    Args:
+        api_key: The visitor's Anthropic API key.
+        model: One of ``USER_MODELS`` chosen by the visitor; None uses ``LUNARNAV_LLM_MODEL`` or
+            ``DEFAULT_API_MODEL``.
 
     Raises:
-        ValueError: If the key has an impossible shape.
+        ValueError: If the key has an impossible shape or the model is not offered.
         RuntimeError: If the ``anthropic`` package is not installed.
     """
+    chosen = (model or "").strip() or None
+    if chosen is not None and chosen not in USER_MODELS:
+        raise ValueError(f"model must be one of {', '.join(USER_MODELS)}")
     return AnthropicApiClient(
-        validate_api_key(api_key), model=os.environ.get("LUNARNAV_LLM_MODEL") or None
+        validate_api_key(api_key), model=chosen or os.environ.get("LUNARNAV_LLM_MODEL") or None
     )
 
 

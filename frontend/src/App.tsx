@@ -376,7 +376,7 @@ function App() {
       <main>
         <div className="stage">
           {/* Account: top-right corner of the globe, away from the busy side column. */}
-          <AccountMenu account={account} proposals={proposals} savedCount={userSites.length} onChanged={accountChanged} />
+          <AccountMenu account={account} proposals={proposals} savedCount={userSites.length} onChanged={accountChanged} sites={sites} />
           <MoonGlobe
             sites={globeSites}
             selected={selectedLocation}

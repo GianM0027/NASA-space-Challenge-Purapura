@@ -2,6 +2,7 @@
 // ABOUTME: Owner: Gian. Shows the AI comment, Michael's summary, date-slip and dispersion tables
 
 import { useState } from 'react'
+import { tabLabels } from './tabLabels'
 import { AiBadge } from '../ai/AiBadge'
 import type { DispersionSample, GeoPoint, RobustnessReport, TimeWindow, VisibilityMetrics } from '../api/contracts'
 import { formatDuration, formatPercent, formatShiftDays, formatUtc } from '../format'
@@ -97,7 +98,12 @@ function TouchdownDiagram(props: {
       {rings.map((ring) => (
         <g key={ring}>
           <circle cx={mid} cy={mid} r={(ring / radius) * RING_PX} className="touchdown-ring" />
-          <text x={mid + 3} y={mid - (ring / radius) * RING_PX - 2} className="touchdown-label">
+          {/* On the north-east diagonal, so the label never sits on the N or E letters. */}
+          <text
+            x={mid + ((ring / radius) * RING_PX) * Math.SQRT1_2 + 3}
+            y={mid - ((ring / radius) * RING_PX) * Math.SQRT1_2 - 3}
+            className="touchdown-label"
+          >
             {ring} m
           </text>
         </g>
@@ -218,6 +224,7 @@ function AnalysisView({ tab }: { tab: AnalysisTab }) {
   const window = `${formatUtc(tab.window.start_utc)} → ${formatUtc(tab.window.end_utc)}`
   return (
     <div className="analysis-view">
+      <h3 className="analysis-title">{tab.label}</h3>
       <p className="muted small">
         {window} · landing within {tab.landingPrecisionM} m
       </p>
@@ -281,14 +288,15 @@ export function MissionAnalysisBox(props: {
     )
   }
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0]
+  const labels = tabLabels(tabs)
   return (
     <section className="ai-box analysis-box" aria-label="Mission analysis">
       <div className="ai-head">
-        <div className="tabs analysis-tabs">
-          {tabs.map((tab) => (
+        <div className="tabs analysis-tabs" role="tablist">
+          {tabs.map((tab, i) => (
             <span key={tab.id} className={tab.id === active.id ? 'analysis-tab active' : 'analysis-tab'}>
-              <button onClick={() => onSelect(tab.id)} title={tab.label}>
-                {tab.label}
+              <button role="tab" aria-selected={tab.id === active.id} onClick={() => onSelect(tab.id)} title={tab.label}>
+                {labels[i]}
               </button>
               <button className="chip-remove" title="Close this analysis" onClick={() => onClose(tab.id)}>
                 ×

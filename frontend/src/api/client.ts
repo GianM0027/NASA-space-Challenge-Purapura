@@ -67,6 +67,17 @@ export interface SiteUpdateStatus {
   message: string
 }
 
+/** Usage statistics for admins (GET /api/admin/stats, decision D47): aggregate counts only. */
+export interface UsageStats {
+  days: string[]
+  visits: number[]
+  visitors: number[]
+  features: { name: string; count: number }[]
+  sites: { name: string; count: number }[]
+  devices: { name: string; count: number }[]
+  errors: { name: string; count: number }[]
+}
+
 /** Edits the admin may make when approving a proposal. */
 export interface ApproveBody {
   name?: string | null
@@ -159,6 +170,9 @@ export const api = {
     request<ProposalInfo>(`/api/admin/proposals/${id}/approve`, body),
   rejectProposal: (id: number, adminNote: string) =>
     request<ProposalInfo>(`/api/admin/proposals/${id}/reject`, { admin_note: adminNote }),
+  adminStats: (days: number) => request<UsageStats>(`/api/admin/stats?days=${days}`),
+  /** Count an event only the browser sees (no identifier is sent); failures are ignored. */
+  statsEvent: (name: 'pdf_report') => request<void>('/api/stats/event', { name }).catch(() => undefined),
   siteUpdateStatus: () => request<SiteUpdateStatus>('/api/admin/site-update'),
   requestSiteUpdate: () => request<SiteUpdateStatus>('/api/admin/site-update', {}),
   removeCommunitySite: (siteId: string) =>

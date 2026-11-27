@@ -99,3 +99,11 @@ Admins also see **Site version** in the Account panel (decision D46): the live c
 `main` on GitHub with what changed, and an **Update the site** button. The app only drops a request
 file in `LUNARNAV_CONTROL_DIR`; a service of the server's owner runs the deploy (tests, maintenance
 page, rollback on failure) and writes `status.json` there, which the panel polls.
+
+### Usage statistics
+
+Admins open **Usage statistics** in the Account panel (decision D47): visits per day, visitors,
+features used, most analyzed catalog sites, devices and errors. Only daily aggregate counts are
+stored (`stats.sqlite3` next to the account store); no cookies, no IP addresses, no user agents.
+A visitor is counted once a day through a salted hash kept in memory for that day only, so no
+consent banner is needed.

@@ -55,6 +55,7 @@ const STATUS_COLORS: Record<Site['status'], string> = {
 const MARKER_RADIUS = 0.012
 const HIT_RADIUS = 0.03 // invisible, larger pick target around each marker
 const EARTH_DISTANCE = 1.9 // globe radii; a direction indicator, not to scale
+const EARTH_MARKER_RADIUS = 0.022 // globe radii; was 0.06, which covered the legend near the camera
 const CLICK_TOLERANCE_PX = 4
 
 type Engine = {
@@ -148,7 +149,8 @@ export function MoonGlobe(props: Props) {
 
     const earth = new Group()
     earth.add(
-      new Mesh(new SphereGeometry(0.06, 24, 16), new MeshBasicMaterial({ color: '#4f8fff' })),
+      // Small: it sits between the camera and the Moon and must not cover the globe or the legend.
+      new Mesh(new SphereGeometry(EARTH_MARKER_RADIUS, 24, 16), new MeshBasicMaterial({ color: '#4f8fff' })),
       new Line(
         new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(0, 0, 0)]),
         new LineBasicMaterial({ color: '#4f8fff', transparent: true, opacity: 0.6 }),

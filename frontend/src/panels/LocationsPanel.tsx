@@ -217,7 +217,16 @@ function LocationRow(props: {
         </div>
       )}
       {proposal === 'pending' && <span className="badge pending small">proposed, waiting for review</span>}
-      {proposal === 'approved' && <span className="badge approved small">added to the catalog</span>}
+      {proposal === 'approved' && (
+        <span className="row approved-copy">
+          <span className="badge approved small">added to the catalog</span>
+          {mode !== 'confirm' && (
+            <button className="link small" title="The catalog has it now for everyone" onClick={() => setMode('confirm')}>
+              Remove my copy
+            </button>
+          )}
+        </span>
+      )}
       {mode === 'propose' && onPropose && (
         <form
           className="row confirm"
@@ -247,7 +256,11 @@ function LocationRow(props: {
       )}
       {mode === 'confirm' && (
         <div className="row confirm">
-          <span className="confirm-question">Delete '{site.name}'? This cannot be undone.</span>
+          <span className="confirm-question">
+            {proposal === 'approved'
+              ? `'${site.name}' is in the catalog now. Delete your personal copy?`
+              : `Delete '${site.name}'? This cannot be undone.`}
+          </span>
           <button className="danger" onClick={() => void remove()}>
             Delete
           </button>
