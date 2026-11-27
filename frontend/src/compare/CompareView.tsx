@@ -1,7 +1,7 @@
 // ABOUTME: Comparison and trade-off view (UI-3, TO-1 to TO-4, TO-6): guided setup on the left, results on the right
 // ABOUTME: Owner: Federico (D37). Self-contained: a pill in the App dock that opens a popup, like the AI assistant
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AiBadge } from '../ai/AiBadge'
 import type { Site, TimeWindow, TradeoffResult } from '../api/contracts'
 import { formatPercent, fromInputValue, toInputValue } from '../format'
@@ -111,6 +111,7 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
   }
   const [draft, setDraft] = useState<TradeoffDraft>(initialDraft)
   const [result, setResult] = useState<TradeoffResult | null>(null)
+  const results = useRef<HTMLDivElement>(null)
   const [busy, setBusy] = useState<'run' | 'export' | null>(null)
   const [error, setError] = useState<string | null>(null)
   // Closed = minimized to a pill: the component stays mounted, so the setup and the result survive.
@@ -167,6 +168,10 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
         const next = await runTradeoff(buildRequest(draft))
         setResult(next)
         onResult?.(next)
+        // Narrow screens stack the setup above the results: bring the results into view.
+        if (globalThis.matchMedia?.('(max-width: 900px)').matches) {
+          requestAnimationFrame(() => results.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+        }
       }
       else await downloadTradeoff(buildRequest(draft), 'lunarnav-tradeoff.xlsx')
     } catch (reason: unknown) {
@@ -476,7 +481,7 @@ export function CompareView({ sites, defaultWindow, initialSiteId, onResult }: P
           </section>
         </div>
 
-        <div className="cmp-results">
+        <div className="cmp-results" ref={results}>
           <div className="cmp-run">
             <button className="cmp-primary" disabled={errors.length > 0 || busy !== null} onClick={() => call('run')}>
               {busy === 'run' ? 'Computing… (can take a minute)' : result ? 'Run again' : 'Run trade-off'}

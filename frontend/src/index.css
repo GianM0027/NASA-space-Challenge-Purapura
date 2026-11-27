@@ -1488,3 +1488,105 @@ button.close-button {
     animation: none;
   }
 }
+
+/* ---------- GUI improvements (audit 2026-11-27) ---------- */
+
+/* Admin toggles in the account popover: one per line. */
+.account button.link {
+  display: block;
+  margin: 4px 0;
+}
+
+/* Legend over the globe: readable over the Earth marker and bright terrain. */
+.legend {
+  right: auto;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgb(11 14 20 / 72%);
+}
+
+/* Time wheel: the date and the offset never wrap while playing. */
+.time-wheel-now,
+.time-wheel-head .muted {
+  white-space: nowrap;
+}
+
+/* Saved sites: coordinates under the name, so three action buttons still fit. */
+.site-coords {
+  display: block;
+}
+
+.row.confirm {
+  flex-wrap: wrap;
+}
+
+.confirm-question {
+  flex-basis: 100%;
+  margin-bottom: 4px;
+}
+
+/* The catalog list shows more rows before it scrolls. */
+aside .sites {
+  max-height: 260px;
+}
+
+.badge.community {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Touchdown diagram: dots are tappable; the picked one is outlined and described below. */
+.touchdown-dot {
+  cursor: pointer;
+}
+
+.touchdown-dot.picked {
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.touchdown-picked {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 760px) {
+  .legend {
+    right: 8px;
+  }
+
+  /* Sheets (AI box, mission analysis) stay on the Moon and Analysis tabs, not over the site lists. */
+  .app[data-tab='sites'] .ai-box,
+  .app[data-tab='sites'] .analysis-box {
+    visibility: hidden;
+  }
+}
+
+/* Compact wheel controls, so date, offset and controls fit on one line in the side column. */
+.time-wheel-head button,
+.time-wheel-head select {
+  padding: 2px 6px;
+}
+
+/* "Sunset 4 d 11 h after the start …": the duration never breaks; the rest may wrap. */
+.event strong {
+  white-space: nowrap;
+}
+
+/* Saved sites: room between rows, and a proposal badge sits right under its own site. */
+aside .sites li + li {
+  margin-top: 6px;
+}
+
+aside .sites li > .badge {
+  margin: 2px 0 0 18px;
+}
+
+.time-wheel-when {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.time-wheel-when .muted {
+  font-size: 11px;
+}

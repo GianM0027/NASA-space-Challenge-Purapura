@@ -56,8 +56,8 @@ function NextEvent(props: { label: string; startUtc: string; eventUtc: string | 
       <span className="event-label">{label}</span>
       {eventUtc ? (
         <>
-          <strong>in {formatDuration(hoursBetween(startUtc, eventUtc))}</strong>
-          <span className="muted">{formatUtc(eventUtc)}</span>
+          <strong>{formatDuration(hoursBetween(startUtc, eventUtc))}</strong>
+          <span className="muted">after the start · {formatUtc(eventUtc)}</span>
         </>
       ) : (
         <span className="muted">not within the window</span>

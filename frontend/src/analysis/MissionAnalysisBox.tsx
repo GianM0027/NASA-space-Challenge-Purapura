@@ -1,6 +1,7 @@
 // ABOUTME: Mission analysis window (spec UI-5, AI-6): one tab per analyzed site, minimizable
 // ABOUTME: Owner: Gian. Shows the AI comment, Michael's summary, date-slip and dispersion tables
 
+import { useState } from 'react'
 import { AiBadge } from '../ai/AiBadge'
 import type { DispersionSample, GeoPoint, RobustnessReport, TimeWindow, VisibilityMetrics } from '../api/contracts'
 import { formatDuration, formatPercent, formatShiftDays, formatUtc } from '../format'
@@ -70,8 +71,24 @@ const CLASS_LABEL: Record<string, string> = {
 const STEEP_LABEL = `red ring: landing slope over ${SLOPE_LIMIT_DEG}°`
 
 /** Target diagram: the analyzed point in the middle, each touchdown sample where it lies. */
-function TouchdownDiagram(props: { samples: DispersionSample[]; nominal: VisibilityMetrics; center: GeoPoint }) {
-  const { samples, nominal, center } = props
+/** One touchdown point in words: offset, bearing, Sun, Earth, slope and how it compares. */
+function dotText(sample: DispersionSample, nominal: VisibilityMetrics, center: GeoPoint): string {
+  const kind = classify(sample, nominal)
+  const steep = isSteep(sample)
+  return (
+    `${Math.round(sample.offset_m)} m ${compass(bearingDeg(center, sample.location))}: Sun ${formatPercent(sample.metrics.illumination_fraction)}, ` +
+    `Earth ${formatPercent(sample.metrics.earth_visibility_fraction)}, landing slope ${sample.slope_max_deg.toFixed(1)}° (${CLASS_LABEL[kind]}${steep ? `, slope over ${SLOPE_LIMIT_DEG}°` : ''})`
+  )
+}
+
+function TouchdownDiagram(props: {
+  samples: DispersionSample[]
+  nominal: VisibilityMetrics
+  center: GeoPoint
+  picked: number | null
+  onPick: (index: number) => void
+}) {
+  const { samples, nominal, center, picked, onPick } = props
   const radius = Math.max(...samples.map((sample) => sample.offset_m))
   const mid = DIAGRAM / 2
   const rings = [...new Set(samples.map((sample) => Math.round(sample.offset_m)))].sort((a, b) => a - b)
@@ -111,12 +128,10 @@ function TouchdownDiagram(props: { samples: DispersionSample[]; nominal: Visibil
             cx={mid + Math.sin(bearing) * r}
             cy={mid - Math.cos(bearing) * r}
             r={5}
-            className={`touchdown-dot ${kind}${steep ? ' steep' : ''}`}
+            className={`touchdown-dot ${kind}${steep ? ' steep' : ''}${picked === i ? ' picked' : ''}`}
+            onClick={() => onPick(i)}
           >
-            <title>
-              {`${Math.round(sample.offset_m)} m ${compass(bearingDeg(center, sample.location))}: Sun ${formatPercent(sample.metrics.illumination_fraction)}, ` +
-                `Earth ${formatPercent(sample.metrics.earth_visibility_fraction)}, landing slope ${sample.slope_max_deg.toFixed(1)}° (${CLASS_LABEL[kind]}${steep ? `, slope over ${SLOPE_LIMIT_DEG}°` : ''})`}
-            </title>
+            <title>{dotText(sample, nominal, center)}</title>
           </circle>
         )
       })}
@@ -127,6 +142,8 @@ function TouchdownDiagram(props: { samples: DispersionSample[]; nominal: Visibil
 /** "Where the lander touches down": verdict sentence, target diagram, numbers on demand. */
 function TouchdownView({ report, center }: { report: RobustnessReport; center: GeoPoint }) {
   const samples = report.dispersion
+  // Tapped dot (touch screens have no hover): its numbers show under the diagram.
+  const [picked, setPicked] = useState<number | null>(null)
   const kinds = new Set(samples.map((sample) => classify(sample, report.nominal)))
   const anySteep = samples.some(isSteep)
   return (
@@ -135,7 +152,13 @@ function TouchdownView({ report, center }: { report: RobustnessReport; center: G
       {samples.length > 0 && (
         <>
           <div className="touchdown-row">
-            <TouchdownDiagram samples={samples} nominal={report.nominal} center={center} />
+            <TouchdownDiagram
+              samples={samples}
+              nominal={report.nominal}
+              center={center}
+              picked={picked}
+              onPick={(i) => setPicked(picked === i ? null : i)}
+            />
             <ul className="touchdown-legend small">
               <li>
                 <i className="touchdown-target" /> target point
@@ -152,9 +175,12 @@ function TouchdownView({ report, center }: { report: RobustnessReport; center: G
                   <i className="touchdown-dot steep" /> {STEEP_LABEL}
                 </li>
               )}
-              <li className="muted">Hover a dot for its numbers.</li>
+              <li className="muted">Tap or hover a dot for its numbers.</li>
             </ul>
           </div>
+          {picked !== null && samples[picked] && (
+            <p className="small touchdown-picked">{dotText(samples[picked], report.nominal, center)}</p>
+          )}
           <details>
             <summary className="muted small">Details</summary>
             <table className="analysis-table">

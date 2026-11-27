@@ -89,8 +89,11 @@ export function TimeWheel(props: {
         <span className="time-wheel-icon" aria-hidden>
           ⏱
         </span>
-        <span className="time-wheel-now">{formatUtc(shown)}</span>
-        <span className="muted small">{formatOffset(offsetHours)}</span>
+        {/* Date with the offset from the start under it, so the controls keep one line. */}
+        <span className="time-wheel-when">
+          <span className="time-wheel-now">{formatUtc(shown)}</span>
+          <span className="muted small">{formatOffset(offsetHours)}</span>
+        </span>
         <span className="grow" />
         <button
           title={playing ? 'Pause' : 'Play: move time forward automatically'}
