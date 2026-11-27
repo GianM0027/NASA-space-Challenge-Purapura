@@ -180,3 +180,60 @@ def test_visitor_model_choice(monkeypatch: pytest.MonkeyPatch, sdk: type[_FakeSd
     assert llm.api_client_for_key(KEY, "claude-opus-5-5").model == "claude-opus-5-5"
     with pytest.raises(ValueError, match="model must be one of"):
         llm.api_client_for_key(KEY, "claude-something-else")
+
+
+def test_nullable_types_become_any_of_for_the_api() -> None:
+    nullable = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["kind", "when", "hours"],
+        "properties": {
+            "kind": {"type": ["string", "null"], "enum": ["a", "b", None]},
+            "when": {"type": ["string", "null"]},
+            "hours": {"type": ["number", "null"], "description": "duration"},
+        },
+    }
+    converted = llm.api_json_schema(nullable)
+    props = converted["properties"]
+    assert props["kind"] == {"anyOf": [{"type": "string", "enum": ["a", "b"]}, {"type": "null"}]}
+    assert props["when"] == {"anyOf": [{"type": "string"}, {"type": "null"}]}
+    assert props["hours"] == {
+        "description": "duration",
+        "anyOf": [{"type": "number"}, {"type": "null"}],
+    }
+    assert converted["required"] == ["kind", "when", "hours"]
+    assert nullable["properties"]["kind"]["enum"] == ["a", "b", None]  # the input is not changed
+
+
+def test_the_real_extraction_schema_has_no_type_lists_for_the_api() -> None:
+    from lunarnav.ai import assistant
+    from lunarnav.ai.archetypes import load_archetypes
+    from lunarnav.ai.regions import load_regions
+
+    schema = assistant._extraction_schema(list(load_archetypes()), list(load_regions()))
+    converted = llm.api_json_schema(schema)
+
+    def check(node: Any) -> None:
+        if isinstance(node, dict):
+            assert not isinstance(node.get("type"), list), node
+            if "enum" in node:
+                assert None not in node["enum"], node
+            for value in node.values():
+                check(value)
+        elif isinstance(node, list):
+            for value in node:
+                check(value)
+
+    check(converted)
+
+
+def test_the_api_receives_the_converted_schema(sdk: type[_FakeSdk]) -> None:
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["x"],
+        "properties": {"x": {"type": ["string", "null"]}},
+    }
+    llm.AnthropicApiClient(KEY).complete_json("s", "p", schema)
+    sent = sdk.instances[0].calls[0]["output_config"]["format"]["schema"]
+    assert sent["properties"]["x"] == {"anyOf": [{"type": "string"}, {"type": "null"}]}

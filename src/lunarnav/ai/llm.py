@@ -227,6 +227,45 @@ def parse_api_message(message: Any) -> dict[str, Any]:
     return answer
 
 
+# Keywords that belong to one JSON type when a nullable type list is split into anyOf branches.
+_TYPE_KEYWORDS = {
+    "string": {"enum", "format", "pattern", "minLength", "maxLength"},
+    "number": {"enum", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"},
+    "integer": {"enum", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"},
+    "array": {"items", "minItems", "maxItems"},
+    "object": {"properties", "required", "additionalProperties"},
+}
+
+
+def api_json_schema(schema: Any) -> Any:
+    """Rewrite a JSON Schema into the form the Messages API's structured outputs accept.
+
+    The API rejects a type list such as ``{"type": ["string", "null"], "enum": [..., None]}``
+    (every enum value must match one declared type). Each type list becomes ``anyOf`` with one
+    branch per type: the keywords of that type (an enum without ``None``) and ``{"type": "null"}``.
+    Everything else is copied unchanged; the Claude CLI keeps receiving the original schema.
+    """
+    if isinstance(schema, list):
+        return [api_json_schema(item) for item in schema]
+    if not isinstance(schema, dict):
+        return schema
+    node = {key: api_json_schema(value) for key, value in schema.items()}
+    types = node.get("type")
+    if not isinstance(types, list):
+        return node
+    shared = {k: v for k, v in node.items() if k in {"description", "title"}}
+    branches: list[dict[str, Any]] = []
+    for kind in types:
+        branch: dict[str, Any] = {"type": kind}
+        for key in _TYPE_KEYWORDS.get(kind, set()):
+            if key in node:
+                branch[key] = node[key]
+        if "enum" in branch:
+            branch["enum"] = [value for value in branch["enum"] if value is not None]
+        branches.append(branch)
+    return {**shared, "anyOf": branches}
+
+
 class AnthropicApiClient:
     """``LlmClient`` backed by the Anthropic Messages API with structured outputs.
 
@@ -288,7 +327,7 @@ class AnthropicApiClient:
                 messages=[{"role": "user", "content": prompt}],
                 output_config={
                     "effort": "low",
-                    "format": {"type": "json_schema", "schema": schema},
+                    "format": {"type": "json_schema", "schema": api_json_schema(schema)},
                 },
                 **fallback,
             )
