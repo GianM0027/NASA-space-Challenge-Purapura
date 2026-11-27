@@ -1,103 +1,92 @@
-<!-- ABOUTME: Entry point of the LunarNav repo: what it is, where the rules are, how to set up and run -->
-<!-- ABOUTME: Owner: Gian; run instructions grow as the API and frontend land -->
+<!-- ABOUTME: Front page of the LunarNav repo: the live site, what it does, how it works, screenshots -->
+<!-- ABOUTME: Owner: Gian. Setup and run instructions live in docs/DEVELOPMENT.md -->
 
-# LunarNav (team Purapura, NASA Space Apps 2026)
+# LunarNav
 
-Lunar landing site navigator for the challenge
-[Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/?tab=details):
-Sun and Earth visibility against the real terrain horizon, power and direct-to-Earth
-communication windows, AI-assisted site search and mission robustness analysis, anywhere on the Moon.
+**Where on the Moon can a lander stay powered and keep talking to Earth?**
 
-## Read first
+LunarNav is a lunar landing site navigator built by team **Purapura** for the
+[NASA Space Apps Challenge 2026](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/?tab=details).
+Pick any point on the Moon and a time window: LunarNav tells you when the Sun and the Earth are
+above the *real* terrain horizon there, how long the nights and the radio outages last, how flat
+the ground is, and how robust all of that is to a late launch or an imprecise landing.
 
-1. [`MISSION.md`](MISSION.md): goal, roles, who writes which file, git flow (frozen)
-2. [`docs/decisions.md`](docs/decisions.md): decisions log (append-only)
-3. [`docs/spec.md`](docs/spec.md): requirements, priorities, owners, API
-4. [`docs/tasks/`](docs/tasks/): what each of us is doing
-5. [`CLAUDE.md`](CLAUDE.md) and [`.claude/skills/`](.claude/skills/): rules for our Claude Code sessions
+### 🌕 Try it: **[lunarnav.tailebb034.ts.net](https://lunarnav.tailebb034.ts.net)**
 
-## Setup
+It runs in the browser on desktop and phone; no installation, no account needed. If the site is
+down, the [screenshots](#screenshots) below show what it does.
 
-Requirements: [uv](https://docs.astral.sh/uv/) (Python is installed by uv from `.python-version`),
-Git, and Node.js LTS for the frontend.
+![LunarNav: the Moon globe lit by the real Sun, with the evaluation of Apollo 15](docs/screenshots/desktop-site-evaluation.png)
 
-```bash
-git clone https://github.com/GianM0027/NASA-space-Challenge-Purapura.git
-cd NASA-space-Challenge-Purapura
-git checkout -b <your-name>                  # gian | federico | michael
-uv sync --group <your-module> --group dev    # e.g. --group terrain --group evaluation
-uv run pytest                                # must be green
-```
+## What you can do
 
-## Checks (before every commit)
+- **Explore the Moon in 3D.** The globe uses NASA's LRO mosaic and is lit by the real Sun
+  direction at the chosen date; the day/night terminator moves as you scrub through time. The
+  catalog holds 36 historic and planned landing sites (Apollo, Luna, Surveyor, Chang'e,
+  Chandrayaan, SLIM, CLPS, Artemis candidates).
+- **Evaluate any site or point.** Click a marker, click anywhere, or type coordinates. For the
+  chosen window you get the Sun and Earth elevation against the local horizon, the share of time in
+  sunlight and with a direct link to Earth, the longest night and the longest outage, the next
+  sunset or earthset, and the landing slope.
+- **Stress-test a landing: Mission analysis.** How do sunlight, darkness and Earth visibility
+  change if the launch slips by days, and across the points where the lander may actually touch
+  down within its landing precision? A target diagram shows where not to land.
+- **Compare sites: Trade-off.** Put 2 to 4 sites side by side, choose what matters (sunlight,
+  darkness, Earth contact, slope, reachable area, your own criteria), weight them equally, by
+  pairwise comparison (AHP) or by hand, and get a ranking with a sensitivity check. Download it as
+  a live Excel workbook.
+- **Ask the AI assistant.** Describe a mission in plain words ("two-week robotic lander near the
+  south pole") and get the catalog ranked against it. The AI only reads your request; every
+  number comes from the engine and is checked before it is shown. It runs on your own Anthropic
+  API key, which stays in your browser.
+- **Export a PDF report** with the sections you choose: site evaluation, mission analysis, AI
+  ranking, trade-off, sources and methods.
+- **Save your sites.** Without an account they last for your browser session; with a free account
+  they are kept and follow you across devices. You can also **propose** a site for the shared
+  catalog: approved ones appear for everyone.
 
-```bash
-uv run ruff format . && uv run ruff check . && uv run pytest
-```
+## How it works
 
-## Run
+| Piece | What it does | Source |
+|---|---|---|
+| Terrain | Horizon masks from 150 km rays and slopes over the landing area | NASA LRO LOLA elevation models: global 474 m grid, south polar 80 m and 20 m grids ([PDS](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/)) |
+| Sun and Earth | Their direction from the site at every time step of the window | [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/), cached |
+| Evaluation | A body counts as visible when its center is above the terrain horizon at its azimuth; runs, fractions and next events from the time series | Our engine (Python) |
+| Robustness | The same evaluation over launch slips and dispersed touchdown points | Our engine |
+| Trade-off | Normalized criteria, AHP weights (geometric mean), consistency ratio, sensitivity | Saaty's AHP |
+| AI assistant | Turns a request into mission requirements and explains the deterministic ranking | Claude, via the visitor's own Anthropic API key |
 
-One-time data download (LOLA elevation models, about 650 MB, into the git-ignored `data/raw/`).
-Without it the app still runs, with placeholder terrain:
+The frontend is React with three.js; the backend is FastAPI. Every choice and its source is in the
+[decision log](docs/decisions.md), the requirements in the [spec](docs/spec.md).
 
-```bash
-uv run python scripts/terrain_download_dem.py
-```
+## Screenshots
 
-Before a demo, warm the caches so no site selection waits (needs `uv sync --all-groups` first):
-horizon masks of every catalog site, then Sun and Earth ephemerides for the demo window (needs
-network; align the GUI start date to the warm-up start).
+**Mission analysis**: launch slips and the touchdown diagram (tap or hover a dot for its numbers).
+![Mission analysis window over the globe](docs/screenshots/desktop-mission-analysis.png)
 
-```bash
-uv run python scripts/terrain_warm_cache.py
-uv run python scripts/ephemeris_warm_cache.py --start 2026-12-01 --days 60
-```
+**Trade-off** between two sites, with the weight of each criterion and how robust the ranking is.
+![Trade-off of Apollo 15 and Apollo 11](docs/screenshots/desktop-trade-off.png)
 
-Backend, from the repo root:
+**South pole**, where the Artemis candidate sites cluster, lit by the Sun at the chosen date.
+![South polar view of the globe with the Artemis candidate sites](docs/screenshots/desktop-south-pole.png)
 
-```bash
-uv sync --all-groups
-uv run uvicorn lunarnav.api.main:app --reload --port 8000
-```
+**PDF report** builder with a live A4 preview.
+![PDF report builder](docs/screenshots/desktop-pdf-report.png)
 
-Frontend, in a second terminal (run npm from inside `frontend/`: `npm --prefix` fails on Windows
-with some npm versions):
+**On a phone**: the Moon, the site lists and the analysis are three tabs.
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+<p>
+  <img src="docs/screenshots/phone-moon.png" alt="LunarNav on a phone: the Moon tab" width="260">
+  &nbsp;
+  <img src="docs/screenshots/phone-analysis.png" alt="LunarNav on a phone: the analysis of Apollo 17" width="260">
+</p>
 
-Open http://localhost:5173 (the dev server proxies `/api` to the backend).
+## Team
 
-### AI provider
+Team Purapura: Gian, Federico and Michael, NASA Space Apps Challenge 2026. Who did what is in
+[MISSION.md](MISSION.md) and the [task files](docs/tasks/).
 
-The AI box uses the server's LLM, chosen by `LUNARNAV_LLM_PROVIDER` (see `.env.example`): `cli`
-(default: the Claude Code CLI with your logged-in plan), `api` (Anthropic API with the server's
-`ANTHROPIC_API_KEY`) or `none`. Any visitor can also add their own Anthropic API key with the
-**API key** button in the AI box: it stays in their browser and is sent only with AI requests,
-which the server passes to Anthropic without storing it (decision D43). For a public deployment
-use `LUNARNAV_LLM_PROVIDER=none`, so visitors never spend your plan; without a key the rest of the
-app works and the AI texts fall back to deterministic sentences.
+## Developing
 
-The API limits requests per client and minute (decision D44; `LUNARNAV_RATE_LIMITS` in
-`.env.example`): generous for a person using the GUI, HTTP 429 with `Retry-After` beyond. Behind a
-reverse proxy run uvicorn with `--proxy-headers` so each visitor is counted by their own address.
-
-### Accounts and site proposals
-
-Accounts are optional (decision D45). A visitor's first saved site starts a guest session: their
-sites are private and last until the browser is closed. Creating an account keeps them; logging in
-from another browser brings them along. Registered users can **propose** one of their sites for the
-shared catalog; the usernames in `LUNARNAV_ADMIN_USERS` review proposals in the Account panel, and
-approved sites appear in the catalog for everyone. Data lives in one SQLite file under
-`LUNARNAV_STATE_DIR` (default `data/state/`, git-ignored); passwords are hashed with scrypt.
-
-Admins also see **Site version** in the Account panel (decision D46): the live commit, the latest
-`main` on GitHub with what changed, and an **Update the site** button. The app only drops a request
-file in `LUNARNAV_CONTROL_DIR`; a service of the server's owner runs the deploy (tests, maintenance
-page, rollback on failure) and writes `status.json` there, which the panel polls.
-API docs: http://localhost:8000/docs. The header badges show which modules are live; a module
-that is missing or fails falls back to a labelled placeholder (spec IF-5), and
-http://localhost:8000/api/modules gives the reason.
+Setup, checks, running it locally and the server options are in
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
