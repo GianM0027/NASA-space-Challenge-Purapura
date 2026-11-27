@@ -23,6 +23,11 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- GUI audit (desktop 1440x900 and phone 390x844, scripted browser, no JS errors or failed
+  requests found) and the certain fixes: admin toggles on separate lines, save form closes after
+  saving, clearer delete confirmation, site rows that fit three actions, readable legend, time
+  wheel on one line, "after the start" for next events, sheets off the Sites tab, tappable
+  touchdown dots, trade-off results scrolled into view on phones, community badge in the catalog.
 - Site version panel for admins (D46): live vs latest commit, changes, "Update the site" writes a
   request file that the server's deploy service picks up; polling and reload. Verified: 8 backend
   tests (GitHub faked, no network), 1 frontend test.

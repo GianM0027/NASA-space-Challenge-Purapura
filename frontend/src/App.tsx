@@ -467,7 +467,7 @@ function App() {
         <aside>
           <div className="aside-group group-sites">
           <section className="panel">
-            <h2>Preloaded landing sites</h2>
+            <h2>Landing site catalog</h2>
             <ul className="sites">
               {curatedSites.map((site) => (
                 <li key={site.id}>
@@ -478,6 +478,11 @@ function App() {
                     <i className={`dot ${site.status}`} />
                     {site.name}
                     {site.mission && <span className="muted"> {site.mission}</span>}
+                    {site.id.startsWith('community-') && (
+                      <span className="badge community" title="Proposed by a user and approved by the admin">
+                        community
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}

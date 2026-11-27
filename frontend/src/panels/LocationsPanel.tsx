@@ -31,6 +31,7 @@ export function CoordinatesBox(props: {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   // Saving is offered for the point last analyzed; editing a coordinate withdraws it. A point
   // clicked on the globe is analyzed at once, so it starts as analyzed, like a typed point after →.
@@ -55,6 +56,9 @@ export function CoordinatesBox(props: {
     setSaving(false)
     setMessage(error)
     if (!error) {
+      // Saved: close the form so the same point is not saved twice, and say where it went.
+      setNotice(`Saved as "${name.trim()}" in Custom landing sites.`)
+      setAnalyzed(false)
       setName('')
       setDescription('')
     }
@@ -115,6 +119,7 @@ export function CoordinatesBox(props: {
         </form>
       )}
       {message && <p className="error">{message}</p>}
+      {notice && !analyzed && <p className="muted small">{notice}</p>}
     </section>
   )
 }
@@ -187,7 +192,7 @@ function LocationRow(props: {
           <button className={`grow${active ? ' active' : ''}`} onClick={() => onPick(site.id)}>
             <i className="dot custom" />
             {site.name}
-            <span className="muted small"> {formatCoordinates(site.location)}</span>
+            <span className="site-coords muted small">{formatCoordinates(site.location)}</span>
             {site.description && <span className="site-description small">{site.description}</span>}
           </button>
           <button
@@ -231,7 +236,7 @@ function LocationRow(props: {
             value={note}
             maxLength={1000}
             aria-label={`Why ${site.name} should join the catalog`}
-            placeholder="Why should it join the catalog? Sources help."
+            placeholder="Why add it? Sources help."
             onChange={(e) => setNote(e.target.value)}
           />
           <button type="submit">Send</button>
@@ -242,8 +247,10 @@ function LocationRow(props: {
       )}
       {mode === 'confirm' && (
         <div className="row confirm">
-          <span>Delete '{site.name}'? This cannot be undone.</span>
-          <button onClick={() => void remove()}>Delete</button>
+          <span className="confirm-question">Delete '{site.name}'? This cannot be undone.</span>
+          <button className="danger" onClick={() => void remove()}>
+            Delete
+          </button>
           <button onClick={() => setMode('view')}>Cancel</button>
         </div>
       )}
