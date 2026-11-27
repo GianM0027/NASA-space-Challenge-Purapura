@@ -343,6 +343,13 @@ def test_tradeoff_comment_keeps_a_checked_text() -> None:
     assert commented.ai_comment == "Malapert wins with a score of 0.58 against 0.42 for IM-2."
 
 
+def test_tradeoff_comment_may_state_the_gap_between_scores() -> None:
+    # 0.5788 - 0.4212 = 0.1576: "16 points" follows from the scores, it is not invented.
+    text = "Malapert leads with 58% against 42% for IM-2, ahead by 16 points."
+    commented = _assistant(_Llm({"comment": text}))[0].comment_tradeoff(_tradeoff())
+    assert commented.ai_comment == text
+
+
 def test_tradeoff_comment_with_an_invented_number_is_dropped() -> None:
     bad = {"comment": "Malapert wins by 37 points."}
     llm = _Llm(bad, bad)

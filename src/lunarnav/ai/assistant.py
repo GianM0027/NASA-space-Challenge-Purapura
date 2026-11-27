@@ -480,12 +480,15 @@ def tradeoff_numbers(result: TradeoffResult) -> list[float]:
 
     Returns:
         Scores, weights, raw and normalized values, judgments, consistency ratio, sensitivity,
-        the number of scenarios and of FoMs, and the ranks 1 to n.
+        the number of scenarios and of FoMs, the ranks 1 to n, and the gaps between any two
+        scores (a comment may say "ahead by 8 points": that gap follows from the scores).
     """
     counts = [float(len(result.labels)), float(len(result.foms))]
     ranks = [float(rank) for rank in range(1, len(result.labels) + 1)]
     values = _numbers_of(result.model_dump(exclude={"ai_comment", "method"}))
-    return counts + ranks + values + name_numbers(*result.labels)
+    scores = list(result.scores)
+    gaps = [abs(a - b) for i, a in enumerate(scores) for b in scores[i + 1 :]]
+    return counts + ranks + values + gaps + name_numbers(*result.labels)
 
 
 def _numbers_of(value: Any) -> list[float]:
@@ -770,7 +773,8 @@ class ChatAssistant:
         """
         system = (
             f"{task} Write at most two sentences, at most 45 words. Fractions may be written as "
-            "percentages, rounded to the nearest unit. Write no number that is not in the data. "
+            "percentages, rounded to the nearest unit. Write no number that is not in the data, "
+            "and do not compute new numbers (differences, ratios, sums); describe them in words. "
             "Use the language of 'language_of' (English if empty)."
         )
         prompt = json.dumps(payload, ensure_ascii=False)
