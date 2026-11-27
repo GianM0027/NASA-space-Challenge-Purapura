@@ -13,8 +13,7 @@ the ground is, and how robust all of that is to a late launch or an imprecise la
 
 ### 🌕 Try it: **[lunarnav.tailebb034.ts.net](https://lunarnav.tailebb034.ts.net)**
 
-It runs in the browser on desktop and phone; no installation, no account needed. If the site is
-down, the [screenshots](#screenshots) below show what it does.
+It runs in the browser on desktop and phone; no installation, no account needed (but you ca still register if you want to save your personal locations)
 
 ![LunarNav: the Moon globe lit by the real Sun, with the evaluation of Apollo 15](docs/screenshots/desktop-site-evaluation.png)
 
@@ -81,12 +80,7 @@ The frontend is React with three.js; the backend is FastAPI. Every choice and it
   <img src="docs/screenshots/phone-analysis.png" alt="LunarNav on a phone: the analysis of Apollo 17" width="260">
 </p>
 
-## Team
+## Instaallation Guide
 
-Team Purapura: Gian, Federico and Michael, NASA Space Apps Challenge 2026. Who did what is in
-[MISSION.md](MISSION.md) and the [task files](docs/tasks/).
-
-## Developing
-
-Setup, checks, running it locally and the server options are in
+In case you want to run your own version of the software: setup, checks, running it locally and the server options are in
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
