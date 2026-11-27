@@ -12,7 +12,9 @@ export function AiKeyPanel(props: { required: boolean; onDone: () => void }) {
   const { required, onDone } = props
   const saved = getAiKey()
   const [draft, setDraft] = useState('')
-  const [remember, setRemember] = useState(isAiKeyRemembered())
+  // Remembering on this device is the default (owner's choice): reloading must not lose the key.
+  // With a key already saved, the box shows where it is now.
+  const [remember, setRemember] = useState(saved ? isAiKeyRemembered() : true)
   const [model, setModel] = useState<AiModelId>(getAiModel())
 
   const save = () => {
@@ -84,7 +86,15 @@ export function AiKeyPanel(props: { required: boolean; onDone: () => void }) {
         ))}
       </fieldset>
       <label className="small ai-key-remember">
-        <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
+        <input
+          type="checkbox"
+          checked={remember}
+          onChange={(event) => {
+            setRemember(event.target.checked)
+            // Applies at once to a key already saved, not only at the next Save.
+            if (saved) setAiKey(saved, event.target.checked)
+          }}
+        />
         Remember on this device
       </label>
       <p className="muted small">
