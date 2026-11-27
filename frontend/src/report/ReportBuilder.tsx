@@ -12,6 +12,7 @@ import { Sources } from './sections/Sources'
 import { Tradeoff } from './sections/Tradeoff'
 import { isAvailable, SECTIONS, selectedSections } from './selection'
 import type { ReportBuilderProps, ReportInputs, SectionId, SectionProps } from './types'
+import { api } from '../api/client'
 import { CloseButton } from '../ui/CloseButton'
 
 /**
@@ -118,6 +119,7 @@ export function ReportBuilder(inputs: ReportBuilderProps) {
   const count = SECTIONS.filter((s) => s.id !== 'cover' && checked.has(s.id) && printable(s.id, inputs)).length
 
   const print = () => {
+    void api.statsEvent('pdf_report') // usage statistics: one count, no identifier (D47)
     const now = new Date().toISOString()
     setGeneratedUtc(now)
     // The browser names the PDF after the document title.

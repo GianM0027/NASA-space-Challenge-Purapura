@@ -2,7 +2,7 @@
 // ABOUTME: Owner: Gian. The key stays in this browser; the panel says plainly where it goes
 
 import { useState } from 'react'
-import { clearAiKey, getAiKey, isAiKeyRemembered, maskKey, setAiKey } from '../api/aiKey'
+import { AI_MODELS, clearAiKey, getAiKey, getAiModel, isAiKeyRemembered, maskKey, setAiKey, setAiModel, type AiModelId } from '../api/aiKey'
 
 /**
  * Key form shown inside the AI box. `required` is true when the server has no AI of its own,
@@ -13,6 +13,7 @@ export function AiKeyPanel(props: { required: boolean; onDone: () => void }) {
   const saved = getAiKey()
   const [draft, setDraft] = useState('')
   const [remember, setRemember] = useState(isAiKeyRemembered())
+  const [model, setModel] = useState<AiModelId>(getAiModel())
 
   const save = () => {
     if (!draft.trim()) return
@@ -61,6 +62,27 @@ export function AiKeyPanel(props: { required: boolean; onDone: () => void }) {
           Save
         </button>
       </form>
+      <fieldset className="ai-model">
+        <legend className="small">Model (token use)</legend>
+        {AI_MODELS.map((option) => (
+          <label key={option.id} className="small">
+            <input
+              type="radio"
+              name="ai-model"
+              value={option.id}
+              checked={model === option.id}
+              onChange={() => {
+                setModel(option.id)
+                setAiModel(option.id)
+              }}
+            />
+            <span>
+              <strong>{option.name}</strong> <span className={`badge usage-${option.usage}`}>{option.usage}</span>
+              <span className="muted"> · {option.note}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
       <label className="small ai-key-remember">
         <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
         Remember on this device

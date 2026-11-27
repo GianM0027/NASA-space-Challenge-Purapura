@@ -55,6 +55,7 @@ class _FakeLlm:
     def __init__(self, key: str, answer: Any) -> None:
         self.key = key
         self.answer = answer
+        self.model: str | None = None
 
     def complete_json(self, system: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         if isinstance(self.answer, Exception):
@@ -80,8 +81,9 @@ def setup() -> tuple[TestClient, ChatAssistant]:
 def _use_fake(monkeypatch: pytest.MonkeyPatch, answer: Any) -> list[_FakeLlm]:
     built: list[_FakeLlm] = []
 
-    def fake(key: str) -> _FakeLlm:
+    def fake(key: str, model: str | None = None) -> _FakeLlm:
         client = _FakeLlm(llm.validate_api_key(key), answer)
+        client.model = model
         built.append(client)
         return client
 
@@ -176,3 +178,19 @@ def test_placeholder_assistant_cannot_take_a_key() -> None:
     assert api.get("/api/ai/config").json()["server_llm"] == "example"
     answer = api.post("/api/ai/ask", json=CHAT, headers={API_KEY_HEADER: KEY})
     assert answer.status_code == 501
+
+
+def test_chosen_model_reaches_the_client(
+    setup: tuple[TestClient, ChatAssistant], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api, _ = setup
+    built = _use_fake(monkeypatch, REPLY)
+    headers = {API_KEY_HEADER: KEY, "X-Anthropic-Model": "claude-sonnet-5-5"}
+    assert api.post("/api/ai/ask", json=CHAT, headers=headers).status_code == 200
+    assert built[-1].model == "claude-sonnet-5-5"
+
+
+def test_unknown_model_is_422(setup: tuple[TestClient, ChatAssistant]) -> None:
+    api, _ = setup
+    headers = {API_KEY_HEADER: KEY, "X-Anthropic-Model": "gpt-9"}
+    assert api.post("/api/ai/ask", json=CHAT, headers=headers).status_code == 422

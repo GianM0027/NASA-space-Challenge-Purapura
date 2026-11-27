@@ -23,6 +23,11 @@ API routes for both delegated modules, TO-5 (AI comment), UI-5 and AI-6, UI-6, t
 6. UI-6 (data attribution), then P2 items if time remains.
 
 ## Done
+- Owner's review round: internal usage statistics with an admin dashboard (D47), model choice
+  with Haiku as default (D48), trade-off units like the site panel (d h, °), smaller Earth
+  marker, short scrollable analysis tabs with the full name above, full-width lone metric card,
+  touchdown ring labels off the compass letters, "Remove my copy" after an approval. Verified:
+  10 new backend tests, 5 new frontend tests, screenshots on desktop and phone.
 - GUI audit (desktop 1440x900 and phone 390x844, scripted browser, no JS errors or failed
   requests found) and the certain fixes: admin toggles on separate lines, save form closes after
   saving, clearer delete confirmation, site rows that fit three actions, readable legend, time

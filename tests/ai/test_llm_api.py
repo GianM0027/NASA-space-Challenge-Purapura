@@ -70,8 +70,15 @@ def test_call_uses_the_key_the_schema_and_the_default_model(sdk: type[_FakeSdk])
     assert call["system"] == "System."
     assert call["messages"] == [{"role": "user", "content": "Prompt."}]
     assert call["output_config"]["format"] == {"type": "json_schema", "schema": SCHEMA}
-    assert call["fallbacks"] == "default"
-    assert "thinking" not in call  # Claude Opus 5.5 rejects disabled thinking; effort only
+    assert "fallbacks" not in call  # the default (Haiku) has no server-side refusal fallback
+
+
+def test_opus_and_sonnet_use_the_refusal_fallback(sdk: type[_FakeSdk]) -> None:
+    for model in ("claude-opus-5-5", "claude-sonnet-5-5"):
+        llm.AnthropicApiClient(KEY, model=model).complete_json("s", "p", SCHEMA)
+        call = sdk.instances[-1].calls[0]
+        assert call["fallbacks"] == "default"
+        assert "thinking" not in call  # these models reject disabled thinking; effort only
 
 
 def test_model_can_be_chosen(sdk: type[_FakeSdk]) -> None:
@@ -159,3 +166,17 @@ def test_unknown_provider_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LUNARNAV_LLM_PROVIDER", "openai")
     with pytest.raises(ValueError, match="unknown LLM provider"):
         llm.build_llm_client()
+
+
+def test_haiku_is_called_without_the_refusal_fallback(sdk: type[_FakeSdk]) -> None:
+    llm.AnthropicApiClient(KEY, model="claude-haiku-5-5").complete_json("s", "p", SCHEMA)
+    call = sdk.instances[0].calls[0]
+    assert "fallbacks" not in call and "betas" not in call
+
+
+def test_visitor_model_choice(monkeypatch: pytest.MonkeyPatch, sdk: type[_FakeSdk]) -> None:
+    monkeypatch.delenv("LUNARNAV_LLM_MODEL", raising=False)
+    assert llm.api_client_for_key(KEY).model == "claude-haiku-5-5"  # default: cheapest, enough
+    assert llm.api_client_for_key(KEY, "claude-opus-5-5").model == "claude-opus-5-5"
+    with pytest.raises(ValueError, match="model must be one of"):
+        llm.api_client_for_key(KEY, "claude-something-else")

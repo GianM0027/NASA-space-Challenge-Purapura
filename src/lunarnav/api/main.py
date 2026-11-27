@@ -15,12 +15,15 @@ and the other AI texts fall back to their deterministic versions.
 from __future__ import annotations
 
 import logging
+import os
+from dataclasses import dataclass
+from pathlib import Path
 from types import ModuleType
 from typing import Annotated, Any
 
-from fastapi import FastAPI, Header, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
-from pydantic import AwareDatetime
+from pydantic import AwareDatetime, BaseModel, Field
 
 from lunarnav.accounts import AccountError, AccountStore, build_account_store
 from lunarnav.api.accounts import SessionDep, build_accounts_router
@@ -37,6 +40,7 @@ from lunarnav.api.requests import (
 from lunarnav.api.services import Services
 from lunarnav.api.site_update import updater_from_env
 from lunarnav.api.sky import sky_state
+from lunarnav.api.stats import CLIENT_EVENTS, Stats, StatsMiddleware
 from lunarnav.api.wiring import ModuleStatus, build_services
 from lunarnav.contracts import (
     AiAnswer,
@@ -56,9 +60,38 @@ from lunarnav.contracts import (
 
 logger = logging.getLogger(__name__)
 
+
+class ClientEvent(BaseModel):
+    """An event counted for the usage statistics (decision D47); only known names count."""
+
+    name: str = Field(max_length=40)
+
+
 # Header carrying a user's own Anthropic API key for the AI routes (decision D43).
 API_KEY_HEADER = "X-Anthropic-Api-Key"
-ApiKey = Annotated[str | None, Header(alias=API_KEY_HEADER)]
+# Model the visitor picked for their key (one of lunarnav.ai.llm.USER_MODELS).
+MODEL_HEADER = "X-Anthropic-Model"
+
+
+@dataclass(frozen=True)
+class UserLlm:
+    """The visitor's own key and model for one request (decision D43)."""
+
+    key: str
+    model: str | None
+
+
+def user_llm(
+    key: Annotated[str | None, Header(alias=API_KEY_HEADER)] = None,
+    model: Annotated[str | None, Header(alias=MODEL_HEADER)] = None,
+) -> UserLlm | None:
+    """FastAPI dependency: the key and model headers, or None without a key."""
+    if key is None or not key.strip():
+        return None
+    return UserLlm(key, model)
+
+
+ApiKey = Annotated[UserLlm | None, Depends(user_llm)]
 
 
 def _llm_module() -> ModuleType | None:
@@ -78,6 +111,7 @@ def build_app(
     services: Services | None = None,
     status: ModuleStatus | None = None,
     accounts: AccountStore | None = None,
+    stats: Stats | None = None,
 ) -> FastAPI:
     """Create the FastAPI app.
 
@@ -86,6 +120,7 @@ def build_app(
         status: Per-service origin reported by ``GET /api/modules``; ignored unless
             ``services`` is given.
         accounts: Account store; opened from the environment when None (decision D45).
+        stats: Usage statistics; opened next to the account store when None (decision D47).
 
     Returns:
         The configured application.
@@ -100,6 +135,10 @@ def build_app(
     limiter = limiter_from_env()
     if limiter is not None:  # per-client limits for the public deployment (decision D44)
         app.add_middleware(RateLimitMiddleware, limiter=limiter)
+    if stats is None:
+        stats = Stats(Path(os.environ.get("LUNARNAV_STATE_DIR") or "data/state") / "stats.sqlite3")
+    # Added last, so it is outermost: it also counts the 429s of the rate limiter (decision D47).
+    app.add_middleware(StatsMiddleware, stats=stats)
 
     @app.exception_handler(ValueError)
     def invalid_input(_: Request, error: ValueError) -> JSONResponse:
@@ -138,6 +177,25 @@ def build_app(
     app.state.base_catalog = svc.catalog
     app.include_router(build_accounts_router(accounts, updater_from_env()))
 
+    @app.get("/api/admin/stats")
+    def admin_stats(session: SessionDep, days: int = 30) -> dict[str, Any]:
+        """Daily usage counters of the last ``days`` days (admin, decision D47)."""
+        session.require_admin()
+        return stats.summary(days)
+
+    @app.post("/api/stats/event", status_code=204)
+    def client_event(event: ClientEvent) -> Response:
+        """Count an event only the browser sees (e.g. a PDF report); unknown names are ignored."""
+        label = CLIENT_EVENTS.get(event.name)
+        if label is not None:
+            stats.record("feature", label)
+        return Response(status_code=204)
+
+    def count_site(site_id: str | None) -> None:
+        """Count an evaluated catalog site (personal sites are never counted by name)."""
+        if site_id and not site_id.startswith("user-"):
+            stats.record("site", site_id)
+
     def ranker_for(catalog: SiteCatalog) -> Any:
         """The ranker over this person's catalog (their own sites included)."""
         with_catalog = getattr(svc.ranker, "with_catalog", None)
@@ -168,7 +226,7 @@ def build_app(
         """Report, per service, whether it is "real", "example" or "error: ..."."""
         return modules
 
-    def assistant_for(api_key: str | None, catalog: SiteCatalog) -> Any:
+    def assistant_for(api_key: UserLlm | None, catalog: SiteCatalog) -> Any:
         """Return the assistant for this request: the caller's key and their catalog.
 
         Without a key the server's LLM answers. 422 for a key of impossible shape; 501 when the
@@ -176,12 +234,12 @@ def build_app(
         """
         rebind = getattr(svc.assistant, "rebind", None)
         llm_client = None
-        if api_key is not None and api_key.strip():
+        if api_key is not None:
             llm = _llm_module()
             if llm is None or not callable(rebind):
                 raise HTTPException(501, "this server cannot use an Anthropic API key")
             try:
-                llm_client = llm.api_client_for_key(api_key)
+                llm_client = llm.api_client_for_key(api_key.key, api_key.model)
             except ValueError as error:
                 raise HTTPException(422, str(error)) from error
         if not callable(rebind):
@@ -253,6 +311,7 @@ def build_app(
     @app.post("/api/evaluate")
     def evaluate_one(request: EvaluateRequest, session: SessionDep) -> Evaluation:
         """Evaluate one site or point over a window."""
+        count_site(request.site_id)
         return evaluate(request, session.catalog())
 
     @app.post("/api/compare")
@@ -267,14 +326,12 @@ def build_app(
         return ranker_for(session.catalog()).rank(requirements)
 
     @app.post("/api/ai/ask")
-    def ask(request: AiRequest, session: SessionDep, api_key: ApiKey = None) -> AiAnswer:
+    def ask(request: AiRequest, session: SessionDep, api_key: ApiKey) -> AiAnswer:
         """Turn one chat turn into updated requirements and, when possible, a ranking."""
         return assistant_for(api_key, session.catalog()).ask(request)
 
     @app.post("/api/ai/explain")
-    def explain(
-        request: ExplainRequest, session: SessionDep, api_key: ApiKey = None
-    ) -> SiteRanking:
+    def explain(request: ExplainRequest, session: SessionDep, api_key: ApiKey) -> SiteRanking:
         """Add a short AI rationale to every ranked site (numbers checked against the ranking)."""
         return assistant_for(api_key, session.catalog()).explain(
             request.ranking, request.language_hint
@@ -286,7 +343,7 @@ def build_app(
     tradeoff_comments: dict[str, str] = {}
 
     def tradeoff(
-        request: TradeoffRequest, api_key: str | None, catalog: SiteCatalog
+        request: TradeoffRequest, api_key: UserLlm | None, catalog: SiteCatalog
     ) -> tuple[TradeoffResult, list[Evaluation]]:
         """Evaluate the scenarios, run the trade-off and add its AI comment (spec TO-5)."""
         evaluations = [evaluate(scenario, catalog) for scenario in request.scenarios]
@@ -303,15 +360,13 @@ def build_app(
 
     @app.post("/api/tradeoff")
     def tradeoff_result(
-        request: TradeoffRequest, session: SessionDep, api_key: ApiKey = None
+        request: TradeoffRequest, session: SessionDep, api_key: ApiKey
     ) -> TradeoffResult:
         """AHP trade-off of 2 to 4 scenarios (spec section 4.8)."""
         return tradeoff(request, api_key, session.catalog())[0]
 
     @app.post("/api/tradeoff/export")
-    def tradeoff_export(
-        request: TradeoffRequest, session: SessionDep, api_key: ApiKey = None
-    ) -> Response:
+    def tradeoff_export(request: TradeoffRequest, session: SessionDep, api_key: ApiKey) -> Response:
         """The same trade-off as a live Excel workbook (spec TO-4); 501 without the module."""
         export = getattr(svc.tradeoff, "export_xlsx", None)
         if not callable(export):
@@ -326,7 +381,7 @@ def build_app(
 
     @app.post("/api/ai/comment-analysis")
     def comment_analysis(
-        request: CommentAnalysisRequest, session: SessionDep, api_key: ApiKey = None
+        request: CommentAnalysisRequest, session: SessionDep, api_key: ApiKey
     ) -> RobustnessReport:
         """Add a short AI comment to a mission-analysis report (numbers checked)."""
         return assistant_for(api_key, session.catalog()).comment_analysis(

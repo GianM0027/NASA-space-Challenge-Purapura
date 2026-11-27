@@ -6,6 +6,8 @@ import { api, type AccountInfo, type ProposalInfo } from '../api/client'
 import { accountError } from './errors'
 import { ProposalReview } from './ProposalReview'
 import { SiteUpdatePanel } from './SiteUpdatePanel'
+import { StatsDashboard } from './StatsDashboard'
+import type { Site } from '../api/contracts'
 
 const STATUS_LABEL: Record<ProposalInfo['status'], string> = {
   pending: 'waiting for review',
@@ -125,11 +127,14 @@ export function AccountPanel(props: {
   proposals: ProposalInfo[]
   savedCount: number
   onChanged: () => void
+  /** Catalog sites, for names in the admin statistics. */
+  sites?: Site[]
 }) {
-  const { account, proposals, savedCount, onChanged } = props
+  const { account, proposals, savedCount, onChanged, sites = [] } = props
   const [deleting, setDeleting] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const [versioning, setVersioning] = useState(false)
+  const [showingStats, setShowingStats] = useState(false)
   const registered = account !== null && !account.is_guest
 
   return (
@@ -176,6 +181,10 @@ export function AccountPanel(props: {
                 {versioning ? '▾' : '▸'} Site version
               </button>
               {versioning && <SiteUpdatePanel />}
+              <button className="link" onClick={() => setShowingStats(true)}>
+                ▸ Usage statistics
+              </button>
+              {showingStats && <StatsDashboard sites={sites} onClose={() => setShowingStats(false)} />}
             </>
           )}
           {/* Session actions at the bottom, apart from the review tools above. */}

@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { AccountInfo, ProposalInfo } from '../api/client'
+import type { Site } from '../api/contracts'
 import { AccountPanel } from './AccountPanel'
 
 function PersonIcon() {
@@ -20,6 +21,7 @@ export function AccountMenu(props: {
   proposals: ProposalInfo[]
   savedCount: number
   onChanged: () => void
+  sites?: Site[]
 }) {
   const { account } = props
   const [open, setOpen] = useState(false)

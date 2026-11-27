@@ -3,7 +3,19 @@
 
 /** Header the backend reads the key from (GET /api/ai/config reports the same name). */
 export const AI_KEY_HEADER = 'X-Anthropic-Api-Key'
+/** Header carrying the model the visitor picked (the backend accepts only AI_MODELS). */
+export const AI_MODEL_HEADER = 'X-Anthropic-Model'
 const STORAGE_KEY = 'lunarnav.anthropicApiKey'
+const MODEL_STORAGE_KEY = 'lunarnav.anthropicModel'
+
+/** Models offered with an own key, by token use; Haiku is the default and recommended one. */
+export const AI_MODELS = [
+  { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5', usage: 'low', note: 'recommended: fast and cheapest, enough for these tasks' },
+  { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5', usage: 'medium', note: 'more careful wording' },
+  { id: 'claude-opus-5-5', name: 'Claude Opus 5.5', usage: 'high', note: 'most capable, costs the most' },
+] as const
+export type AiModelId = (typeof AI_MODELS)[number]['id']
+export const DEFAULT_AI_MODEL: AiModelId = 'claude-haiku-5-5'
 const CHANGE_EVENT = 'lunarnav-ai-key'
 
 /** Minimal Storage surface, so tests can pass in-memory stores. */
@@ -76,10 +88,30 @@ export function clearAiKey(): void {
   notify()
 }
 
-/** Headers carrying the key, for the AI requests only; empty without a key. */
+/** The model picked for the own key (remembered on this device; not sensitive). */
+export function getAiModel(): AiModelId {
+  let stored: string | null = null
+  try {
+    stored = stores.local?.getItem(MODEL_STORAGE_KEY) ?? null
+  } catch {
+    stored = null
+  }
+  return AI_MODELS.some((model) => model.id === stored) ? (stored as AiModelId) : DEFAULT_AI_MODEL
+}
+
+export function setAiModel(model: AiModelId): void {
+  try {
+    stores.local?.setItem(MODEL_STORAGE_KEY, model)
+  } catch {
+    // Not remembered: the default applies next time.
+  }
+  notify()
+}
+
+/** Headers carrying the key and model, for the AI requests only; empty without a key. */
 export function aiKeyHeaders(): Record<string, string> {
   const key = getAiKey()
-  return key ? { [AI_KEY_HEADER]: key } : {}
+  return key ? { [AI_KEY_HEADER]: key, [AI_MODEL_HEADER]: getAiModel() } : {}
 }
 
 /** Show only the last characters of a key, e.g. for "Key ending in …a1b2". */

@@ -8,8 +8,10 @@ import {
   clearAiKey,
   getAiKey,
   isAiKeyRemembered,
+  getAiModel,
   maskKey,
   setAiKey,
+  setAiModel,
   stores,
   type KeyStore,
 } from './aiKey'
@@ -56,7 +58,7 @@ describe('AI key storage', () => {
     expect(session.data.size).toBe(1)
     expect(local.data.size).toBe(0)
     expect(isAiKeyRemembered()).toBe(false)
-    expect(aiKeyHeaders()).toEqual({ [AI_KEY_HEADER]: 'sk-ant-session' })
+    expect(aiKeyHeaders()).toEqual({ [AI_KEY_HEADER]: 'sk-ant-session', 'X-Anthropic-Model': 'claude-haiku-5-5' })
   })
 
   it('remembers the key on the device only when asked, and moves it between stores', () => {
@@ -94,5 +96,15 @@ describe('AI key storage', () => {
   it('masks all but the last four characters', () => {
     expect(maskKey('sk-ant-api03-abcd1234')).toBe('…1234')
     expect(maskKey('abc')).toBe('…')
+  })
+
+  it('sends Haiku by default and the model the visitor picked', () => {
+    setAiKey('sk-ant-x', false)
+    expect(getAiModel()).toBe('claude-haiku-5-5')
+    expect(aiKeyHeaders()['X-Anthropic-Model']).toBe('claude-haiku-5-5')
+    setAiModel('claude-opus-5-5')
+    expect(aiKeyHeaders()['X-Anthropic-Model']).toBe('claude-opus-5-5')
+    local.data.set('lunarnav.anthropicModel', 'not-a-model')
+    expect(getAiModel()).toBe('claude-haiku-5-5')
   })
 })

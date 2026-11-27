@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AiBadge } from '../ai/AiBadge'
 import type { Site, TimeWindow, TradeoffResult } from '../api/contracts'
-import { formatPercent, fromInputValue, toInputValue } from '../format'
+import { formatDuration, formatPercent, fromInputValue, toInputValue } from '../format'
 import './compare.css'
 import {
   activeFomIds,
@@ -72,6 +72,9 @@ function fomName(id: string, draft: TradeoffDraft, result: TradeoffResult | null
 function formatValue(value: number | null, unit: string): string {
   if (value === null) return 'n/a'
   if (unit === '') return formatPercent(value)
+  // Same notation as the site panel: durations in days and hours, angles in degrees.
+  if (unit === 'h') return formatDuration(value)
+  if (unit === 'deg') return `${value.toFixed(1)}°`
   return `${value.toFixed(value >= 100 ? 0 : 1)} ${unit}`
 }
 

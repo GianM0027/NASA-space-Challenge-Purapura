@@ -770,8 +770,24 @@ button.link {
   overflow-y: auto;
 }
 
+/* Analysis tabs: one scrollable row of short labels (full name above the results). */
 .analysis-tabs {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.analysis-tab {
+  flex: none;
+}
+
+.analysis-title {
+  margin: 2px 0 2px;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
 }
 
 .analysis-tab {
@@ -1589,4 +1605,219 @@ aside .sites li > .badge {
 
 .time-wheel-when .muted {
   font-size: 11px;
+}
+
+/* A section with a single value (e.g. "Power and link together") uses the whole row. */
+.metrics > .metric:only-child {
+  grid-column: 1 / -1;
+}
+
+.approved-copy {
+  gap: 8px;
+  margin: 2px 0 0 18px;
+}
+
+.approved-copy .badge {
+  margin: 0;
+}
+
+/* ---------- Admin usage statistics (decision D47) ---------- */
+.stats-backdrop {
+  z-index: 70;
+}
+
+.stats-dialog {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.stats-range {
+  flex: none;
+  margin-left: auto;
+}
+
+.stats-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+}
+
+.stats-body h3 {
+  margin: 18px 0 8px;
+}
+
+.stats-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.stats-figure {
+  margin: 0;
+}
+
+.stats-readout {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.stats-plot {
+  position: relative;
+}
+
+.stats-chart {
+  display: block;
+  width: 100%;
+  height: 140px;
+  touch-action: manipulation;
+}
+
+.stats-max {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  pointer-events: none;
+}
+
+.stats-dates {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.stats-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.stats-baseline {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.stats-axis {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.stats-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.stats-bar {
+  fill: color-mix(in srgb, var(--accent) 70%, var(--surface));
+}
+
+.stats-bar.active {
+  fill: var(--accent);
+}
+
+.stats-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0 28px;
+}
+
+.stats-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stats-bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 11em) 1fr 3em;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.stats-bar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.stats-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.stats-bar-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-ok {
+  color: var(--good);
+}
+
+@media (max-width: 760px) {
+  .stats-dialog {
+    inset: 0;
+    border-radius: 0;
+  }
+
+  .stats-body {
+    padding: 12px;
+  }
+
+  .stats-bars li {
+    grid-template-columns: minmax(0, 9em) 1fr 2.5em;
+  }
+}
+
+/* Model picker under the API key (token use: low, medium, high). */
+.ai-model {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.ai-model legend {
+  padding: 0 4px;
+  color: var(--muted);
+}
+
+.ai-model label {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--text);
+}
+
+.ai-model input {
+  margin-top: 2px;
+}
+
+.badge.usage-low {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.badge.usage-medium {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.badge.usage-high {
+  color: var(--bad);
+  border-color: var(--bad);
 }
